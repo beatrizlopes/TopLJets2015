@@ -37,6 +37,11 @@ options.register('outFilename', 'MiniEvents.root',
                  VarParsing.varType.string,
                  "Output file name"
                  )
+options.register('globalTag', None,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.string,
+                 "Override with this global tag, if none use default"
+                 )                 
 options.register('baseJetCollection','slimmedJets',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.string,
@@ -67,10 +72,15 @@ options.register('savePF', False,
                  VarParsing.varType.bool,
                  'save PF candidates'
                  )
+options.register('RecoProtons', False,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.bool,
+                 'Run DirectoProton reconstruction'
+                 )                 
 options.register('applyFilt', True,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
-                 'save PF candidates'
+                 'Apply filters'
                  )
 options.parseArguments()
 
@@ -81,7 +91,11 @@ process = cms.Process("MiniAnalysis", eras.ctpps_2016)
 #get the configuration to apply
 from TopLJets2015.TopAnalysis.EraConfig import getEraConfiguration
 globalTag, jecTag, jecDB, jerTag, jerDB = getEraConfiguration(era=options.era,isData=options.runOnData)
-
+if options.globalTag:
+      globalTag=options.globalTag
+      print 'Forcing global tag to',globalTag
+      
+      
 # Load the standard set of configuration modules
 process.load("TrackingTools.TransientTrack.TransientTrackBuilder_cfi")
 process.load('Configuration.StandardSequences.Services_cff')
@@ -207,8 +221,10 @@ if options.runOnData:
 
 #schedule execution
 toSchedule=[]
-if process.egammaPostReco:
+try:
       toSchedule.append( process.egammaPostReco )
+except:
+      print '\te/g post reco not found, will take e/g as it is'
 if process.updatedPatJetsUpdatedJECBTag:
       process.custom_jec_seq=cms.Sequence(process.QGTagger * process.patJetCorrFactorsUpdatedJECBTag * process.updatedPatJetsUpdatedJECBTag)
       process.custom_jec=cms.Path(process.custom_jec_seq)
@@ -239,6 +255,11 @@ if options.runProtonFastSim:
       toSchedule.append(process.pps_simulation_step)
       toSchedule.append(process.pps_reco_step)
       process.analysis.tagRecoProtons = cms.InputTag('ctppsProtonReconstructionOFDB')
+      
+if options.RecoProtons:
+      process.analysis.ctppsLocalTracks    = cms.InputTag("ctppsLocalTrackLiteProducer") 
+      process.analysis.tagRecoProtons      = cms.InputTag("ctppsProtons","singleRP") 
+      process.analysis.tagMultiRecoProtons = cms.InputTag("ctppsProtons","multiRP") 
 
 process.ana=cms.Path(process.analysis)
 toSchedule.append( process.ana )

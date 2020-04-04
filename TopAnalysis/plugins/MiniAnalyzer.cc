@@ -150,7 +150,7 @@ private:
   edm::EDGetTokenT<pat::METCollection> metToken_;
   edm::EDGetTokenT<pat::PackedCandidateCollection> pfToken_;
   edm::EDGetTokenT<std::vector<CTPPSLocalTrackLite> > ctppsToken_;
-  edm::EDGetTokenT<std::vector<reco::ForwardProton>> tokenRecoProtons_;
+  std::vector< edm::EDGetTokenT<std::vector<reco::ForwardProton> > > tokenRecoProtons_;
 
   //
   edm::EDGetTokenT<bool> BadChCandFilterToken_,BadPFMuonFilterToken_;
@@ -215,13 +215,17 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
   pfToken_(consumes<pat::PackedCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfCands"))),
   ctppsToken_(consumes<std::vector<CTPPSLocalTrackLite> >(iConfig.getParameter<edm::InputTag>("ctppsLocalTracks"))),
-  tokenRecoProtons_(consumes<std::vector<reco::ForwardProton>>(iConfig.getParameter<InputTag>("tagRecoProtons"))),
   BadChCandFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badChCandFilter"))),
   BadPFMuonFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badPFMuonFilter"))),
   saveTree_( iConfig.getParameter<bool>("saveTree") ),
   savePF_( iConfig.getParameter<bool>("savePF") ),
   applyFilt_( iConfig.getParameter<bool>("applyFilt") )
 {
+	
+  tokenRecoProtons_.push_back( consumes<std::vector<reco::ForwardProton>>(iConfig.getParameter<InputTag>("tagRecoProtons")));
+  tokenRecoProtons_.push_back( consumes<std::vector<reco::ForwardProton>>(iConfig.getParameter<InputTag>("tagMultiRecoProtons")));
+
+  	
   //now do what ever initialization is needed
   electronToken_      = mayConsume<edm::View<pat::Electron> >(iConfig.getParameter<edm::InputTag>("electrons"));
   photonToken_        = mayConsume<edm::View<pat::Photon> >(iConfig.getParameter<edm::InputTag>("photons"));
@@ -565,7 +569,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   iEvent.getByToken(pfToken_,pfcands);
 
   //
-  //PPS local tracks (only present in data)
+  //PPS local tracks (if present)
   //
   ev_.nppstrk=0;
   edm::Handle<CTPPSLocalTrackLiteCollection> recoPPSTracks;
@@ -593,41 +597,43 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   }
 
   //
-  //PPS protons (only present in data)
+  //PPS protons (if present), loop over multi- and single-RP reco
   //
   ev_.nfwdtrk=0;
-  edm::Handle<vector<reco::ForwardProton>> recoProtons;
-  iEvent.getByToken(tokenRecoProtons_, recoProtons);
-  if(recoProtons.isValid()){
-    try{
-      for (const auto & proton : *recoProtons)
-        {
-          if(!proton.validFit()) continue;
+  for(size_t ip=0; ip<tokenRecoProtons_.size(); ip++){
+    edm::Handle<vector<reco::ForwardProton>> recoProtons;
+    iEvent.getByToken(tokenRecoProtons_[ip], recoProtons);
+    if(recoProtons.isValid()){
+      try{
+        for (const auto & proton : *recoProtons)
+          {
+            if(!proton.validFit()) continue;
 
-          CTPPSDetId detid( (*(proton.contributingLocalTracks().begin()))->getRPId() );
-          ev_.fwdtrk_pot[ev_.nfwdtrk]       = 100*detid.arm()+10*detid.station()+detid.rp();
-          ev_.fwdtrk_chisqnorm[ev_.nfwdtrk] = proton.normalizedChi2();
-          ev_.fwdtrk_method[ev_.nfwdtrk]    = Short_t(proton.method());
+            CTPPSDetId detid( (*(proton.contributingLocalTracks().begin()))->getRPId() );
+            ev_.fwdtrk_pot[ev_.nfwdtrk]       = 100*detid.arm()+10*detid.station()+detid.rp();
+            ev_.fwdtrk_chisqnorm[ev_.nfwdtrk] = proton.normalizedChi2();
+            ev_.fwdtrk_method[ev_.nfwdtrk]    = Short_t(proton.method());
 
-          ev_.fwdtrk_thetax[ev_.nfwdtrk]    = proton.thetaX();
-          ev_.fwdtrk_thetay[ev_.nfwdtrk]    = proton.thetaY();
-          ev_.fwdtrk_vx[ev_.nfwdtrk]        = proton.vx();
-          ev_.fwdtrk_vy[ev_.nfwdtrk]        = proton.vy();
-          ev_.fwdtrk_vz[ev_.nfwdtrk]        = proton.vz();
-          ev_.fwdtrk_time[ev_.nfwdtrk]      = proton.time();
-          ev_.fwdtrk_timeError[ev_.nfwdtrk] = proton.timeError();
+            ev_.fwdtrk_thetax[ev_.nfwdtrk]    = proton.thetaX();
+            ev_.fwdtrk_thetay[ev_.nfwdtrk]    = proton.thetaY();
+            ev_.fwdtrk_vx[ev_.nfwdtrk]        = proton.vx();
+            ev_.fwdtrk_vy[ev_.nfwdtrk]        = proton.vy();
+            ev_.fwdtrk_vz[ev_.nfwdtrk]        = proton.vz();
+            ev_.fwdtrk_time[ev_.nfwdtrk]      = proton.time();
+            ev_.fwdtrk_timeError[ev_.nfwdtrk] = proton.timeError();
 
-          ev_.fwdtrk_xi[ev_.nfwdtrk]        = proton.xi();
-          ev_.fwdtrk_xiError[ev_.nfwdtrk]   = proton.xiError();
-          ev_.fwdtrk_t[ev_.nfwdtrk]         = proton.t();
-          ev_.nfwdtrk++;
-        }
-    }
-    catch(std::exception &e){
-      cout << e.what() << endl;
+            ev_.fwdtrk_xi[ev_.nfwdtrk]        = proton.xi();
+            ev_.fwdtrk_xiError[ev_.nfwdtrk]   = proton.xiError();
+            ev_.fwdtrk_t[ev_.nfwdtrk]         = proton.t();
+            ev_.nfwdtrk++;
+          }
+      }
+      catch(std::exception &e){
+        cout << e.what() << endl;
+      }
     }
   }
-
+  
   //
   //LEPTON SELECTION 
   ev_.nl=0; 
@@ -1235,12 +1241,18 @@ bool MiniAnalyzer::isMediumMuon2016ReReco(const reco::Muon & recoMu)
 void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   //get beam-crossing angle and LHC conditions
-  edm::ESHandle<LHCInfo> hLHCInfo;
-  std::string lhcInfoLabel("");
-  iSetup.get<LHCInfoRcd>().get(lhcInfoLabel, hLHCInfo);
-  if(hLHCInfo.isValid()){
-    ev_.beamXangle=hLHCInfo->crossingAngle();
-    ev_.instLumi=hLHCInfo->instLumi();
+  try{
+    edm::ESHandle<LHCInfo> hLHCInfo;
+    std::string lhcInfoLabel("");
+    iSetup.get<LHCInfoRcd>().get(lhcInfoLabel, hLHCInfo);
+    if(hLHCInfo.isValid()){
+      ev_.beamXangle=hLHCInfo->crossingAngle();
+      ev_.instLumi=hLHCInfo->instLumi();
+    }
+  }
+  catch(...){
+    ev_.beamXangle=0;
+    ev_.instLumi=0;
   }
 
   histContainer_["counter"]->Fill(0);

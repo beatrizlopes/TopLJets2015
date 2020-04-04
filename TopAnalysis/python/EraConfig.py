@@ -12,12 +12,12 @@ def getEraConfiguration(era,isData):
     jecFiles    = {
         'era2016':('Summer16_07Aug2017_V11_MC',   'Summer16_07Aug2017All_V11_DATA', 'Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs'),
         'era2017':('Fall17_17Nov2017_V32_94X_MC', 'Fall17_17Nov2017_V32_94X_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2018':('Autumn18_V8_MC',              'Autumn18_RunABCD_V8_DATA',       'Autumn18_V8_MC_UncertaintySources_AK4PFchs')
+        'era2018':('Autumn18_V19_MC',             'Autumn18_RunABCD_V19_DATA',      'Autumn18_V19_MC_UncertaintySources_AK4PFchs')
         }
     jerFiles    = {
         'era2016':('Summer16_25nsV1_MC',         'Summer16_25nsV1_DATA'),
         'era2017':('Summer16_25nsV1_MC',         'Summer16_25nsV1_DATA'),
-        'era2018':('Autumn18_V1_MC',             'Autumn18_V1_DATA'),
+        'era2018':('Autumn18_V7b_MC',    'Autumn18_V7b_DATA'),
         }
     muonFiles   = {
         'era2016':'RoccoR2016.txt',
@@ -32,7 +32,7 @@ def getEraConfiguration(era,isData):
     jerTag    = '_'.join( jerFile.split('_')[0:-1] )
     jerDB     = 'jer_DATA.db'  if isData else 'jer_MC.db'
     qgDBFile  = 'QGL_AK4chs_94X.db'
-    ctppsDBFile= 'CTPPSRPRealAlignment_table_v26Apr.db'
+    #ctppsDBFile= 'CTPPSRPAlignment_real_offline_v7.db'
     muonDBFile = muonFiles[era]
 
     #copy correction files to a common CMSSW search path directory
@@ -41,7 +41,7 @@ def getEraConfiguration(era,isData):
     os.system('cp ${CMSSW_BASE}/src/TopLJets2015/TopAnalysis/data/%s/%s.db %s'%(era,jerFile,jerDB))
     os.system('cp ${CMSSW_BASE}/src/TopLJets2015/TopAnalysis/data/%s/%s.txt jecUncSources.txt'%(era,jecFiles[era][2]))
     os.system('cp ${CMSSW_BASE}/src/TopLJets2015/TopAnalysis/data/%s qg_db.db'%(qgDBFile))
-    os.system('cp ${CMSSW_BASE}/src/TopLJets2015/TopAnalysis/data/%s ctpps_db.db'%(ctppsDBFile))
+    #os.system('cp ${CMSSW_BASE}/src/TopLJets2015/TopAnalysis/data/%s ctpps_db.db'%(ctppsDBFile))
     os.system('cp ${CMSSW_BASE}/src/TopLJets2015/TopAnalysis/data/%s/%s muoncorr_db.txt'%(era,muonDBFile))
 
 
@@ -49,7 +49,7 @@ def getEraConfiguration(era,isData):
     print 'JER tag: ',jerTag,'to be read from',jerDB
     print 'Muon corrections to be read from muoncorr_db.txt'
     print 'q/g discriminator to be read from qg_db.db'
-    print 'CTPPS config to be read from ctpps_db.db'
+    #print 'CTPPS config to be read from ctpps_db.db'
 
     return globalTag, jecTag, jecDB, jerTag, jerDB
     
