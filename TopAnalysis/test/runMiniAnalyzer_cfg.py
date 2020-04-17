@@ -86,7 +86,7 @@ options.parseArguments()
 
 #start process
 from Configuration.StandardSequences.Eras import eras
-process = cms.Process("MiniAnalysis", eras.ctpps_2016)      
+process = cms.Process("MiniAnalysis", eras.Run2_2017)
 
 #get the configuration to apply
 from TopLJets2015.TopAnalysis.EraConfig import getEraConfiguration
@@ -225,6 +225,8 @@ try:
       toSchedule.append( process.egammaPostReco )
 except:
       print '\te/g post reco not found, will take e/g as it is'
+      
+      
 if process.updatedPatJetsUpdatedJECBTag:
       process.custom_jec_seq=cms.Sequence(process.QGTagger * process.patJetCorrFactorsUpdatedJECBTag * process.updatedPatJetsUpdatedJECBTag)
       process.custom_jec=cms.Path(process.custom_jec_seq)
@@ -249,14 +251,13 @@ if options.runOnData:
       toSchedule.append(process.ppsReco)
 
 if options.runProtonFastSim:
-      from TopLJets2015.TopAnalysis.protonReco_cfg import setupProtonReco
-      setupProtonReco(process,options.runProtonFastSim)
+      from TopLJets2015.TopAnalysis.protonReco_cfg import setupProtonSim
+      print(process.custom_jec)
+      setupProtonSim(process,options.runProtonFastSim,True)
+      print(process.custom_jec)
       toSchedule.append(process.pps_fastsim)
-      toSchedule.append(process.pps_simulation_step)
-      toSchedule.append(process.pps_reco_step)
-      process.analysis.tagRecoProtons = cms.InputTag('ctppsProtonReconstructionOFDB')
-      
-if options.RecoProtons:
+
+if options.RecoProtons or options.runProtonFastSim:
       process.analysis.ctppsLocalTracks    = cms.InputTag("ctppsLocalTrackLiteProducer") 
       process.analysis.tagRecoProtons      = cms.InputTag("ctppsProtons","singleRP") 
       process.analysis.tagMultiRecoProtons = cms.InputTag("ctppsProtons","multiRP") 

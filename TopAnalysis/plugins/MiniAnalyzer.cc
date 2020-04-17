@@ -306,6 +306,10 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       ev_.g_x2     = evt->pdf()->x.second;
       ev_.g_id1    = evt->pdf()->id.first;
       ev_.g_id2    = evt->pdf()->id.second;
+	  
+	  //parton shower weights:
+	  ev_.g_npsw = evt->weights().size();
+	  for(int i=0; i< ev_.g_npsw; i++) ev_.g_psw[i]=evt->weights().at(i);
     }
   histContainer_["counter"]->Fill(1,ev_.g_w[0]);
 
@@ -916,8 +920,8 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	  break;
 	}
 
-      ev_.gamma_mva[ev_.ngamma]=g.userFloat("PhotonMVAEstimatorRunIIFall17v1Values");
-      ev_.gamma_mvaCats[ev_.ngamma]=g.userInt("PhotonMVAEstimatorRunIIFall17v1Categories");
+      ev_.gamma_mva[ev_.ngamma]=g.userFloat("PhotonMVAEstimatorRunIIFall17v2Values");
+      ev_.gamma_mvaCats[ev_.ngamma]=g.userInt("PhotonMVAEstimatorRunIIFall17v2Categories");
       ev_.gamma_idFlags[ev_.ngamma]= g.passElectronVeto() | (g.hasPixelSeed()<<1) | (ismvawp80<<2) | (ismvawp90<<3);
       ev_.gamma_pid[ev_.ngamma]= ( (looseBits & 0x3ff)
                                    | ((mediumBits & 0x3ff)<<10)
