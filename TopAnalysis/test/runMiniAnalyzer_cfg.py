@@ -12,6 +12,11 @@ options.register('runProtonFastSim', None,
                  VarParsing.varType.int,
                  "Run proton fastsim for this angle"
                  )
+options.register('doPUProtons', True,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.bool,
+                 "Include PU protons"
+                 )				 
 options.register('runWithAOD', False,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
@@ -264,7 +269,7 @@ if options.runOnData:
 
 if options.runProtonFastSim:
       from TopLJets2015.TopAnalysis.protonReco_cfg import setupProtonSim
-      setupProtonSim(process,options.runProtonFastSim,withPU=True)
+      setupProtonSim(process,options.runProtonFastSim,withPU=options.doPUProtons)
       toSchedule.append(process.pps_fastsim)
 
 if options.RecoProtons or options.runProtonFastSim:
