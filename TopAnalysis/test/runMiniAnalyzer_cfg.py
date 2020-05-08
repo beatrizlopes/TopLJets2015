@@ -139,6 +139,17 @@ customizeJetTools(process=process,
                   baseJetCollection=options.baseJetCollection,
                   runOnData=options.runOnData)
 
+#pps settings:
+if options.runProtonFastSim:
+    if 'era2016' in options.era:
+          process.load("Validation.CTPPS.simu_config.year_2016_postTS2_cff")
+    if 'era2017' in options.era:
+          process.load("Validation.CTPPS.simu_config.year_2017_postTS2_cff")
+    if 'era2018' in options.era:
+          process.load("Validation.CTPPS.simu_config.year_2018_cff")
+    
+    
+    
 #message logger
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.threshold = ''
@@ -221,6 +232,7 @@ if options.runOnData:
 
 #schedule execution
 toSchedule=[]
+
 try:
       toSchedule.append( process.egammaPostReco )
 except:
@@ -252,15 +264,14 @@ if options.runOnData:
 
 if options.runProtonFastSim:
       from TopLJets2015.TopAnalysis.protonReco_cfg import setupProtonSim
-      print(process.custom_jec)
       setupProtonSim(process,options.runProtonFastSim,True)
-      print(process.custom_jec)
       toSchedule.append(process.pps_fastsim)
 
 if options.RecoProtons or options.runProtonFastSim:
       process.analysis.ctppsLocalTracks    = cms.InputTag("ctppsLocalTrackLiteProducer") 
       process.analysis.tagRecoProtons      = cms.InputTag("ctppsProtons","singleRP") 
       process.analysis.tagMultiRecoProtons = cms.InputTag("ctppsProtons","multiRP") 
+
 
 process.ana=cms.Path(process.analysis)
 toSchedule.append( process.ana )

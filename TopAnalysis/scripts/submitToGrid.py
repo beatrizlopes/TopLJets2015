@@ -6,7 +6,7 @@ import commands
 """
 creates the crab cfg and submits the job
 """
-def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era2017',submit=False,addParents=False,rawParents=False):
+def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era2017',submit=False,addParents=False,rawParents=False,xangle=None):
     
     from TopLJets2015.TopAnalysis.EraConfig import getEraConfiguration
     globalTag, jecTag, jecDB, jerTag, jerDB = getEraConfiguration(era=era,isData=bool(isData))
@@ -31,6 +31,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.write('config.JobType.pluginName = "Analysis"\n')
     config_file.write('config.JobType.psetName = "'+cfg+'"\n')
     config_file.write('config.JobType.disableAutomaticOutputCollection = False\n')
+    config_file.write('config.JobType.maxMemoryMB = 3000\n')
     if isZeroBias:
         print 'This is a ZeroBias sample will save everything...'
         config_file.write('config.JobType.pyCfgParams = [\'applyFilt=False\', \'runOnData=%s\',\'era=%s\']\n' % (bool(isData),era))
@@ -46,7 +47,10 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
             else:
                 config_file.write('config.JobType.pyCfgParams = [\'runOnData=True\',\'era=%s\']\n' % era )
         else:
-            config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'era=%s\']\n' % era )
+            if xangle:
+                config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'runProtonFastSim=%s\',\'era=%s\']\n' % (xangle,era) )
+            else:
+                config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'era=%s\']\n' % era )
 
     #config_file.write('config.JobType.inputFiles = [\'{0}/{1}\',\'{0}/{2}\',\'{0}/muoncorr_db.txt\',\'{0}/jecUncSources.txt\']\n'.format(cmssw,jecDB,jerDB))
     
@@ -98,6 +102,7 @@ def main():
     parser.add_option('-c', '--cfg',         dest='cfg'   ,      help='cfg to be sent to grid',        default=None,    type='string')
     parser.add_option(      '--addParents',  dest='addParents',  help='analyze parents as well',       default=False,   action='store_true')
     parser.add_option(      '--rawParents',  dest='rawParents',  help='parent is RAW',                 default=False,   action='store_true')
+    parser.add_option(      '--xangle',      dest='xangle',      help='activate PPS reco',            default=None,     type='string')
     parser.add_option('-j', '--json',        dest='json'  ,      help='json with list of files',      default=None,    type='string')
     parser.add_option('-o', '--only',        dest='only'  ,      help='submit only these (csv)',      default=None,    type='string')
     parser.add_option('-l', '--lumi',        dest='lumiMask',    help='json with list of good lumis', default='/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/ReReco/Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON.txt')
@@ -141,6 +146,7 @@ def main():
                          era=opt.era,
                          workDir=opt.workDir,
                          submit=opt.submit,
+                         xangle=opt.xangle,
                          addParents=opt.addParents,
                          rawParents=opt.rawParents)
 

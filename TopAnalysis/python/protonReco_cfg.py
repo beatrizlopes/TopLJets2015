@@ -18,7 +18,6 @@ def setupProtonSim(process,xangle,withPU):
     process.beamDivergenceVtxGenerator.srcGenParticle = cms.VInputTag(cms.InputTag("prunedGenParticles"))
   
   # do not apply vertex smearing again
-  process.load("Validation.CTPPS.simu_config.year_2017_postTS2_cff")
   process.ctppsBeamParametersESSource.vtxStddevX = 0
   process.ctppsBeamParametersESSource.vtxStddevY = 0
   process.ctppsBeamParametersESSource.vtxStddevZ = 0
