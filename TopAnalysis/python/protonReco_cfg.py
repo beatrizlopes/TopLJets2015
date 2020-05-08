@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 
-def setupProtonSim(process,xangle,withPU):
+def setupProtonSim(process,xangle,withPU=False):
 
   # load settings
   #process.load("direct_simu_reco_cff")

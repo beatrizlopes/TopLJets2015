@@ -264,7 +264,7 @@ if options.runOnData:
 
 if options.runProtonFastSim:
       from TopLJets2015.TopAnalysis.protonReco_cfg import setupProtonSim
-      setupProtonSim(process,options.runProtonFastSim,True)
+      setupProtonSim(process,options.runProtonFastSim,withPU=True)
       toSchedule.append(process.pps_fastsim)
 
 if options.RecoProtons or options.runProtonFastSim:
