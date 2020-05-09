@@ -3,11 +3,7 @@ import FWCore.ParameterSet.Config as cms
 
 def setupProtonSim(process,xangle,withPU=False):
 
-  # load settings
-  #process.load("direct_simu_reco_cff")
-   
   # update settings of beam-smearing module
-  process.load("IOMC.EventVertexGenerators.beamDivergenceVtxGenerator_cfi")
   process.beamDivergenceVtxGenerator.src = cms.InputTag("")
   
   # input collections
@@ -29,6 +25,8 @@ def setupProtonSim(process,xangle,withPU=False):
   
   # set up Xangle  
   process.ctppsLHCInfoESSource.xangle = cms.double(xangle)
+  process.ctppsBeamParametersESSource.halfXangleX45 = xangle * 1E-6
+  process.ctppsBeamParametersESSource.halfXangleX56 = xangle * 1E-6
 
   # processing path 
   process.pps_fastsim = cms.Path(process.beamDivergenceVtxGenerator

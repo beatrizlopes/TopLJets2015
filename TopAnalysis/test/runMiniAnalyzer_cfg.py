@@ -153,8 +153,6 @@ if options.runProtonFastSim:
     if 'era2018' in options.era:
           process.load("Validation.CTPPS.simu_config.year_2018_cff")
     
-    
-    
 #message logger
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.threshold = ''
@@ -233,7 +231,6 @@ else:
 if options.runOnData:
       process.analysis.metFilterBits = cms.InputTag("TriggerResults","","RECO")
       print '\t will save met filter bits'
-      process.analysis.tagRecoProtons = cms.InputTag('ctppsProtons','singleRP')      
 
 #schedule execution
 toSchedule=[]
@@ -272,11 +269,10 @@ if options.runProtonFastSim:
       setupProtonSim(process,options.runProtonFastSim,withPU=options.doPUProtons)
       toSchedule.append(process.pps_fastsim)
 
-if options.RecoProtons or options.runProtonFastSim:
+if options.RecoProtons or options.runProtonFastSim or options.runOnData:
       process.analysis.ctppsLocalTracks    = cms.InputTag("ctppsLocalTrackLiteProducer") 
-      process.analysis.tagRecoProtons      = cms.InputTag("ctppsProtons","singleRP") 
-      process.analysis.tagMultiRecoProtons = cms.InputTag("ctppsProtons","multiRP") 
-
+      process.analysis.tagRecoProtons      = cms.InputTag("ctppsProtons","singleRP","") 
+      process.analysis.tagMultiRecoProtons = cms.InputTag("ctppsProtons","multiRP","") 
 
 process.ana=cms.Path(process.analysis)
 toSchedule.append( process.ana )

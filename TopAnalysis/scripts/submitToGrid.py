@@ -48,9 +48,9 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
                 config_file.write('config.JobType.pyCfgParams = [\'runOnData=True\',\'era=%s\']\n' % era )
         else:
             if xangle:
-                config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'runProtonFastSim=%s\',\'era=%s\']\n' % (xangle,era) )
+                config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'noParticleLevel=True\',\'runProtonFastSim=%s\',\'era=%s\']\n' % (xangle,era) )
             else:
-                config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'era=%s\']\n' % era )
+                config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'noParticleLevel=True\',\'era=%s\']\n' % era )
 
     #config_file.write('config.JobType.inputFiles = [\'{0}/{1}\',\'{0}/{2}\',\'{0}/muoncorr_db.txt\',\'{0}/jecUncSources.txt\']\n'.format(cmssw,jecDB,jerDB))
     
