@@ -35,3 +35,37 @@ def setupProtonSim(process,xangle,withPU=False):
     * process.ctppsProtons
  )
 
+def ctppsCustom(process):
+
+  # define conditions
+  SetConditions(process)
+  
+	
+
+def SetConditions(process):
+  
+  # chose LHCInfo
+  global lhcInfoDefined
+  lhcInfoDefined = True
+
+  # chose alignment
+  global alignmentDefined
+  alignmentDefined = True
+
+  # chose optics
+  global opticsDefined
+  opticsDefined = True
+  
+  # check choices
+  if not lhcInfoDefined:
+    raise ValueError("LHCInfo not defined")
+
+  if not alignmentDefined:
+    raise ValueError("alignment not defined")
+
+  if not opticsDefined:
+    raise ValueError("optics not defined")
+	
+  # processing path 
+  
+

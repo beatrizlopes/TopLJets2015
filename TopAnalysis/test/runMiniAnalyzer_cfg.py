@@ -77,10 +77,10 @@ options.register('savePF', False,
                  VarParsing.varType.bool,
                  'save PF candidates'
                  )
-options.register('RecoProtons', False,
+options.register('RedoProtons', False,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
-                 'Run DirectoProton reconstruction'
+                 'Run Direct Proton reconstruction'
                  )                 
 options.register('applyFilt', True,
                  VarParsing.multiplicity.singleton,
@@ -144,15 +144,20 @@ customizeJetTools(process=process,
                   baseJetCollection=options.baseJetCollection,
                   runOnData=options.runOnData)
 
-#pps settings:
+#pps simulation settings:
 if options.runProtonFastSim:
-    if 'era2016' in options.era:
-          process.load("Validation.CTPPS.simu_config.year_2016_postTS2_cff")
-    if 'era2017' in options.era:
-          process.load("Validation.CTPPS.simu_config.year_2017_postTS2_cff")
-    if 'era2018' in options.era:
-          process.load("Validation.CTPPS.simu_config.year_2018_cff")
-    
+  if 'era2016' in options.era:
+      process.load("Validation.CTPPS.simu_config.year_2016_postTS2_cff")
+  if 'era2017' in options.era:
+      process.load("Validation.CTPPS.simu_config.year_2017_postTS2_cff")
+  if 'era2018' in options.era:
+      process.load("Validation.CTPPS.simu_config.year_2018_cff")
+
+if options.RedoProtons and not options.redoProtonRecoFromRAW:
+  print  'ERROR: In order to properly apply the alignment and timing calibration, the reconstruction needs to start with RecHits (for Si strips and pixels) and Digis (for timing RPs). All this input can be found in AOD files, however it is not available in miniAOD.'
+  print  'For more info see: https://twiki.cern.ch/twiki/bin/view/CMS/TaggedProtonsRecommendations'
+
+  
 #message logger
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.threshold = ''
@@ -216,6 +221,10 @@ process.analysis.saveTree  = cms.bool(options.saveTree)
 process.analysis.savePF    = cms.bool(options.savePF)
 process.analysis.applyFilt = cms.bool(options.applyFilt)
 print '\t save tree=',options.saveTree,' save PF=',options.savePF
+if options.runProtonFastSim: 
+  print 'INFO:\t Run proton simulation with xangle = ',options.runProtonFastSim,'murad'
+if options.RedoProtons: print 'INFO:\t Redo proton recontrsuction'
+
 if 'era2017' in options.era:
       process.analysis.jetIdToUse=ANALYSISJETIDS[2017]
       process.analysis.triggersToUse=ANALYSISTRIGGERLISTS[2017]
@@ -248,31 +257,23 @@ if process.updatedPatJetsUpdatedJECBTag:
 if process.fullPatMetSequenceModifiedMET:
       process.custom_met=cms.Path(process.fullPatMetSequenceModifiedMET)
       toSchedule.append(process.custom_met)
-if not (options.runOnData or options.noParticleLevel):
+if not (options.runOnData or options.noParticleLevel or options.runProtonFastSim):
       process.mctruth=cms.Path(process.mergedGenParticles*process.genParticles2HepMC*process.particleLevel)
       toSchedule.append( process.mctruth )
 
-if options.runOnData:
-      from TopLJets2015.TopAnalysis.protonReco_cfg import ctppsCustom
-      ctppsCustom(process,options.era)
-
-      if options.redoProtonRecoFromRAW:
-            process.load('EventFilter.CTPPSRawToDigi.ctppsRawToDigi_cff')
-            process.load('RecoCTPPS.Configuration.recoCTPPS_cff')
-            process.ppsReco=cms.Path(process.ctppsRawToDigi*process.recoCTPPS*process.ppsSeq)
-      else:
-            process.ppsReco=cms.Path(process.ppsSeq)
+if options.RedoProtons or options.redoProtonRecoFromRAW:
+      #from TopLJets2015.TopAnalysis.protonReco_cfg import SetConditions
+      process.load("CalibPPS.ESProducers.ctppsAlignment_cff")
+      process.load("EventFilter.CTPPSRawToDigi.ctppsRawToDigi_cff")
+      process.load("RecoCTPPS.Configuration.recoCTPPS_cff")
+      #SetConditions(process)
+      process.ppsReco=cms.Path(process.ctppsRawToDigi*process.recoCTPPS)
       toSchedule.append(process.ppsReco)
 
 if options.runProtonFastSim:
       from TopLJets2015.TopAnalysis.protonReco_cfg import setupProtonSim
       setupProtonSim(process,options.runProtonFastSim,withPU=options.doPUProtons)
       toSchedule.append(process.pps_fastsim)
-
-if options.RecoProtons or options.runProtonFastSim or options.runOnData:
-      process.analysis.ctppsLocalTracks    = cms.InputTag("ctppsLocalTrackLiteProducer") 
-      process.analysis.tagRecoProtons      = cms.InputTag("ctppsProtons","singleRP","") 
-      process.analysis.tagMultiRecoProtons = cms.InputTag("ctppsProtons","multiRP","") 
 
 process.ana=cms.Path(process.analysis)
 toSchedule.append( process.ana )
