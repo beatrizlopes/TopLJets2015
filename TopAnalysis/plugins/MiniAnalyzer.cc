@@ -446,6 +446,7 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
           {
             ev_.gtop_id[ ev_.ngtop ]  = genIt.pdgId();
             ev_.gtop_pt[ ev_.ngtop ]  = genIt.pt();
+            ev_.gtop_pz[ ev_.ngtop ]  = genIt.pz();
             ev_.gtop_eta[ ev_.ngtop ] = genIt.eta();
             ev_.gtop_phi[ ev_.ngtop ] = genIt.phi();
             ev_.gtop_m[ ev_.ngtop ]   = genIt.mass();
@@ -459,6 +460,7 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             const reco::Candidate *d=genIt.daughter(idau);
             ev_.gtop_id[ ev_.ngtop ]  = d->pdgId();
             ev_.gtop_pt[ ev_.ngtop ]  = d->pt();
+            ev_.gtop_pz[ ev_.ngtop ]  = d->pz();
             ev_.gtop_eta[ ev_.ngtop ] = d->eta();
             ev_.gtop_phi[ ev_.ngtop ] = d->phi();
             ev_.gtop_m[ ev_.ngtop ]   = d->mass();
@@ -476,6 +478,7 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       const GenParticle & genIt = (*particleLevel)[i];
       ev_.gtop_id[ ev_.ngtop ]  = genIt.pdgId()*1000;
       ev_.gtop_pt[ ev_.ngtop ]  = genIt.pt();
+      ev_.gtop_pz[ ev_.ngtop ]  = genIt.pz();
       ev_.gtop_eta[ ev_.ngtop ] = genIt.eta();
       ev_.gtop_phi[ ev_.ngtop ] = genIt.phi();
       ev_.gtop_m[ ev_.ngtop ]   = genIt.mass();

@@ -32,6 +32,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.write('config.JobType.psetName = "'+cfg+'"\n')
     config_file.write('config.JobType.disableAutomaticOutputCollection = False\n')
     config_file.write('config.JobType.maxMemoryMB = 2500\n')
+    config_file.write('config.JobType.maxJobRuntimeMin = 360\n')
     if isZeroBias:
         print 'This is a ZeroBias sample will save everything...'
         config_file.write('config.JobType.pyCfgParams = [\'applyFilt=False\', \'runOnData=%s\',\'era=%s\']\n' % (bool(isData),era))

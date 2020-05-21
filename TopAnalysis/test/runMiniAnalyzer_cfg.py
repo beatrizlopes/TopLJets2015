@@ -275,7 +275,8 @@ if options.runProtonFastSim:
       setupProtonSim(process,options.runProtonFastSim,withPU=options.doPUProtons)
       toSchedule.append(process.pps_fastsim)
 
-process.ana=cms.Path(process.analysis)
+#process.ana=cms.Path(process.analysis)
+process.ana=cms.EndPath(process.analysis)
 toSchedule.append( process.ana )
                            
 process.schedule=cms.Schedule( (p for p in toSchedule) )
