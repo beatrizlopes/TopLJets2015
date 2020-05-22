@@ -39,10 +39,13 @@ void RunExclusiveTop2020(const TString in_fname,
   /////////////////////
   // INITIALIZATION //
   ///////////////////
+  float EBEAM(6500);
+  float XIMAX(0.3);
+  
   //const char* CMSSW_BASE = getenv("CMSSW_BASE");
   MiniEvent_t ev;  
   //preselection cuts to apply
-  float minLeptonPt(27);
+  float minLeptonPt(30);
   size_t minJetMultiplicity(3);
 
   //CORRECTIONS: LUMINOSITY+PILEUP
@@ -70,7 +73,7 @@ void RunExclusiveTop2020(const TString in_fname,
   TH1 *counter=(TH1 *)f->Get("analysis/counter");
   TH1 *triggerList=(TH1 *)f->Get("analysis/triggerList");
   TTree *t = (TTree*)f->Get("analysis/data");
-  attachToMiniEventTree(t,ev,true);
+  attachToMiniEventTree(t,ev,false); // if full load also jet systematics
   Int_t nentries(t->GetEntriesFast());
   if (debug) nentries = min(1000,nentries); //restrict number of entries for testing
   t->GetEntry(0);
@@ -87,7 +90,7 @@ void RunExclusiveTop2020(const TString in_fname,
   std::map<TString,bool> boutVars;
   for(size_t i=0; i<sizeof(bvars)/sizeof(TString); i++) boutVars[bvars[i]]=false;
   
-  TString ivars[]={"nl","nj","nbj"};
+  TString ivars[]={"nl","nj","nbj","nxip","nxin"};
   std::map<TString,Int_t> ioutVars;
   for(size_t i=0; i<sizeof(ivars)/sizeof(TString); i++) ioutVars[ivars[i]]=0;
   
@@ -193,6 +196,7 @@ void RunExclusiveTop2020(const TString in_fname,
 		
 	  // Reset vars
 	  for(size_t i=0; i<sizeof(fvars)/sizeof(TString); i++) foutVars[fvars[i]]=0.;
+	  for(size_t i=0; i<sizeof(ivars)/sizeof(TString); i++) ioutVars[ivars[i]]=0;
 
       //trigger
       boutVars["hasMTrigger"] = false;
@@ -229,7 +233,6 @@ void RunExclusiveTop2020(const TString in_fname,
       //cout << " passJets = " << passJets << endl;
       //if(!passJets) continue;
 	  ioutVars["nj"] = allJets.size();
-	  ioutVars["nbj"] = 0;
       for(size_t ij=0; ij<allJets.size(); ij++) {
           if(ev.j_btag[allJets[ij].getJetIndex()]>0) {ioutVars["nbj"]++;}
       }
@@ -268,19 +271,17 @@ void RunExclusiveTop2020(const TString in_fname,
 		// proton reconstruction information:
 		// missing
 		
-		// ttbar reconstruction (if available)
+		// truth information (if available)
 		TLorentzVector top1, top2;
-		cout << "top1.Pt() && top2.pt() = "  << (top1.Pt() && top2.Pt()) << " , " << top1.Pt() << endl;
 		for(int i=0;i<ev.ngtop;i++){
 			if(ev.gtop_id[i]==6)  top1.SetPtEtaPhiM(ev.gtop_pt[i],ev.gtop_eta[i],ev.gtop_phi[i],ev.gtop_m[i]);
 			if(ev.gtop_id[i]==-6) top2.SetPtEtaPhiM(ev.gtop_pt[i],ev.gtop_eta[i],ev.gtop_phi[i],ev.gtop_m[i]);
 			if(ev.gtop_id[i]==2212){ // stable proton
-				if(ev.gtop_pz[i]>0) foutVars["xip_truth"] = ev.gtop_pz[i]/6500.;
-				else foutVars["xin_truth"] = -ev.gtop_pz[i]/6500.;
+				if(ev.gtop_pz[i]>(1-XIMAX)*EBEAM) {foutVars["xip_truth"] = 1 - ev.gtop_pz[i]/EBEAM; ioutVars["nxip"]++;}
+				else if(ev.gtop_pz[i]<(XIMAX-1)*EBEAM) {foutVars["xin_truth"] = 1 + ev.gtop_pz[i]/EBEAM; ioutVars["nxin"]++;}
 			}
 		}
-		cout << "top1.Pt() && top2.Pt() = "  << (top1.Pt() && top2.Pt()) << " , " << top1.Pt() << endl;		
-		if(top1.Pt() && top2.Pt()){
+		if(top1.Pt() && top2.Pt()){ // check if found pair of top quarks
 			float mtt = (top1+top2).M();
 			float Ytt = (top1+top2).Rapidity();
 			foutVars["mtt"] = mtt;

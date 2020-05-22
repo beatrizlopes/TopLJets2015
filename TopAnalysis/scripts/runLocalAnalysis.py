@@ -150,8 +150,8 @@ def main():
     task_list = []
     processedTags=[]
     if '.root' in opt.input:
-        inF=opt.input
-        if '/store/' in inF and not 'root:' in inF : inF='root://eoscms//eos/cms'+opt.input              
+        inF=opt.input;
+        if '/store/' in inF and '/eos/' not in inF[0:5] and not 'root:' in inF : inF='root://eoscms//eos/cms'+opt.input              
         for systVar in varList:
             outF=opt.output
             xsec=1.
