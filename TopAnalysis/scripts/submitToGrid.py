@@ -49,7 +49,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
                 config_file.write('config.JobType.pyCfgParams = [\'runOnData=True\',\'era=%s\']\n' % era )
         else:
             if xangle:
-                config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'noParticleLevel=True\',\'runProtonFastSim=%s\',\'era=%s\']\n' % (xangle,era) )
+                config_file.write('config.JobType.pyCfgParams = [\'noSyst=True\',\'runOnData=False\',\'noParticleLevel=True\',\'runProtonFastSim=%s\',\'era=%s\']\n' % (xangle,era) )
             else:
                 config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'noParticleLevel=True\',\'era=%s\']\n' % era )
 

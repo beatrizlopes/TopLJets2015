@@ -81,7 +81,12 @@ options.register('RedoProtons', False,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
                  'Run Direct Proton reconstruction'
-                 )                 
+                 ) 
+options.register('noSyst', False,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.bool,
+                 'Skip systematic unc branches'
+                 )                  
 options.register('applyFilt', True,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
@@ -240,7 +245,8 @@ else:
 if options.runOnData:
       process.analysis.metFilterBits = cms.InputTag("TriggerResults","","RECO")
       print '\t will save met filter bits'
-
+if options.noSyst:
+      process.analysis.jecUncSources = cms.vstring()
 #schedule execution
 toSchedule=[]
 

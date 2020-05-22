@@ -6,6 +6,7 @@
 #include "TopLJets2015/TopAnalysis/interface/VBFVectorBoson.h"
 #include "TopLJets2015/TopAnalysis/interface/PhotonTrigEff.h"
 #include "TopLJets2015/TopAnalysis/interface/TopSummer2019.h"
+#include "TopLJets2015/TopAnalysis/interface/ExclusiveTop2020.h"
 
 #include "TH1F.h"
 #include "TFile.h"
@@ -29,7 +30,7 @@ void printHelp()
        << "\t --CR       - make CR for fake rate, based on pu jet id" << endl
        << "\t --QCDTemp  - can be true only if is CR. Used to make QCD templates for fake photons" << endl
        << "\t --SRfake   - makes the region on which the fake ratio should be applied" << endl
-       << "\t --mvatree  - store selected events in a tree for mva" << endl;
+       << "\t --skimtree - store selected events in a tree" << endl;
 }
 
 //
@@ -56,7 +57,7 @@ int main(int argc, char* argv[])
     else if(arg.find("--CR")!=string::npos)                     { CR=true; }
     else if(arg.find("--QCDTemp")!=string::npos)                { QCDTemp=true; }
     else if(arg.find("--SRfake")!=string::npos)                 { SRfake=true; }
-    else if(arg.find("--mvatree")!=string::npos)                { skimtree=true; }
+    else if(arg.find("--skimtree")!=string::npos)               { skimtree=true; }
     else if(arg.find("--normTag")!=string::npos && i+1<argc)    { normTag=argv[i+1]; i++;}
     else if(arg.find("--era")!=string::npos && i+1<argc)        { era=argv[i+1]; i++;}
     else if(arg.find("--method")!=string::npos && i+1<argc)     { method=argv[i+1]; i++;}
@@ -100,6 +101,9 @@ int main(int argc, char* argv[])
   //check method to run
   if(method=="ExclusiveZX::RunExclusiveZX") {
     RunExclusiveZX(in,out,channel,charge,normH,puH,era,debug);
+  }
+  else if(method=="RunExclusiveTop2020") {
+    RunExclusiveTop2020(in,out,normH,puH,era,debug,skimtree);
   }
   else if(method=="RunTopSummer2019") {
     RunTopSummer2019(in,out,normH,puH,era,debug);

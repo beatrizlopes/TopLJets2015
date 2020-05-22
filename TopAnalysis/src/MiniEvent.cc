@@ -88,6 +88,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("l_ip3dsig",          ev.l_ip3dsig,          "l_ip3dsig[nl]/F");
 
   //photons
+  /*
   t->Branch("ngamma",                   &ev.ngamma,                   "ngamma/I");
   t->Branch("gamma_isPromptFinalState",  ev.gamma_isPromptFinalState, "gamma_isPromptFinalState[ngamma]/O");
   t->Branch("gamma_pid",                 ev.gamma_pid,                "gamma_pid[ngamma]/I");
@@ -111,9 +112,11 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("gamma_hoe",                 ev.gamma_hoe,                "gamma_hoe[ngamma]/F");
   t->Branch("gamma_r9",                  ev.gamma_r9,                 "gamma_r9[ngamma]/F");
   t->Branch("gamma_sieie",               ev.gamma_sieie,              "gamma_sieie[ngamma]/F");
-
+  */
+  
   //jet info
   t->Branch("nj",        &ev.nj,        "nj/I");
+  t->Branch("nbj",       &ev.nbj,       "nbj/I");
   t->Branch("j_g",        ev.j_g,       "j_g[nj]/I");
   t->Branch("j_area",     ev.j_area,    "j_area[nj]/F");
   t->Branch("j_jerUp",    ev.j_jerUp,   "j_jerUp[nj]/F");
@@ -302,6 +305,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
   t->SetBranchAddress("l_ip3dsig",          ev.l_ip3dsig);
 
   //photon info
+  /*
   t->SetBranchAddress("ngamma", &ev.ngamma);
   t->SetBranchAddress("gamma_isPromptFinalState",  ev.gamma_isPromptFinalState);
   t->SetBranchAddress("gamma_pid",                 ev.gamma_pid);
@@ -325,9 +329,11 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
   t->SetBranchAddress("gamma_hoe",                 ev.gamma_hoe);
   t->SetBranchAddress("gamma_r9",                  ev.gamma_r9);
   t->SetBranchAddress("gamma_sieie",               ev.gamma_sieie);
-
+  */
+  
   //jet info
   t->SetBranchAddress("nj",        &ev.nj);
+  t->SetBranchAddress("nbj",       &ev.nbj);
   t->SetBranchAddress("j_g",        ev.j_g);
   t->SetBranchAddress("j_jerUp",    ev.j_jerUp);
   t->SetBranchAddress("j_jerDn",    ev.j_jerDn);

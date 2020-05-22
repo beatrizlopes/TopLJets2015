@@ -8,7 +8,7 @@ struct MiniEvent_t
   MiniEvent_t()
   {
     g_nw=0; ng=0; ngtop=0;
-    ngamma=0; nl=0; nj=0;
+    ngamma=0; nl=0; nj=0; nbj=0;
   }
 
   Bool_t isData;
@@ -53,7 +53,7 @@ struct MiniEvent_t
     gamma_mva[50], gamma_mvaCats[50],
     gamma_chargedHadronIso[50],gamma_neutralHadronIso[50],gamma_photonIso[50],gamma_hoe[50],gamma_r9[50],gamma_sieie[50];
 
-  Int_t nj;
+  Int_t nj, nbj;
   Float_t j_pt[200],j_eta[200],j_phi[200],j_mass[200],j_area[200],j_rawsf[200];
   Float_t j_jerUp[200],j_jerDn[200],j_jecUp[30][200],j_jecDn[30][200];
   Float_t j_csv[200],j_deepcsv[200],j_pumva[200],j_emf[200],j_qg[200];

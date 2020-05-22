@@ -1109,6 +1109,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	    }
 	}
 
+	  if(ev_.j_btag[ev_.nj]) ev_.nbj++;
       ev_.nj++;
 
       //save all PF candidates central jet
@@ -1267,7 +1268,7 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   ngleptons_=0;   ngphotons_=0;
   nrecleptons_=0; nrecphotons_=0;
   ev_.g_nw=0; ev_.ng=0; ev_.ngtop=0;
-  ev_.nl=0; ev_.ngamma=0; ev_.nj=0; ev_.nfwdtrk=0; ev_.nrawmu=0;
+  ev_.nl=0; ev_.ngamma=0; ev_.nj=0; ev_.nbj=0; ev_.nfwdtrk=0; ev_.nrawmu=0;
 
   //analyze the event
   if(!iEvent.isRealData()) genAnalysis(iEvent,iSetup);
@@ -1275,7 +1276,8 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   //save event if at least one object at gen or reco level
   if(applyFilt_)
-    if((ngleptons_==0 && ngphotons_==0 && nrecleptons_==0 && nrecphotons_==0) || !saveTree_) return;
+    if( (ev_.nj<3 || ev_.nbj<1 || nrecleptons_==0 || ev_.nfwdtrk==0) || !saveTree_) return;
+    //if((ngleptons_==0 && ngphotons_==0 && nrecleptons_==0 && nrecphotons_==0) || !saveTree_) return;
   ev_.run     = iEvent.id().run();
   ev_.lumi    = iEvent.luminosityBlock();
   ev_.event   = iEvent.id().event();
