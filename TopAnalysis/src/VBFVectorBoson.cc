@@ -747,7 +747,7 @@ void VBFVectorBoson::readTree()
   triggerList_ = (TH1F *)f_->Get("analysis/triggerList");
   weightSysts_ = getWeightSysts(f_);
   t_           = (TTree*)f_->Get("analysis/data");
-  attachToMiniEventTree(t_,ev_,true);
+  attachToMiniEventTree(t_,ev_);
   nentries_   = t_->GetEntriesFast();
   if (debug_) nentries_ = min(500000,nentries_); //restrict number of entries for testing
   t_->GetEntry(0);

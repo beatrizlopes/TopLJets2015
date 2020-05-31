@@ -72,11 +72,6 @@ options.register('saveTree', True,
                  VarParsing.varType.bool,
                  "save summary tree"
                  )
-options.register('savePF', False,
-                 VarParsing.multiplicity.singleton,
-                 VarParsing.varType.bool,
-                 'save PF candidates'
-                 )
 options.register('RedoProtons', False,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
@@ -92,6 +87,11 @@ options.register('applyFilt', True,
                  VarParsing.varType.bool,
                  'Apply filters'
                  )
+options.register('ListVars','full',
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.string,
+                 "List of variables to use [full,lepjet, lep, jet]"
+                 )				 
 options.parseArguments()
 
 #start process
@@ -219,16 +219,19 @@ process.TFileService = cms.Service("TFileService",
                                   )
 
 #analysis
-from TopLJets2015.TopAnalysis.miniAnalyzer_cfi import  ANALYSISJETIDS,ANALYSISTRIGGERLISTS
+from TopLJets2015.TopAnalysis.miniAnalyzer_cfi import  ANALYSISJETIDS,ANALYSISTRIGGERLISTS,ANALYSISVARS
 process.load('TopLJets2015.TopAnalysis.miniAnalyzer_cfi')
 print 'MiniAnalyzer configuration is as follows:'
 process.analysis.saveTree  = cms.bool(options.saveTree)
-process.analysis.savePF    = cms.bool(options.savePF)
 process.analysis.applyFilt = cms.bool(options.applyFilt)
-print '\t save tree=',options.saveTree,' save PF=',options.savePF
+print '\t save tree=',options.saveTree,
+print (', using ListVars=\''+options.ListVars+'\'') if options.saveTree else ''
+ 
 if options.runProtonFastSim: 
   print 'INFO:\t Run proton simulation with xangle = ',options.runProtonFastSim,'murad'
 if options.RedoProtons: print 'INFO:\t Redo proton recontrsuction'
+
+process.analysis.ListVars = ANALYSISVARS[options.ListVars]
 
 if 'era2017' in options.era:
       process.analysis.jetIdToUse=ANALYSISJETIDS[2017]

@@ -73,7 +73,7 @@ void RunExclusiveTop2020(const TString in_fname,
   TH1 *counter=(TH1 *)f->Get("analysis/counter");
   TH1 *triggerList=(TH1 *)f->Get("analysis/triggerList");
   TTree *t = (TTree*)f->Get("analysis/data");
-  attachToMiniEventTree(t,ev,false); // if full load also jet systematics
+  attachToMiniEventTree(t,ev);
   Int_t nentries(t->GetEntriesFast());
   if (debug) nentries = min(1000,nentries); //restrict number of entries for testing
   t->GetEntry(0);
@@ -231,7 +231,7 @@ void RunExclusiveTop2020(const TString in_fname,
       bool passJets(allJets.size()<minJetMultiplicity);
 
       //cout << " passJets = " << passJets << endl;
-      //if(!passJets) continue;
+      if(!passJets) continue;
 	  ioutVars["nj"] = allJets.size();
       for(size_t ij=0; ij<allJets.size(); ij++) {
           if(ev.j_btag[allJets[ij].getJetIndex()]>0) {ioutVars["nbj"]++;}

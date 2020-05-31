@@ -91,7 +91,7 @@ void TOP17010::init(UInt_t scenario){
   }
 
   t_ = (TTree*)f_->Get("analysis/data");
-  attachToMiniEventTree(t_,ev_,true);
+  attachToMiniEventTree(t_,ev_);
   nentries_ = t_->GetEntriesFast();
   if (debug_) nentries_ = 10000; //restrict number of entries for testing
   t_->GetEntry(0);

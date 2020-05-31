@@ -60,11 +60,14 @@ struct MiniEvent_t
   Float_t j_c2_00[200],j_c2_02[200],j_c2_05[200],j_c2_10[200],j_c2_20[200];
   Float_t j_zg[200],j_mult[200],j_gaptd[200],j_gawidth[200],j_gathrust[200],j_tau32[200],j_tau21[200];
   Float_t j_vtxmass[200],j_vtx3DVal[200],j_vtx3DSig[200],j_vtxpx[200],j_vtxpy[200],j_vtxpz[200];
+  Float_t e_j_px[200], e_j_py[200], e_j_pz[200]; // error on jet components
+  
   Bool_t j_btag[200];
   Int_t j_vtxNtracks[200],j_flav[200],j_id[200],j_pid[200],j_hadflav[200],j_g[200];
 
   //met
   Float_t met_pt,met_phi,met_sig;
+  Float_t e_met_px, e_met_py, e_met_pxpy;  // error on estimation of MET
   Float_t met_ptShifted[14],met_phiShifted[14];
   Int_t met_filterBits;
 
@@ -94,7 +97,7 @@ struct MiniEvent_t
   Int_t rawmu_pid[200];
 };
 
-void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs=0);
-void attachToMiniEventTree(TTree *t, MiniEvent_t &ev,bool full=false);
+void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t, std::vector<std::string>);
+void attachToMiniEventTree(TTree *t, MiniEvent_t &ev);
 
 #endif

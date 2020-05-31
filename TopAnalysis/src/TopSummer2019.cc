@@ -95,7 +95,7 @@ void RunTopSummer2019(const TString in_fname,
 
   TH1 *triggerList=(TH1 *)f->Get("analysis/triggerList");
   TTree *t = (TTree*)f->Get("analysis/data");
-  attachToMiniEventTree(t,ev,true);
+  attachToMiniEventTree(t,ev);
   Int_t nentries(t->GetEntriesFast());
   if (debug) nentries = min(100000,nentries); //restrict number of entries for testing
   t->GetEntry(0);

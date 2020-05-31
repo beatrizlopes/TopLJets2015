@@ -39,7 +39,7 @@ void RunPhotonTrigEff(TString filename,
   TFile *f = TFile::Open(filename);  
   TH1 *triggerList=(TH1 *)f->Get("analysis/triggerList");
   TTree *t = (TTree*)f->Get("analysis/data");
-  attachToMiniEventTree(t,ev,true);
+  attachToMiniEventTree(t,ev);
   Int_t nentries(t->GetEntriesFast());
   // if (debug) nentries = 10000; //restrict number of entries for testing
   t->GetEntry(0);

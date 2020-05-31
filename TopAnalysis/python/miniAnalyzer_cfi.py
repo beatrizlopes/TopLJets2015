@@ -1,5 +1,15 @@
 import FWCore.ParameterSet.Config as cms
 
+ANALYSISVARS={
+   'basic': [],
+   'full':  ['leptons','photons','jets','pflow','met','pps','rawmu'],
+   'lepton':['leptons'],
+   'pps_zx':['leptons','pps','generator'],
+   'pps_yx':['photons','pps','generator'],
+   'pps':   ['pps'],
+   'ttbar': ['leptons','jets','met'],
+   'test':  ['generator','pps']
+}
 ANALYSISTRIGGERLISTS={
     2018:[
         'HLT_Ele32_WPTight_Gsf_v',
@@ -154,7 +164,7 @@ ANALYSISJETIDS={
 
 analysis = cms.EDAnalyzer("MiniAnalyzer",
                           saveTree               = cms.bool(True),
-                          savePF                 = cms.bool(True),
+                          ListVars               = cms.vstring(ANALYSISVARS['full']),
                           applyFilt              = cms.bool(True),
                           triggerBits            = cms.InputTag("TriggerResults","","HLT"),
                           prescales              = cms.InputTag("patTrigger"),

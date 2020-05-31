@@ -162,9 +162,9 @@ private:
   std::string jetIdToUse_;
   std::vector<JetCorrectionUncertainty *> jecCorrectionUncs_;
 
-  std::vector<std::string> triggersToUse_,metFiltersToUse_;
+  std::vector<std::string> triggersToUse_,metFiltersToUse_,ListVars_;
 
-  bool saveTree_,savePF_;
+  bool saveTree_;
   TTree *tree_;
   MiniEvent_t ev_;
 
@@ -218,7 +218,6 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   BadChCandFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badChCandFilter"))),
   BadPFMuonFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badPFMuonFilter"))),
   saveTree_( iConfig.getParameter<bool>("saveTree") ),
-  savePF_( iConfig.getParameter<bool>("savePF") ),
   applyFilt_( iConfig.getParameter<bool>("applyFilt") )
 {
 	
@@ -229,6 +228,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   //now do what ever initialization is needed
   electronToken_      = mayConsume<edm::View<pat::Electron> >(iConfig.getParameter<edm::InputTag>("electrons"));
   photonToken_        = mayConsume<edm::View<pat::Photon> >(iConfig.getParameter<edm::InputTag>("photons"));
+  ListVars_           = iConfig.getParameter<std::vector<std::string> >("ListVars");
   triggersToUse_      = iConfig.getParameter<std::vector<std::string> >("triggersToUse");
   metFiltersToUse_    = iConfig.getParameter<std::vector<std::string> >("metFiltersToUse");
   jetIdToUse_         = iConfig.getParameter<std::string>("jetIdToUse");
@@ -255,8 +255,8 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   //create a tree for the selected events
   if(saveTree_)
     {
-      tree_ = fs->make<TTree>("data","data");
-      createMiniEventTree(tree_,ev_,jecCorrectionUncs_.size());
+      tree_ = fs->make<TTree>("tree","tree with selected events");
+      createMiniEventTree(tree_,ev_,jecCorrectionUncs_.size(),ListVars_);
     }
 }
 
@@ -614,7 +614,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       try{
         for (const auto & proton : *recoProtons)
           {
-            if(!proton.validFit()) continue;
+            //if(!proton.validFit()) continue;
 
             CTPPSDetId detid( (*(proton.contributingLocalTracks().begin()))->getRPId() );
             ev_.fwdtrk_pot[ev_.nfwdtrk]       = 100*detid.arm()+10*detid.station()+detid.rp();
@@ -623,7 +623,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 
             ev_.fwdtrk_thetax[ev_.nfwdtrk]    = proton.thetaX();
             ev_.fwdtrk_thetay[ev_.nfwdtrk]    = proton.thetaY();
-            ev_.fwdtrk_vx[ev_.nfwdtrk]        = proton.vx();
+            ev_.fwdtrk_vx[ev_.nfwdtrk]        = proton.validFit(); // FIX ME BACK!!!
             ev_.fwdtrk_vy[ev_.nfwdtrk]        = proton.vy();
             ev_.fwdtrk_vz[ev_.nfwdtrk]        = proton.vz();
             ev_.fwdtrk_time[ev_.nfwdtrk]      = proton.time();
@@ -1072,6 +1072,11 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       ev_.j_deepcsv[ev_.nj] = j->bDiscriminator("pfDeepCSVJetTags:probb") + j->bDiscriminator("pfDeepCSVJetTags:probbb");
       ev_.j_btag[ev_.nj]    = (ev_.j_deepcsv[ev_.nj]>0.4941);
       ev_.j_emf[ev_.nj]     = CEMF+NEMF;
+	  
+	  // jet momentum uncertainties (for exclusive ttbar analysis):
+	  ev_.e_j_px[ev_.nj]  =  abs(cos(corrP4.phi()))*(abs(j->correctedJet("Uncorrected").pt()-j->pt()));
+	  ev_.e_j_py[ev_.nj]  =  abs(sin(corrP4.phi()))*(abs(j->correctedJet("Uncorrected").pt()-j->pt()));
+	  ev_.e_j_pz[ev_.nj]  =  (abs(j->correctedJet("Uncorrected").pt()-j->pt()))/(tan( 2.*atan(exp(-corrP4.eta())) ));
 
       //jet shape variables
       ev_.j_c2_00[ev_.nj]    = getC(2, 0.0, &(*j), true, 0.9);
@@ -1131,7 +1136,12 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
     ev_.met_ptShifted[i]  = mets->at(0).shiftedPt(pat::MET::METUncertainty(i));
     ev_.met_phiShifted[i] = mets->at(0).shiftedPhi(pat::MET::METUncertainty(i));
   }
-
+  
+  // MET errors (for exclusive ttbar analysis)
+  ev_.e_met_px  = mets->at(0).getSignificanceMatrix()[0][0];
+  ev_.e_met_py  = mets->at(0).getSignificanceMatrix()[1][1];
+  ev_.e_met_pxpy= mets->at(0).getSignificanceMatrix()[0][1];
+  
   //MET filter bits
   ev_.met_filterBits=0;
   edm::Handle<edm::TriggerResults> h_metFilters;
@@ -1276,7 +1286,7 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   //save event if at least one object at gen or reco level
   if(applyFilt_)
-    if( (ev_.nj<3 || ev_.nbj<1 || nrecleptons_==0 || ev_.nfwdtrk==0) || !saveTree_) return;
+    if( (ev_.nj<3 || ev_.nbj<1 || nrecleptons_==0) || !saveTree_) return;
     //if((ngleptons_==0 && ngphotons_==0 && nrecleptons_==0 && nrecphotons_==0) || !saveTree_) return;
   ev_.run     = iEvent.id().run();
   ev_.lumi    = iEvent.luminosityBlock();

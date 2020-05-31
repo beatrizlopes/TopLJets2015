@@ -18,7 +18,7 @@ def setupProtonSim(process,xangle,withPU=False):
   process.ctppsBeamParametersESSource.vtxStddevY = 0
   process.ctppsBeamParametersESSource.vtxStddevZ = 0
   
-  #undo CMS vertex shift
+  #undo CMS vertex shift (example)
   process.ctppsBeamParametersESSource.vtxOffsetX45 = +0.2475 * 1E-1
   process.ctppsBeamParametersESSource.vtxOffsetY45 = -0.6924 * 1E-1
   process.ctppsBeamParametersESSource.vtxOffsetZ45 = -8.1100 * 1E-1
@@ -27,6 +27,10 @@ def setupProtonSim(process,xangle,withPU=False):
   process.ctppsLHCInfoESSource.xangle = cms.double(xangle)
   process.ctppsBeamParametersESSource.halfXangleX45 = xangle * 1E-6
   process.ctppsBeamParametersESSource.halfXangleX56 = xangle * 1E-6
+  
+  # for multiRP fit, set if you want to use x* and y* as free parameters or set them to zero
+  process.ctppsProtons.fitVtxY = True
+  #process.ctppsProtons.fitVtxX = False
 
   # processing path 
   process.pps_fastsim = cms.Path(process.beamDivergenceVtxGenerator

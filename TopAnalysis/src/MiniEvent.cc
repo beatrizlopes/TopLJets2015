@@ -1,7 +1,8 @@
 #include "TopLJets2015/TopAnalysis/interface/MiniEvent.h"
 
+
 //
-void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
+void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<std::string> ListVars)
 {
   //event header
   t->Branch("isData",    &ev.isData,   "isData/O");
@@ -24,6 +25,8 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("g_npsw",    &ev.g_npsw,   "g_npsw/I");
   t->Branch("g_psw",      ev.g_psw,    "g_psw[g_npsw]/F");
 
+  // MC truth info:
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("generator")!=std::string::npos){
   //gen event (jets and dressed leptons)
   t->Branch("ng",       &ev.ng,       "ng/I");
   t->Branch("g_id",      ev.g_id,     "g_id[ng]/I");
@@ -50,7 +53,8 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("gtop_eta",   ev.gtop_eta,   "gtop_eta[ngtop]/F");
   t->Branch("gtop_phi",   ev.gtop_phi,   "gtop_phi[ngtop]/F");
   t->Branch("gtop_m",     ev.gtop_m,     "gtop_m[ngtop]/F");
-
+  } // and list mc generator variables
+  
   //reco level event
   t->Branch("nvtx",          &ev.nvtx,        "nvtx/I");
   t->Branch("rho",           &ev.rho,         "rho/F");
@@ -60,6 +64,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("zeroBiasPS",   &ev.zeroBiasPS, "zeroBiasPS/I");
 
   //leptons
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("leptons")!=std::string::npos){
   t->Branch("nl", &ev.nl, "nl/I");
   t->Branch("l_isPromptFinalState",                         ev.l_isPromptFinalState,                       "l_isPromptFinalState[nl]/O");
   t->Branch("l_isDirectPromptTauDecayProductFinalState",    ev.l_isDirectPromptTauDecayProductFinalState,  "l_isDirectPromptTauDecayProductFinalState[nl]/O");
@@ -86,13 +91,14 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("l_relIso",           ev.l_relIso,           "l_relIso[nl]/F");
   t->Branch("l_ip3d",             ev.l_ip3d,             "l_ip3d[nl]/F");
   t->Branch("l_ip3dsig",          ev.l_ip3dsig,          "l_ip3dsig[nl]/F");
-
+  } // end save leptons
+  
   //photons
-  /*
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("photons")!=std::string::npos){
   t->Branch("ngamma",                   &ev.ngamma,                   "ngamma/I");
   t->Branch("gamma_isPromptFinalState",  ev.gamma_isPromptFinalState, "gamma_isPromptFinalState[ngamma]/O");
   t->Branch("gamma_pid",                 ev.gamma_pid,                "gamma_pid[ngamma]/I");
-  t->Branch("gamma_idFlags",             ev.gamma_idFlags,                "gamma_idFlags[ngamma]/I");
+  t->Branch("gamma_idFlags",             ev.gamma_idFlags,            "gamma_idFlags[ngamma]/I");
   t->Branch("gamma_g",                   ev.gamma_g,                  "gamma_g[ngamma]/I");
   t->Branch("gamma_mva",                 ev.gamma_mva,                "gamma_mva[ngamma]/F");
   t->Branch("gamma_mvaCats",             ev.gamma_mvaCats,            "gamma_mvaCats[ngamma]/F");
@@ -112,9 +118,10 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("gamma_hoe",                 ev.gamma_hoe,                "gamma_hoe[ngamma]/F");
   t->Branch("gamma_r9",                  ev.gamma_r9,                 "gamma_r9[ngamma]/F");
   t->Branch("gamma_sieie",               ev.gamma_sieie,              "gamma_sieie[ngamma]/F");
-  */
+  } // end store photons
   
   //jet info
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("jets")!=std::string::npos){
   t->Branch("nj",        &ev.nj,        "nj/I");
   t->Branch("nbj",       &ev.nbj,       "nbj/I");
   t->Branch("j_g",        ev.j_g,       "j_g[nj]/I");
@@ -159,8 +166,13 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("j_flav",        ev.j_flav,       "j_flav[nj]/I");
   t->Branch("j_hadflav",     ev.j_hadflav,    "j_hadflav[nj]/I");
   t->Branch("j_pid",         ev.j_pid,        "j_pid[nj]/I");
-
+  t->Branch("e_j_px",   ev.e_j_px,    "e_j_px[nj]/F");
+  t->Branch("e_j_py",   ev.e_j_py,    "e_j_py[nj]/F");
+  t->Branch("e_j_pz",   ev.e_j_pz,    "e_j_pz[nj]/F");
+  } // end store jets
+  
   //pf sums
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("pflow")!=std::string::npos){
   t->Branch("nchPV",        &ev.nchPV,         "nchPV/I");
   t->Branch("sumPVChPt",    &ev.sumPVChPt,     "sumPVChPt/F");
   t->Branch("sumPVChPz",    &ev.sumPVChPz,     "sumPVChPz/F");
@@ -173,16 +185,25 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("sumPFChEn",    ev.sumPFChEn,     "sumPFChEn[8]/F");
   t->Branch("sumPFChPz",    ev.sumPFChPz,     "sumPFChPz[8]/F");
   t->Branch("sumPFChHt",    ev.sumPFChHt,     "sumPFChHt[8]/F");
-
+  } // end store pflow
+  
   //MET
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("met")!=std::string::npos){
   t->Branch("met_pt",      &ev.met_pt,     "met_pt/F");
   t->Branch("met_phi",     &ev.met_phi,    "met_phi/F");
   t->Branch("met_sig",     &ev.met_sig,    "met_sig/F");
   t->Branch("met_ptShifted",   ev.met_ptShifted,    "met_ptShifted[14]/F");
   t->Branch("met_phiShifted",   ev.met_phiShifted,    "met_phiShifted[14]/F");
   t->Branch("met_filterBits", &ev.met_filterBits, "met_filterBits/I");
+  t->Branch("e_met_px",       &ev.e_met_px,     "e_met_px/F");
+  t->Branch("e_met_py",       &ev.e_met_py,     "e_met_py/F");
+  t->Branch("e_met_pxpy",     &ev.e_met_pxpy,   "e_met_pxpy/F");
+
+
+  } // end store met
 
   //CTPPS local tracks
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("pps")!=std::string::npos){
   t->Branch("nppstrk",         &ev.nppstrk,          "nppstrk/S");
   t->Branch("ppstrk_pot",       ev.ppstrk_pot,       "ppstrk_pot[nppstrk]/S");
   t->Branch("ppstrk_x",         ev.ppstrk_x,         "ppstrk_x[nppstrk]/F");
@@ -210,16 +231,19 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs)
   t->Branch("fwdtrk_xi",        ev.fwdtrk_xi,        "fwdtrk_xi[nfwdtrk]/F");
   t->Branch("fwdtrk_xiError",   ev.fwdtrk_xiError,   "fwdtrk_xiError[nfwdtrk]/F");
   t->Branch("fwdtrk_t",         ev.fwdtrk_t,         "fwdtrk_t[nfwdtrk]/F");
-
+  } // end store pps
+  
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("rawmu")!=std::string::npos){
   t->Branch("nrawmu", &ev.nrawmu, "nrawmu/I");
   t->Branch("rawmu_pt", ev.rawmu_pt, "rawmu_pt[nrawmu]/S");
   t->Branch("rawmu_eta", ev.rawmu_eta, "rawmu_eta[nrawmu]/S");
   t->Branch("rawmu_phi", ev.rawmu_phi, "rawmu_phi[nrawmu]/S");
   t->Branch("rawmu_pid", ev.rawmu_pid, "rawmu_pid[nrawmu]/I");
+  } // end store raw muons
 }
 
 //
-void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
+void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
 {
   //event header
   t->SetBranchAddress("isData",    &ev.isData);
@@ -241,6 +265,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
   t->SetBranchAddress("g_w",       ev.g_w);
 
   //gen event (jets and dressed leptons)
+  if(t->FindBranch("ng")){
   t->SetBranchAddress("ng",       &ev.ng);
   t->SetBranchAddress("g_id",      ev.g_id);
   t->SetBranchAddress("g_tagCtrs", ev.g_tagCtrs);
@@ -267,7 +292,8 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
   t->SetBranchAddress("gtop_eta",   ev.gtop_eta);
   t->SetBranchAddress("gtop_phi",   ev.gtop_phi);
   t->SetBranchAddress("gtop_m",     ev.gtop_m);
-
+  } 
+  
   //reco level event
   t->SetBranchAddress("nvtx",      &ev.nvtx);
   t->SetBranchAddress("rho",      &ev.rho);
@@ -277,6 +303,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
     t->SetBranchAddress("zeroBiasPS",   &ev.zeroBiasPS);
 
   //lepton info
+  if(t->FindBranch("nl")){
   t->SetBranchAddress("nl", &ev.nl);
   t->SetBranchAddress("l_isPromptFinalState",                         ev.l_isPromptFinalState);
   t->SetBranchAddress("l_isDirectPromptTauDecayProductFinalState",    ev.l_isDirectPromptTauDecayProductFinalState);
@@ -303,9 +330,10 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
   t->SetBranchAddress("l_relIso",           ev.l_relIso);
   t->SetBranchAddress("l_ip3d",             ev.l_ip3d);
   t->SetBranchAddress("l_ip3dsig",          ev.l_ip3dsig);
-
+  }
+  
   //photon info
-  /*
+  if(t->FindBranch("ngamma")){
   t->SetBranchAddress("ngamma", &ev.ngamma);
   t->SetBranchAddress("gamma_isPromptFinalState",  ev.gamma_isPromptFinalState);
   t->SetBranchAddress("gamma_pid",                 ev.gamma_pid);
@@ -329,19 +357,19 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
   t->SetBranchAddress("gamma_hoe",                 ev.gamma_hoe);
   t->SetBranchAddress("gamma_r9",                  ev.gamma_r9);
   t->SetBranchAddress("gamma_sieie",               ev.gamma_sieie);
-  */
+  }
   
   //jet info
+  if(t->FindBranch("nj")){
   t->SetBranchAddress("nj",        &ev.nj);
   t->SetBranchAddress("nbj",       &ev.nbj);
   t->SetBranchAddress("j_g",        ev.j_g);
   t->SetBranchAddress("j_jerUp",    ev.j_jerUp);
   t->SetBranchAddress("j_jerDn",    ev.j_jerDn);
-  if(full){
   for(int i=0; i<29; i++) {
     t->SetBranchAddress(Form("j_jecUp%d",i), ev.j_jecUp[i]);
     t->SetBranchAddress(Form("j_jecDn%d",i), ev.j_jecDn[i]);
-  }}
+  }
 
   t->SetBranchAddress("j_area",     ev.j_area);
   t->SetBranchAddress("j_rawsf",    ev.j_rawsf);
@@ -378,8 +406,13 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
   t->SetBranchAddress("j_flav",        ev.j_flav);
   t->SetBranchAddress("j_hadflav",     ev.j_hadflav);
   t->SetBranchAddress("j_pid",         ev.j_pid);
-
+  t->SetBranchAddress("e_j_px",       ev.e_j_px);
+  t->SetBranchAddress("e_j_py",       ev.e_j_py);
+  t->SetBranchAddress("e_j_pz",       ev.e_j_pz);  
+  }
+  
   //PF Sums
+  if(t->FindBranch("nchPV")){
   t->SetBranchAddress("nchPV",        &ev.nchPV);
   t->SetBranchAddress("sumPVChPt",    &ev.sumPVChPt);
   t->SetBranchAddress("sumPVChPz",    &ev.sumPVChPz);
@@ -392,16 +425,23 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
   t->SetBranchAddress("sumPFChEn",    ev.sumPFChEn);
   t->SetBranchAddress("sumPFChPz",    ev.sumPFChPz);
   t->SetBranchAddress("sumPFChHt",    ev.sumPFChHt);
-
+  }
+  
   //MET
+  if(t->FindBranch("met_pt")){
   t->SetBranchAddress("met_pt",    &ev.met_pt);
   t->SetBranchAddress("met_phi",   &ev.met_phi);
   t->SetBranchAddress("met_sig",   &ev.met_sig);
   t->SetBranchAddress("met_ptShifted",   ev.met_ptShifted);
   t->SetBranchAddress("met_phiShifted",   ev.met_phiShifted);
   t->SetBranchAddress("met_filterBits", &ev.met_filterBits);
-
+  t->SetBranchAddress("e_met_px",    &ev.e_met_px);
+  t->SetBranchAddress("e_met_py",    &ev.e_met_py);
+  t->SetBranchAddress("e_met_pxpy",  &ev.e_met_pxpy);  
+  }
+  
   //CTPPS local tracks
+  if(t->FindBranch("nppstrk")){
   t->SetBranchAddress("nppstrk",         &ev.nppstrk);
   t->SetBranchAddress("ppstrk_pot",       ev.ppstrk_pot);
   t->SetBranchAddress("ppstrk_x",         ev.ppstrk_x);
@@ -429,11 +469,14 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev,bool full)
   t->SetBranchAddress("fwdtrk_xi",        ev.fwdtrk_xi);
   t->SetBranchAddress("fwdtrk_xiError",   ev.fwdtrk_xiError);
   t->SetBranchAddress("fwdtrk_t",         ev.fwdtrk_t);
-
+  }
+  
   //
+  if(t->FindBranch("nrawmu")){
   t->SetBranchAddress("nrawmu",   &ev.nrawmu);
   t->SetBranchAddress("rawmu_pt",  ev.rawmu_pt);
   t->SetBranchAddress("rawmu_eta", ev.rawmu_eta);
   t->SetBranchAddress("rawmu_phi", ev.rawmu_phi);
   t->SetBranchAddress("rawmu_pid", ev.rawmu_pid);
+  }
 }
