@@ -29,8 +29,8 @@ def setupProtonSim(process,xangle,withPU=False):
   process.ctppsBeamParametersESSource.halfXangleX56 = xangle * 1E-6
   
   # for multiRP fit, set if you want to use x* and y* as free parameters or set them to zero
-  process.ctppsProtons.fitVtxY = True
-  #process.ctppsProtons.fitVtxX = False
+  process.ctppsProtons.fitVtxY = False
+  process.ctppsProtons.fitVtxX = False
 
   # processing path 
   process.pps_fastsim = cms.Path(process.beamDivergenceVtxGenerator

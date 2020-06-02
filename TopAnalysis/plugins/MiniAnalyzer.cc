@@ -159,7 +159,7 @@ private:
 
   std::unordered_map<std::string,TH1*> histContainer_;
 
-  std::string jetIdToUse_;
+  std::string jetIdToUse_, FilterType_;
   std::vector<JetCorrectionUncertainty *> jecCorrectionUncs_;
 
   std::vector<std::string> triggersToUse_,metFiltersToUse_,ListVars_;
@@ -229,6 +229,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   electronToken_      = mayConsume<edm::View<pat::Electron> >(iConfig.getParameter<edm::InputTag>("electrons"));
   photonToken_        = mayConsume<edm::View<pat::Photon> >(iConfig.getParameter<edm::InputTag>("photons"));
   ListVars_           = iConfig.getParameter<std::vector<std::string> >("ListVars");
+  FilterType_         = iConfig.getParameter<std::string>("FilterType");
   triggersToUse_      = iConfig.getParameter<std::vector<std::string> >("triggersToUse");
   metFiltersToUse_    = iConfig.getParameter<std::vector<std::string> >("metFiltersToUse");
   jetIdToUse_         = iConfig.getParameter<std::string>("jetIdToUse");
@@ -1285,9 +1286,11 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   recAnalysis(iEvent,iSetup);
 
   //save event if at least one object at gen or reco level
-  if(applyFilt_)
-    if( (ev_.nj<3 || ev_.nbj<1 || nrecleptons_==0) || !saveTree_) return;
-    //if((ngleptons_==0 && ngphotons_==0 && nrecleptons_==0 && nrecphotons_==0) || !saveTree_) return;
+  if(!saveTree_) return;
+  if(applyFilt_){
+	if (FilterType_.find("ttbar")!=std::string::npos)
+      if( (ev_.nj<3 || ev_.nbj<1 || nrecleptons_==0)) return;
+  }
   ev_.run     = iEvent.id().run();
   ev_.lumi    = iEvent.luminosityBlock();
   ev_.event   = iEvent.id().event();

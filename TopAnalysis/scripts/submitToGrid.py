@@ -6,7 +6,7 @@ import commands
 """
 creates the crab cfg and submits the job
 """
-def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era2017',submit=False,addParents=False,rawParents=False,xangle=None):
+def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era2017',submit=False,addParents=False,rawParents=False,xangle=None,listVars='full'):
     
     from TopLJets2015.TopAnalysis.EraConfig import getEraConfiguration
     globalTag, jecTag, jecDB, jerTag, jerDB = getEraConfiguration(era=era,isData=bool(isData))
@@ -33,28 +33,22 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.write('config.JobType.disableAutomaticOutputCollection = False\n')
     config_file.write('config.JobType.maxMemoryMB = 2500\n')
     config_file.write('config.JobType.maxJobRuntimeMin = 360\n')
+    pyCfgParams = '\'runOnData=%s\',\'era=%s\''%(bool(isData),era)
     if isZeroBias:
         print 'This is a ZeroBias sample will save everything...'
-        config_file.write('config.JobType.pyCfgParams = [\'applyFilt=False\', \'runOnData=%s\',\'era=%s\']\n' % (bool(isData),era))
-    else:
-        if isData:
-            if addParents:
-                if rawParents:
-                    print 'Parent is RAW'
-                    config_file.write('config.JobType.pyCfgParams = [\'runOnData=True\',\'era=%s\',\'redoProtonRecoFromRAW=True\']\n' % era )
-                else:
-                    print 'Parent is AOD'
-                    config_file.write('config.JobType.pyCfgParams = [\'runOnData=True\',\'era=%s\',\'runWithAOD=True\']\n' % era )
-            else:
-                config_file.write('config.JobType.pyCfgParams = [\'runOnData=True\',\'era=%s\']\n' % era )
-        else:
-            if xangle:
-                config_file.write('config.JobType.pyCfgParams = [\'noSyst=True\',\'runOnData=False\',\'runProtonFastSim=%s\',\'era=%s\']\n' % (xangle,era) )
-            else:
-                config_file.write('config.JobType.pyCfgParams = [\'runOnData=False\',\'noParticleLevel=True\',\'era=%s\']\n' % era )
-
-    #config_file.write('config.JobType.inputFiles = [\'{0}/{1}\',\'{0}/{2}\',\'{0}/muoncorr_db.txt\',\'{0}/jecUncSources.txt\']\n'.format(cmssw,jecDB,jerDB))
-    
+        pyCfgParams += '\'applyFilt=False\'\n'
+    if isData: pyCfgParams += ',\'runOnData=True\''
+    else: pyCfgParams += ',\'runOnData=False\',\'noParticleLevel=True\''
+    if addParents:
+      if rawParents:
+        print 'Parent is RAW'
+        pyCfgParams += ',\'redoProtonRecoFromRAW=True\''
+      else:
+        print 'Parent is AOD'
+        pyCfgParams += ',\'runWithAOD=True\''
+    if xangle: pyCfgParams += ',\'runProtonFastSim=%s\''%xangle
+    pyCfgParams += ',\'ListVars=%s\''%listVars
+    config_file.write('config.JobType.pyCfgParams = [%s]\n'%pyCfgParams)
     config_file.write('config.JobType.inputFiles = [\'{0}\',\'{1}\',\'muoncorr_db.txt\',\'jecUncSources.txt\',\'qg_db.db\']\n'.format(jecDB,jerDB))
     config_file.write('\n')
     config_file.write('config.section_("Data")\n')
@@ -109,6 +103,7 @@ def main():
     parser.add_option('-l', '--lumi',        dest='lumiMask',    help='json with list of good lumis', default='/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/ReReco/Cert_294927-306462_13TeV_EOY2017ReReco_Collisions17_JSON.txt')
     parser.add_option(      '--era',         dest='era',         help='era to use (sub-dir in data/)', default='era2017',  type='string')
     parser.add_option('-w', '--workDir',     dest='workDir',     help='working directory',             default='grid',     type='string')
+    parser.add_option(      '--listVars',    dest='listVars',    help='variables to use',              default='full',     type='string')
     parser.add_option(      '--lfn',         dest='lfn',         help='base lfn to store outputs',     default='/store/group/cmst3/group/top/psilva', type='string')
     parser.add_option('-s', '--submit',      dest='submit',      help='submit jobs',                   default=False,   action='store_true')
     (opt, args) = parser.parse_args()
@@ -149,7 +144,8 @@ def main():
                          submit=opt.submit,
                          xangle=opt.xangle,
                          addParents=opt.addParents,
-                         rawParents=opt.rawParents)
+                         rawParents=opt.rawParents,
+                         listVars=opt.listVars)
 
     print 'crab cfg files have been created under %s' % opt.workDir
     if opt.submit:

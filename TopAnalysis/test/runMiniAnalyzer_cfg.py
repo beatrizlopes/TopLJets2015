@@ -232,6 +232,8 @@ if options.runProtonFastSim:
 if options.RedoProtons: print 'INFO:\t Redo proton recontrsuction'
 
 process.analysis.ListVars = ANALYSISVARS[options.ListVars]
+process.analysis.FilterType = options.ListVars
+
 
 if 'era2017' in options.era:
       process.analysis.jetIdToUse=ANALYSISJETIDS[2017]

@@ -7,7 +7,7 @@ ANALYSISVARS={
    'pps_zx':['leptons','pps','generator'],
    'pps_yx':['photons','pps','generator'],
    'pps':   ['pps'],
-   'ttbar': ['leptons','jets','met'],
+   'ttbar': ['leptons','jets','met','pps','generator'],
    'test':  ['generator','pps']
 }
 ANALYSISTRIGGERLISTS={
@@ -165,6 +165,7 @@ ANALYSISJETIDS={
 analysis = cms.EDAnalyzer("MiniAnalyzer",
                           saveTree               = cms.bool(True),
                           ListVars               = cms.vstring(ANALYSISVARS['full']),
+                          FilterType             = cms.string("full"),
                           applyFilt              = cms.bool(True),
                           triggerBits            = cms.InputTag("TriggerResults","","HLT"),
                           prescales              = cms.InputTag("patTrigger"),
