@@ -30,7 +30,7 @@ def setupProtonSim(process,xangle,withPU=False):
   
   # for multiRP fit, set if you want to use x* and y* as free parameters or set them to zero
   process.ctppsProtons.fitVtxY = False
-  process.ctppsProtons.fitVtxX = False
+  #process.ctppsProtons.fitVtxX = False
 
   # processing path 
   process.pps_fastsim = cms.Path(process.beamDivergenceVtxGenerator

@@ -41,7 +41,6 @@ void RunExclusiveTop2020(const TString in_fname,
   ///////////////////
   float EBEAM(6500);
   float XIMAX(0.3);
-  
   //const char* CMSSW_BASE = getenv("CMSSW_BASE");
   MiniEvent_t ev;  
   //preselection cuts to apply
@@ -71,13 +70,20 @@ void RunExclusiveTop2020(const TString in_fname,
     return;
   }
   TH1 *counter=(TH1 *)f->Get("analysis/counter");
+  if(!counter) {cout << "Corrupted or missing counter: \"analysis/counter\" " << endl;return;}
   TH1 *triggerList=(TH1 *)f->Get("analysis/triggerList");
-  TTree *t = (TTree*)f->Get("analysis/data");
+  if(!triggerList) {cout << "Corrupted or missing triggerList: \"analysis/triggerList\" " << endl;return;}
+  TTree *t = (TTree*)f->Get("analysis/tree");
+  if(!t) {cout << "Corrupted or missing tree: \"analysis/tree\" " << endl;return;}
+  std::cout << "Initializing ExclusiveTop2020: in_fname=" << in_fname << " , outname=" << outname << ", era="<<era<<std::endl;
   attachToMiniEventTree(t,ev);
+  std::cout << "Initializing ExclusiveTop2020: in_fname=" << in_fname << " , outname=" << outname << ", era="<<era<<std::endl;
   Int_t nentries(t->GetEntriesFast());
+  std::cout << "Initializing ExclusiveTop2020: outname=" << outname << " , nentries=" << nentries << ", era="<<era<<std::endl;
   if (debug) nentries = min(1000,nentries); //restrict number of entries for testing
-  t->GetEntry(0);
-  cout << "...producing " << outname << " from " << nentries << " events" << endl;  
+  //t->GetEntry(0);
+  std::cout << "Initializing ExclusiveTop2020: outname=" << outname << " , nentries=" << nentries << ", era="<<era<<std::endl;
+  std::cout << "...producing " << outname << " from " << nentries << " events" << std::endl;  
     
   //PREPARE OUTPUT (BOOK SOME HISTOGRAMS)
   TString baseName=gSystem->BaseName(outname); 
@@ -114,14 +120,16 @@ void RunExclusiveTop2020(const TString in_fname,
 	outT->Branch("event",&ev.event,"event/l");
 	outT->Branch("lumi",&ev.lumi,"lumi/i");
 	outT->Branch("nvtx",&ev.nvtx,"nvtx/I");
-    outT->Branch("nchPV",&ev.nchPV,"nchPV/I");
+    if(t->FindBranch("nchPV")) outT->Branch("nchPV",&ev.nchPV,"nchPV/I");
 	ADDVAR(&ev.beamXangle,"beamXangle","/F",outT);
 	
 	
 	ADDVAR(&ev.rho,"rho","/F",outT);
+	if(t->FindBranch("met_pt")){
 	ADDVAR(&ev.met_pt,"met_pt","/F",outT);
 	ADDVAR(&ev.met_phi,"met_phi","/F",outT);
 	ADDVAR(&ev.met_sig,"met_sig","/F",outT);
+	}
 	
 	// fill custom variables
 	for(size_t i=0; i<sizeof(bvars)/sizeof(TString); i++){
@@ -400,6 +408,7 @@ void RunExclusiveTop2020(const TString in_fname,
     if(it.second->GetEntries()==0) continue;
     it.second->SetDirectory(fOut); it.second->Write(); 
   }  
+  cout << endl << "Writes skimtree? " << skimtree << endl; 
   if(skimtree){outT->Write();}
   
   fOut->Close();

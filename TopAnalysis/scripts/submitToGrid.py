@@ -37,8 +37,6 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     if isZeroBias:
         print 'This is a ZeroBias sample will save everything...'
         pyCfgParams += '\'applyFilt=False\'\n'
-    if isData: pyCfgParams += ',\'runOnData=True\''
-    else: pyCfgParams += ',\'runOnData=False\',\'noParticleLevel=True\''
     if addParents:
       if rawParents:
         print 'Parent is RAW'

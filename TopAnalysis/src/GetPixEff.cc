@@ -51,7 +51,7 @@ class PixEff
 	private: 
 	int _nbins; float _bw, _xmin, _xmax;
 	TFile * _file0;
-	TString eff_file = "/eos/project/c/ctpps/subsystems/Pixel/RPixTracking/pixelEfficiencies.root";
+	TString eff_file = "/eos/project/c/ctpps/subsystems/Pixel/RPixTracking/pixelEfficiencies_multiRP.root";
 	int _year = 2017;
 	TH1D *_hef201745[4], *_hef201756[4];
 	
