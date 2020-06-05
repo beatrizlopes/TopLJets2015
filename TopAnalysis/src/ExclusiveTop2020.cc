@@ -10,6 +10,7 @@
 #include "TopLJets2015/TopAnalysis/interface/CommonTools.h"
 #include "TopLJets2015/TopAnalysis/interface/ExclusiveTop2020.h"
 #include "TopLJets2015/TopAnalysis/interface/L1PrefireEfficiencyWrapper.h"
+#include "TopQuarkAnalysis/TopTools/interface/MEzCalculator.h"
 
 #include "TopLJets2015/TopAnalysis/src/GetPixEff.cc"
 
@@ -26,6 +27,9 @@ using namespace std;
 
 #define ADDVAR(x,name,t,tree) tree->Branch(name,x,TString(name)+TString(t))
 
+double m_TOP = 173.1;
+double m_W   =  80.379;
+double m_NU  =  0.;
 
 //
 void RunExclusiveTop2020(const TString in_fname,
@@ -40,13 +44,19 @@ void RunExclusiveTop2020(const TString in_fname,
   // INITIALIZATION //
   ///////////////////
   float EBEAM(6500);
-  float XIMAX(0.3);
+  float XIMIN(0.03);
+  float XIMAX(0.2);
   //const char* CMSSW_BASE = getenv("CMSSW_BASE");
   MiniEvent_t ev;  
+
   //preselection cuts to apply
   float minLeptonPt(30);
-  size_t minJetMultiplicity(3);
+  size_t minJetMultiplicity(4);
+  size_t minBJetMultiplicity(2);
 
+  //auxiliary to solve neutrino pZ using MET
+  MEzCalculator neutrinoPzComputer;
+  
   //CORRECTIONS: LUMINOSITY+PILEUP
   LumiTools lumi(era,genPU);
   std::map<Int_t,Float_t> lumiPerRun=lumi.lumiPerRun();
@@ -75,16 +85,13 @@ void RunExclusiveTop2020(const TString in_fname,
   if(!triggerList) {cout << "Corrupted or missing triggerList: \"analysis/triggerList\" " << endl;return;}
   TTree *t = (TTree*)f->Get("analysis/tree");
   if(!t) {cout << "Corrupted or missing tree: \"analysis/tree\" " << endl;return;}
-  std::cout << "Initializing ExclusiveTop2020: in_fname=" << in_fname << " , outname=" << outname << ", era="<<era<<std::endl;
   attachToMiniEventTree(t,ev);
-  std::cout << "Initializing ExclusiveTop2020: in_fname=" << in_fname << " , outname=" << outname << ", era="<<era<<std::endl;
   Int_t nentries(t->GetEntriesFast());
-  std::cout << "Initializing ExclusiveTop2020: outname=" << outname << " , nentries=" << nentries << ", era="<<era<<std::endl;
   if (debug) nentries = min(1000,nentries); //restrict number of entries for testing
   //t->GetEntry(0);
-  std::cout << "Initializing ExclusiveTop2020: outname=" << outname << " , nentries=" << nentries << ", era="<<era<<std::endl;
   std::cout << "...producing " << outname << " from " << nentries << " events" << std::endl;  
     
+
   //PREPARE OUTPUT (BOOK SOME HISTOGRAMS)
   TString baseName=gSystem->BaseName(outname); 
   TString dirName=gSystem->DirName(outname);
@@ -96,11 +103,12 @@ void RunExclusiveTop2020(const TString in_fname,
   std::map<TString,bool> boutVars;
   for(size_t i=0; i<sizeof(bvars)/sizeof(TString); i++) boutVars[bvars[i]]=false;
   
-  TString ivars[]={"nl","nj","nbj","nxip","nxin"};
+  TString ivars[]={"nl","nj","nbj","nlj","nxip","nxin"};
   std::map<TString,Int_t> ioutVars;
   for(size_t i=0; i<sizeof(ivars)/sizeof(TString); i++) ioutVars[ivars[i]]=0;
   
-  TString fvars[]={"mtt","Ytt","mpp","Ypp","xip","xin","xip_truth","xin_truth"};
+  TString fvars[]={"gen_mtt","gen_Ytt","mpp","Ypp","xip","xin","xip_truth","xin_truth",
+                    "HT", "chi2min","mtt","Ytt","pTtt","dPhitt"};
   std::map<TString,Float_t> foutVars;
   for(size_t i=0; i<sizeof(fvars)/sizeof(TString); i++) foutVars[fvars[i]]=0.;
   
@@ -196,20 +204,26 @@ void RunExclusiveTop2020(const TString in_fname,
   SelectionTool selector(in_fname, false, triggerList);
   
   //EVENT LOOP
-  //select mu+>=4 jets events triggered by a single muon trigger
+  //select el/mu + >=4 jets events triggered by a single muon trigger
   for (Int_t iev=0;iev<nentries;iev++)
     {
       t->GetEntry(iev);
-      if(iev%1000==0) { printf("\r [%3.0f%%] done", 100.*(float)iev/(float)nentries); fflush(stdout); }
+      if(iev%1000==0) { printf("\r [%3.0f%%] done", 100.*(float)(iev+1)/(float)nentries); fflush(stdout); }
 		
 	  // Reset vars
 	  for(size_t i=0; i<sizeof(fvars)/sizeof(TString); i++) foutVars[fvars[i]]=0.;
 	  for(size_t i=0; i<sizeof(ivars)/sizeof(TString); i++) ioutVars[ivars[i]]=0;
+	  
+	  int runNumber = (ev.isData) ? ev.run : 297050; // era2017B
 
       //trigger
       boutVars["hasMTrigger"] = false;
       if(era.Contains("2016")) boutVars["hasMTrigger"]=(selector.hasTriggerBit("HLT_IsoMu24_v", ev.triggerBits) );     
-      if(era.Contains("2017")) boutVars["hasMTrigger"]=(selector.hasTriggerBit("HLT_IsoMu27_v", ev.triggerBits) );   
+      if(era.Contains("2017")) boutVars["hasMTrigger"]=(selector.hasTriggerBit("HLT_IsoMu27_v", ev.triggerBits) ); 
+	  boutVars["hasETrigger"]=(selector.hasTriggerBit("HLT_Ele35_WPTight_Gsf_v",                                  ev.triggerBits) || 
+                               selector.hasTriggerBit("HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v",                     ev.triggerBits) ||
+							   selector.hasTriggerBit("HLT_Ele30_eta2p1_WPTight_Gsf_CentralPFJet35_EleCleaned_v", ev.triggerBits));
+	  
       boutVars["hasMMTrigger"]=(selector.hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v",        ev.triggerBits) ||
 								selector.hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ",                  ev.triggerBits) ||
 								selector.hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v",          ev.triggerBits));
@@ -219,10 +233,10 @@ void RunExclusiveTop2020(const TString in_fname,
 	  boutVars["hasMETrigger"]=(selector.hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v",    ev.triggerBits) ||
 								selector.hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v", ev.triggerBits));
       
-	  boutVars["hasSLT"] = boutVars["hasMTrigger"];
+	  boutVars["hasSLT"] = boutVars["hasMTrigger"] || boutVars["hasETrigger"];
 	  boutVars["hasDLT"] = (boutVars["hasMMTrigger"]||boutVars["hasEETrigger"]||boutVars["hasEMTrigger"]||boutVars["hasMETrigger"]);
       
-	  //if(!boutVars["hasSLT"] && !boutVars["hasDLT"]) continue;
+	  if(!boutVars["hasSLT"]) continue;
 
       //lepton selection
       std::vector<Particle> leptons = selector.flaggedLeptons(ev);     
@@ -236,18 +250,59 @@ void RunExclusiveTop2020(const TString in_fname,
       btvSF.addBTagDecisions(ev);
       if(!ev.isData) btvSF.updateBTagDecisions(ev);      
       std::vector<Jet> allJets = selector.getGoodJets(ev,30.,2.4,leptons,{});
-      bool passJets(allJets.size()<minJetMultiplicity);
+      bool passJets(allJets.size()>=minJetMultiplicity);
 
       //cout << " passJets = " << passJets << endl;
       if(!passJets) continue;
+	  foutVars["HT"] = 0;
 	  ioutVars["nj"] = allJets.size();
+	  std::vector<Jet>      bJets,lightJets;
       for(size_t ij=0; ij<allJets.size(); ij++) {
-          if(ev.j_btag[allJets[ij].getJetIndex()]>0) {ioutVars["nbj"]++;}
+		  foutVars["HT"]+=allJets[ij].pt();
+          if(ev.j_btag[allJets[ij].getJetIndex()]>0) {
+			  ioutVars["nbj"]++;
+			  bJets.push_back(allJets[ij]);
+		  }
+		  else {
+			  ioutVars["nlj"]++;
+			  lightJets.push_back(allJets[ij]);
+		  }	  
       }
-		
+	  bool passBJets(bJets.size()>=minBJetMultiplicity);
+	  if(!passBJets) continue;
+	  
       //met
       TLorentzVector met(0,0,0,0);
       met.SetPtEtaPhiM(ev.met_pt,0,ev.met_phi,0.);
+	  
+	  // compute reconstructed tops:
+	  neutrinoPzComputer.SetMET(met);
+	  neutrinoPzComputer.SetLepton(leptons[0].p4());
+	  float nupz=neutrinoPzComputer.Calculate();
+	  TLorentzVector neutrinoP4(met.Px(),met.Py(),nupz ,TMath::Sqrt(met.Pt()*met.Pt()+nupz*nupz));
+	  
+	  foutVars["chi2min"]=999; float invm_TOP = 1. / m_TOP, invm_W = 1. / m_W; int ttbar_idx[4] = {-1,-1,-1,-1};
+	  for(int iblep=0;iblep<ioutVars["nj"];iblep++){
+		  if(ev.j_btag[allJets[iblep].getJetIndex()]==0) continue; // not a b jet
+		  float _chi2 = TMath::Power( invm_TOP*(allJets[iblep].p4() + leptons[0].p4() + neutrinoP4).M() - 1, 2 );
+	  for(int ibhad=0;ibhad<ioutVars["nj"];ibhad++){
+		  if(ibhad==iblep) continue;
+		  if(ev.j_btag[allJets[ibhad].getJetIndex()]==0) continue; // not a b jet
+	  for(int ij1=0;ij1<ioutVars["nj"];ij1++){
+		  if(ij1==ibhad || ij1==iblep) continue;
+	  for(int ij2=0;ij2<ioutVars["nj"];ij2++){
+		  if(ij2==ij1 || ij2==ibhad || ij2==iblep) continue;
+		  _chi2+=  TMath::Power( invm_TOP*(allJets[ibhad].p4() + allJets[ij1].p4() + allJets[ij2].p4()).M() - 1, 2 );
+		  //_chi2+=  TMath::Power( invm_W*(allJets[ij1].p4() + allJets[ij2].p4()).M() - 1, 2 );
+		  if(_chi2 < foutVars["chi2min"]) {foutVars["chi2min"] = _chi2; ttbar_idx[0] = iblep; ttbar_idx[1] = ibhad; ttbar_idx[2] = ij1; ttbar_idx[3] = ij2;}
+	  }}}}
+		  
+	  TLorentzVector tlep = (allJets.at(ttbar_idx[0]).p4() + leptons[0].p4() + neutrinoP4);
+	  TLorentzVector thad = (allJets.at(ttbar_idx[1]).p4() + allJets.at(ttbar_idx[2]).p4() + allJets.at(ttbar_idx[3]).p4());
+      foutVars["pTtt"] = (tlep+thad).Pt();
+      foutVars["mtt"] = (tlep+thad).M();
+	  foutVars["Ytt"] = (tlep+thad).Rapidity();
+	  foutVars["dPhitt"] = TMath::Abs(tlep.DeltaPhi(thad));
 
       //event weight
       float evWgt(1.0);
@@ -292,13 +347,13 @@ void RunExclusiveTop2020(const TString in_fname,
 		if(top1.Pt() && top2.Pt()){ // check if found pair of top quarks
 			float mtt = (top1+top2).M();
 			float Ytt = (top1+top2).Rapidity();
-			foutVars["mtt"] = mtt;
-			foutVars["Ytt"] = Ytt;
+			foutVars["gen_mtt"] = mtt;
+			foutVars["gen_Ytt"] = Ytt;
 		}
 				
       }
 	  else{
-		foutVars["mtt"] = -1;
+		foutVars["gen_mtt"] = -1; foutVars["gen_Ytt"] = -999;
 	  }
       
 
@@ -340,19 +395,20 @@ void RunExclusiveTop2020(const TString in_fname,
 
         const unsigned short pot_raw_id = ev.fwdtrk_pot[ift]; // ppstrk_pot fwdtrk_pot
 		float xi = ev.fwdtrk_xi[ift];
-		if(xi<0.03) continue; // cut on the event selection
+		if(xi<XIMIN) continue; // cut on the event selection
 //		float x  = ev.ppstrk_x[ift];
+		if(ev.fwdtrk_vx[ift]==0) continue; // FIXME used for debug!!!
 
         //single pot reconstruction
         if(ev.fwdtrk_method[ift]==0){
 
 		if(pot_raw_id==23){
 			pixel_neg_xi[pixel_neg_n]=xi;
-			pixel_neg_xi_eff[pixel_neg_n]=PPS_eff.getEff(xi,pot_raw_id,0);
+			pixel_neg_xi_eff[pixel_neg_n] = (ev.isData) ? 1 : PPS_eff.getEff(xi,pot_raw_id,runNumber);
 			pixel_neg_n++;}
 		else if(pot_raw_id==123){
 			pixel_pos_xi[pixel_pos_n]=xi;
-			pixel_pos_xi_eff[pixel_pos_n]=PPS_eff.getEff(xi,pot_raw_id,0);
+			pixel_pos_xi_eff[pixel_pos_n] = (ev.isData) ? 1 : PPS_eff.getEff(xi,pot_raw_id,runNumber);
 			pixel_pos_n++;}
 		else if(pot_raw_id==3){strip_neg_xi[strip_neg_n]=xi; strip_neg_n++;}
 		else if(pot_raw_id==103){strip_pos_xi[strip_pos_n]=xi; strip_pos_n++;}
@@ -376,8 +432,7 @@ void RunExclusiveTop2020(const TString in_fname,
 	  mass_pixel_n=0;
 	  for(int i=0;i<pixel_pos_n;i++){
 		  for(int j=0;j<pixel_neg_n;j++){
-			  mass_pixel_n++;
-			  mass_pixel_all[mass_pixel_n]=13000.*sqrt(pixel_pos_xi[i]*pixel_neg_xi[j]);
+			  mass_pixel_all[mass_pixel_n++]=13000.*sqrt(pixel_pos_xi[i]*pixel_neg_xi[j]);
 		  }
 	  }
 	  
@@ -408,7 +463,6 @@ void RunExclusiveTop2020(const TString in_fname,
     if(it.second->GetEntries()==0) continue;
     it.second->SetDirectory(fOut); it.second->Write(); 
   }  
-  cout << endl << "Writes skimtree? " << skimtree << endl; 
   if(skimtree){outT->Write();}
   
   fOut->Close();

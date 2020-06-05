@@ -1289,7 +1289,7 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   if(!saveTree_) return;
   if(applyFilt_){
 	if (FilterType_.find("ttbar")!=std::string::npos)
-      if( (ev_.nj<3 || ev_.nbj<1 || nrecleptons_==0)) return;
+      if( (ev_.nj<4 || ev_.nbj<1 || nrecleptons_==0)) return;
   }
   ev_.run     = iEvent.id().run();
   ev_.lumi    = iEvent.luminosityBlock();

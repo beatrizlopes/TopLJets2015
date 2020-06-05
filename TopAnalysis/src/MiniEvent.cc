@@ -12,6 +12,8 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("beamXangle",  &ev.beamXangle,   "beamXangle/F");
   t->Branch("instLumi",    &ev.instLumi,     "instLumi/F");
 
+  // MC truth info:
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("generator")!=std::string::npos){
   //generator level information
   t->Branch("g_pu",      &ev.g_pu,     "g_pu/I");
   t->Branch("g_putrue",  &ev.g_putrue, "g_putrue/I");
@@ -25,8 +27,6 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("g_npsw",    &ev.g_npsw,   "g_npsw/I");
   t->Branch("g_psw",      ev.g_psw,    "g_psw[g_npsw]/F");
 
-  // MC truth info:
-  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("generator")!=std::string::npos){
   //gen event (jets and dressed leptons)
   t->Branch("ng",       &ev.ng,       "ng/I");
   t->Branch("g_id",      ev.g_id,     "g_id[ng]/I");
@@ -128,7 +128,8 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("j_area",     ev.j_area,    "j_area[nj]/F");
   t->Branch("j_jerUp",    ev.j_jerUp,   "j_jerUp[nj]/F");
   t->Branch("j_jerDn",    ev.j_jerDn,   "j_jerDn[nj]/F");
-  for(int i=0; i<njecUncs; i++) {
+  //for(int i=0; i<njecUncs; i++) {
+  for(int i=0; i<29; i++) {
     t->Branch(Form("j_jecUp%d",i),    ev.j_jecUp[i],   Form("j_jecUp%d[nj]/F",i));
     t->Branch(Form("j_jecDn%d",i),    ev.j_jecDn[i],   Form("j_jecDn%d[nj]/F",i));
   }
@@ -245,7 +246,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
 //
 void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
 {
-  std::cout << "call attachToMiniEventTree " << std::endl;
+
   //event header
   t->SetBranchAddress("isData",    &ev.isData);
   t->SetBranchAddress("run",       &ev.run);
@@ -254,6 +255,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("beamXangle",  &ev.beamXangle);
   t->SetBranchAddress("instLumi",    &ev.instLumi);
 
+  if(t->FindBranch("ng")){
   //generator level event
   t->SetBranchAddress("g_pu",      &ev.g_pu);
   t->SetBranchAddress("g_putrue",  &ev.g_putrue);
@@ -268,7 +270,6 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("g_psw",     ev.g_psw);
 
   //gen event (jets and dressed leptons)
-  if(t->FindBranch("ng")){
   t->SetBranchAddress("ng",       &ev.ng);
   t->SetBranchAddress("g_id",      ev.g_id);
   t->SetBranchAddress("g_tagCtrs", ev.g_tagCtrs);
@@ -369,10 +370,10 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("j_area",     ev.j_area);
   t->SetBranchAddress("j_jerUp",    ev.j_jerUp);
   t->SetBranchAddress("j_jerDn",    ev.j_jerDn);
-  //for(int i=0; i<29; i++) {
-  //  t->SetBranchAddress(Form("j_jecUp%d",i), ev.j_jecUp[i]);
-  //  t->SetBranchAddress(Form("j_jecDn%d",i), ev.j_jecDn[i]);
-  //}
+  for(int i=0; i<29; i++) {
+    t->SetBranchAddress(Form("j_jecUp%d",i), ev.j_jecUp[i]);
+    t->SetBranchAddress(Form("j_jecDn%d",i), ev.j_jecDn[i]);
+  }
 
   t->SetBranchAddress("j_rawsf",    ev.j_rawsf);
   t->SetBranchAddress("j_pt",       ev.j_pt);

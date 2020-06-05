@@ -23,6 +23,9 @@ git clone -b 94x https://gitlab.cern.ch/psilva/BFragmentationAnalyzer.git
 scram b -j 8
 cd -
 
+#TopTools:
+git cms-addpkg TopQuarkAnalysis/TopTools
+
 #This package
 cd $CMSSW_BASE/src
 git clone https://github.com/pfs/TopLJets2015.git -b 106_protonreco

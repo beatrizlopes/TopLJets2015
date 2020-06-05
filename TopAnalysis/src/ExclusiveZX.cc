@@ -546,7 +546,7 @@ void RunExclusiveZX(const TString in_fname,
 	    // generator level info
 		TLorentzVector pp(0,0,0,0);
         for(int ig=0; ig<ev.ngtop; ig++) {
-          if(ev.g_id[ig]!=2212) continue;
+          if(ev.gtop_id[ig]!=2212) continue;
           float pz(ev.gtop_pz[ig]);
           float m(0.938);
           float en(sqrt(pz*pz+m*m));
