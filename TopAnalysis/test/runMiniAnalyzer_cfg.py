@@ -100,7 +100,7 @@ process = cms.Process("MiniAnalysis", eras.Run2_2017)
 
 #get the configuration to apply
 from TopLJets2015.TopAnalysis.EraConfig import getEraConfiguration
-globalTag, jecTag, jecDB, jerTag, jerDB = getEraConfiguration(era=options.era,isData=options.runOnData)
+globalTag, jecTag, jecDB, jerTag, jerDB, ppscff = getEraConfiguration(era=options.era,isData=options.runOnData)
 if options.globalTag:
       globalTag=options.globalTag
       print 'Forcing global tag to',globalTag
@@ -151,12 +151,7 @@ customizeJetTools(process=process,
 
 #pps simulation settings:
 if options.runProtonFastSim:
-  if 'era2016' in options.era:
-      process.load("Validation.CTPPS.simu_config.year_2016_postTS2_cff")
-  if 'era2017' in options.era:
-      process.load("Validation.CTPPS.simu_config.year_2017_postTS2_cff")
-  if 'era2018' in options.era:
-      process.load("Validation.CTPPS.simu_config.year_2018_cff")
+  process.load(ppscff)
 
 if options.RedoProtons and not options.redoProtonRecoFromRAW:
   print  'ERROR: In order to properly apply the alignment and timing calibration, the reconstruction needs to start with RecHits (for Si strips and pixels) and Digis (for timing RPs). All this input can be found in AOD files, however it is not available in miniAOD.'
@@ -219,7 +214,7 @@ process.TFileService = cms.Service("TFileService",
                                   )
 
 #analysis
-from TopLJets2015.TopAnalysis.miniAnalyzer_cfi import  ANALYSISJETIDS,ANALYSISTRIGGERLISTS,ANALYSISVARS
+from TopLJets2015.TopAnalysis.miniAnalyzer_cfi import  ANALYSISJETIDS,ANALYSISTRIGGERLISTS,ANALYSISVARS,ANALYSISRUNS
 process.load('TopLJets2015.TopAnalysis.miniAnalyzer_cfi')
 print 'MiniAnalyzer configuration is as follows:'
 process.analysis.saveTree  = cms.bool(options.saveTree)
@@ -234,7 +229,9 @@ if options.RedoProtons: print 'INFO:\t Redo proton recontrsuction'
 process.analysis.ListVars = ANALYSISVARS[options.ListVars]
 process.analysis.FilterType = options.ListVars
 
-
+if not options.runOnData:
+      process.analysis.runNumber = cms.untracked.int32(ANALYSISRUNS[options.era])
+      print '\t MC, set runNumber = ',process.analysis.runNumber
 if 'era2017' in options.era:
       process.analysis.jetIdToUse=ANALYSISJETIDS[2017]
       process.analysis.triggersToUse=ANALYSISTRIGGERLISTS[2017]
@@ -252,6 +249,12 @@ if options.runOnData:
       print '\t will save met filter bits'
 if options.noSyst:
       process.analysis.jecUncSources = cms.vstring()
+      
+#Special settings for exclusive ttbar:
+if 'ttbar' in options.ListVars:
+      print 'INFO\t setting up special settings for exclusive ttbar analysis, jetIdToUse = looseID'
+      process.analysis.jetIdToUse='looseID'
+
 #schedule execution
 toSchedule=[]
 

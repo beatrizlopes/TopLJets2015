@@ -7,27 +7,39 @@ struct MiniEvent_t
 {
   MiniEvent_t()
   {
-    g_nw=0; ng=0; ngtop=0;
+    g_nw=0; g_npsw=0; ng=0; ngtop=0; 
     ngamma=0; nl=0; nj=0; nbj=0;
   }
 
+  static const int MAXWEIGHTS   =  10;  // was 1285 in ttbar MC
+  static const int MAXPSWEIGHTS =  46;
+  static const int MAXGENPAR    =  20;  // initialy was 500
+  static const int MAXGENTOPAR  =  25;
+  static const int MAXGAMMA     =  20;
+  static const int MAXLEP       =  20;
+  static const int MAXJET       =  100;
+  static const int MAXMETSYS    =  14;
+  static const int MAXJETSYS    =  29;
+  static const int MAXRAWMU     =  50;
+  static const int MAXPROTONS   =  10;
+  
   Bool_t isData;
   UInt_t run,lumi;
   ULong64_t event;
   Float_t beamXangle, instLumi;
-
+   
   //gen level event
   Int_t g_id1, g_id2;
   Float_t g_x1, g_x2, g_qscale;
   Int_t g_pu,g_putrue;
   Int_t g_nw, g_npsw;
-  Float_t g_w[500], g_psw[500];
+  Float_t g_w[MAXWEIGHTS], g_psw[MAXPSWEIGHTS];
   Int_t ng,ngtop;
-  Int_t g_id[500],g_bid[500],g_tagCtrs[500];
-  Bool_t g_isSemiLepBhad[500];
-  Float_t g_pt[500],g_eta[500],g_phi[500],g_m[500],g_xb[500],g_xbp[500];
-  Int_t gtop_id[25];
-  Float_t gtop_pt[25],gtop_pz[25],gtop_eta[25],gtop_phi[25],gtop_m[25];
+  Int_t g_id[MAXGENPAR],g_bid[MAXGENPAR],g_tagCtrs[MAXGENPAR];
+  Bool_t g_isSemiLepBhad[MAXGENPAR];
+  Float_t g_pt[MAXGENPAR],g_eta[MAXGENPAR],g_phi[MAXGENPAR],g_m[MAXGENPAR],g_xb[MAXGENPAR],g_xbp[MAXGENPAR];
+  Int_t gtop_id[MAXGENTOPAR];
+  Float_t gtop_pt[MAXGENTOPAR],gtop_pz[MAXGENTOPAR],gtop_eta[MAXGENTOPAR],gtop_phi[MAXGENTOPAR],gtop_m[MAXGENTOPAR];
   Int_t g_nchPV;
   Float_t g_sumPVChPt,g_sumPVChPz,g_sumPVChHt;
 
@@ -39,36 +51,36 @@ struct MiniEvent_t
 
   //leptons
   Int_t nl;
-  Bool_t l_isPromptFinalState[50], l_isDirectPromptTauDecayProductFinalState[50];
-  Int_t l_id[50],l_charge[50],l_pid[50],l_g[200];
-  Float_t l_pt[50],l_eta[50],l_phi[50], l_mass[50], l_highpt[50],
-    l_scaleUnc1[50], l_scaleUnc2[50], l_scaleUnc3[50], l_scaleUnc4[50], l_scaleUnc5[50], l_scaleUnc6[50], l_scaleUnc7[50],
-    l_miniIso[50], l_chargedHadronIso[50], l_relIso[50], l_ip3d[50], l_ip3dsig[50],l_mva[50],l_mvaCats[50];
+  Bool_t l_isPromptFinalState[MAXLEP], l_isDirectPromptTauDecayProductFinalState[MAXLEP];
+  Int_t l_id[MAXLEP],l_charge[MAXLEP],l_pid[MAXLEP],l_g[MAXLEP];
+  Float_t l_pt[MAXLEP],l_eta[MAXLEP],l_phi[MAXLEP], l_mass[MAXLEP], l_highpt[MAXLEP],
+    l_scaleUnc1[MAXLEP], l_scaleUnc2[MAXLEP], l_scaleUnc3[MAXLEP], l_scaleUnc4[MAXLEP], l_scaleUnc5[MAXLEP], l_scaleUnc6[MAXLEP], l_scaleUnc7[MAXLEP],
+    l_miniIso[MAXLEP], l_chargedHadronIso[MAXLEP], l_relIso[MAXLEP], l_ip3d[MAXLEP], l_ip3dsig[MAXLEP],l_mva[MAXLEP],l_mvaCats[MAXLEP];
 
   Int_t ngamma;
-  Bool_t gamma_isPromptFinalState[50];
-  Int_t gamma_pid[50],gamma_idFlags[50],gamma_g[50];
-  Float_t gamma_pt[50],gamma_eta[50],gamma_phi[50],
-    gamma_scaleUnc1[50],gamma_scaleUnc2[50],gamma_scaleUnc3[50],gamma_scaleUnc4[50],gamma_scaleUnc5[50],gamma_scaleUnc6[50],gamma_scaleUnc7[50],
-    gamma_mva[50], gamma_mvaCats[50],
-    gamma_chargedHadronIso[50],gamma_neutralHadronIso[50],gamma_photonIso[50],gamma_hoe[50],gamma_r9[50],gamma_sieie[50];
+  Bool_t gamma_isPromptFinalState[MAXGAMMA];
+  Int_t gamma_pid[MAXGAMMA],gamma_idFlags[MAXGAMMA],gamma_g[MAXGAMMA];
+  Float_t gamma_pt[MAXGAMMA],gamma_eta[MAXGAMMA],gamma_phi[MAXGAMMA],
+    gamma_scaleUnc1[MAXGAMMA],gamma_scaleUnc2[MAXGAMMA],gamma_scaleUnc3[MAXGAMMA],gamma_scaleUnc4[MAXGAMMA],gamma_scaleUnc5[MAXGAMMA],gamma_scaleUnc6[MAXGAMMA],gamma_scaleUnc7[MAXGAMMA],
+    gamma_mva[MAXGAMMA], gamma_mvaCats[MAXGAMMA],
+    gamma_chargedHadronIso[MAXGAMMA],gamma_neutralHadronIso[MAXGAMMA],gamma_photonIso[MAXGAMMA],gamma_hoe[MAXGAMMA],gamma_r9[MAXGAMMA],gamma_sieie[MAXGAMMA];
 
   Int_t nj, nbj;
-  Float_t j_pt[200],j_eta[200],j_phi[200],j_mass[200],j_area[200],j_rawsf[200];
-  Float_t j_jerUp[200],j_jerDn[200],j_jecUp[30][200],j_jecDn[30][200];
-  Float_t j_csv[200],j_deepcsv[200],j_pumva[200],j_emf[200],j_qg[200];
-  Float_t j_c2_00[200],j_c2_02[200],j_c2_05[200],j_c2_10[200],j_c2_20[200];
-  Float_t j_zg[200],j_mult[200],j_gaptd[200],j_gawidth[200],j_gathrust[200],j_tau32[200],j_tau21[200];
-  Float_t j_vtxmass[200],j_vtx3DVal[200],j_vtx3DSig[200],j_vtxpx[200],j_vtxpy[200],j_vtxpz[200];
-  Float_t e_j_px[200], e_j_py[200], e_j_pz[200]; // error on jet components
+  Float_t j_pt[MAXJET],j_eta[MAXJET],j_phi[MAXJET],j_mass[MAXJET],j_area[MAXJET],j_rawsf[MAXJET];
+  Float_t j_jerUp[MAXJET],j_jerDn[MAXJET],j_jecUp[MAXJETSYS][MAXJET],j_jecDn[MAXJETSYS][MAXJET];
+  Float_t j_csv[MAXJET],j_deepcsv[MAXJET],j_pumva[MAXJET],j_emf[MAXJET],j_qg[MAXJET];
+  Float_t j_c2_00[MAXJET],j_c2_02[MAXJET],j_c2_05[MAXJET],j_c2_10[MAXJET],j_c2_20[MAXJET];
+  Float_t j_zg[MAXJET],j_mult[MAXJET],j_gaptd[MAXJET],j_gawidth[MAXJET],j_gathrust[MAXJET],j_tau32[MAXJET],j_tau21[MAXJET];
+  Float_t j_vtxmass[MAXJET],j_vtx3DVal[MAXJET],j_vtx3DSig[MAXJET],j_vtxpx[MAXJET],j_vtxpy[MAXJET],j_vtxpz[MAXJET];
+  Float_t e_j_px[MAXJET], e_j_py[MAXJET], e_j_pz[MAXJET]; // error on jet components
   
-  Bool_t j_btag[200];
-  Int_t j_vtxNtracks[200],j_flav[200],j_id[200],j_pid[200],j_hadflav[200],j_g[200];
+  Bool_t j_btag[MAXJET];
+  Int_t j_vtxNtracks[MAXJET],j_flav[MAXJET],j_id[MAXJET],j_pid[MAXJET],j_hadflav[MAXJET],j_g[MAXJET];
 
   //met
   Float_t met_pt,met_phi,met_sig;
   Float_t e_met_px, e_met_py, e_met_pxpy;  // error on estimation of MET
-  Float_t met_ptShifted[14],met_phiShifted[14];
+  Float_t met_ptShifted[MAXMETSYS],met_phiShifted[MAXMETSYS];
   Int_t met_filterBits;
 
   //event energy fluxes (PF-based)
@@ -78,23 +90,23 @@ struct MiniEvent_t
   Float_t sumPFHt[8],sumPFEn[8],sumPFPz[8],sumPFChHt[8],sumPFChEn[8],sumPFChPz[8];
 
   //CTPPS protons
-  Short_t nfwdtrk,fwdtrk_pot[50],fwdtrk_method[50];
-  Float_t fwdtrk_thetax[50],fwdtrk_thetay[50],
-    fwdtrk_vx[50],fwdtrk_vy[50],fwdtrk_vz[50],
-    fwdtrk_time[50],fwdtrk_timeError[50],
-    fwdtrk_chisqnorm[50],fwdtrk_xi[50],fwdtrk_xiError[50],fwdtrk_t[50];
-
+  Short_t nfwdtrk,fwdtrk_pot[MAXPROTONS],fwdtrk_method[MAXPROTONS];
+  Float_t fwdtrk_thetax[MAXPROTONS],fwdtrk_thetay[MAXPROTONS],
+    fwdtrk_vx[MAXPROTONS],fwdtrk_vy[MAXPROTONS],fwdtrk_vz[MAXPROTONS],
+    fwdtrk_time[MAXPROTONS],fwdtrk_timeError[MAXPROTONS],
+    fwdtrk_chisqnorm[MAXPROTONS],fwdtrk_xi[MAXPROTONS],fwdtrk_xiError[MAXPROTONS],fwdtrk_xiSF[MAXPROTONS],fwdtrk_t[MAXPROTONS];
+  
   //PPS tracks (needed for low PU run)
-  Short_t nppstrk,ppstrk_pot[50];
-  Float_t ppstrk_x[50],ppstrk_y[50], ppstrk_xUnc[50],ppstrk_yUnc[50],
-    ppstrk_tx[50],ppstrk_ty[50],ppstrk_txUnc[50],ppstrk_tyUnc[50],
-    ppstrk_chisqnorm[50];
-  //ppstrk_t[50],ppstrk_tUnc[50]; // UFSD only (2018)
+  Short_t nppstrk,ppstrk_pot[MAXPROTONS];
+  Float_t ppstrk_x[MAXPROTONS],ppstrk_y[MAXPROTONS], ppstrk_xUnc[MAXPROTONS],ppstrk_yUnc[MAXPROTONS],
+    ppstrk_tx[MAXPROTONS],ppstrk_ty[MAXPROTONS],ppstrk_txUnc[MAXPROTONS],ppstrk_tyUnc[MAXPROTONS],
+    ppstrk_chisqnorm[MAXPROTONS];
+  //ppstrk_t[MAXPROTONS],ppstrk_tUnc[MAXPROTONS]; // UFSD only (2018)
 
   //these are crazy variables for the cross check
   Int_t nrawmu;
-  Short_t rawmu_pt[200],rawmu_eta[200],rawmu_phi[200];
-  Int_t rawmu_pid[200];
+  Short_t rawmu_pt[MAXRAWMU],rawmu_eta[MAXRAWMU],rawmu_phi[MAXRAWMU];
+  Int_t rawmu_pid[MAXRAWMU];
 };
 
 void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t, std::vector<std::string>);

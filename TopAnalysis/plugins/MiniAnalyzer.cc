@@ -62,6 +62,7 @@
 #include "TopLJets2015/TopAnalysis/interface/MyIPTools.h"
 #include "TopLJets2015/TopAnalysis/interface/JetShapes.h"
 #include "TopLJets2015/TopAnalysis/interface/RoccoR.h"
+#include "TopLJets2015/TopAnalysis/interface/PPSEff.h"
 #include "DataFormats/TrackReco/interface/HitPattern.h"
 #include "PhysicsTools/SelectorUtils/interface/PFJetIDSelectionFunctor.h"
 #include "DataFormats/Common/interface/ValueMap.h"
@@ -169,6 +170,8 @@ private:
   MiniEvent_t ev_;
 
   RoccoR *muonRC_;
+  
+  PPSEff *PPS_eff_; int runNumber_;
 
   edm::Service<TFileService> fs;
 
@@ -218,6 +221,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   BadChCandFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badChCandFilter"))),
   BadPFMuonFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badPFMuonFilter"))),
   saveTree_( iConfig.getParameter<bool>("saveTree") ),
+  runNumber_( iConfig.getUntrackedParameter<int>("runNumber") ),
   applyFilt_( iConfig.getParameter<bool>("applyFilt") )
 {
 	
@@ -243,6 +247,8 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   muonRC_ = new RoccoR();
   muonRC_->init(iConfig.getParameter<std::string>("RoccoR"));
   //muonRC_->init(edm::FileInPath(iConfig.getParameter<std::string>("RoccoR")).fullPath());
+  
+  PPS_eff_ = new PPSEff(edm::FileInPath(iConfig.getParameter<std::string>("PPS_pixelEff")).fullPath());
 
   histContainer_["triggerList"] = fs->make<TH1F>("triggerList", ";Trigger bits;",triggersToUse_.size(),0,triggersToUse_.size());
   histContainer_["triggerPrescale"] = fs->make<TH1D>("triggerPrescale", ";Trigger prescale sum;",triggersToUse_.size(),0,triggersToUse_.size());
@@ -310,20 +316,32 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	  
 	  //parton shower weights:
 	  ev_.g_npsw = evt->weights().size();
+	  if(ev_.MAXPSWEIGHTS<ev_.g_npsw){
+		  cout << "WARNING: expected MAXN PS weights ("<<ev_.MAXPSWEIGHTS<<") is smaller than the NPS weights in MC ("<<ev_.g_npsw<<")."<<endl;
+		  cout <<"\t\t... will store only the first " << ev_.MAXPSWEIGHTS << "weights."<<endl;
+		  ev_.g_npsw = ev_.MAXPSWEIGHTS;
+	  }
 	  for(int i=0; i< ev_.g_npsw; i++) ev_.g_psw[i]=evt->weights().at(i);
-    }
+	}
   histContainer_["counter"]->Fill(1,ev_.g_w[0]);
 
   //alternative weights for systematics
   edm::Handle<LHEEventProduct> evet;
   iEvent.getByToken(generatorlheToken_, evet);
-  if(evet.isValid())
+  if(false && evet.isValid()) // switch off additinal weights, for some reason ttbar has 1285 weights :/ 
+  // see https://twiki.cern.ch/twiki/bin/viewauth/CMS/LHEReaderCMSSW#Retrieving_the_weights for details
     {
-      double asdd=evet->originalXWGTUP();
-      for(unsigned int i=0  ; i<evet->weights().size();i++){
-	double asdde=evet->weights()[i].wgt;
-	ev_.g_w[ev_.g_nw]=ev_.g_w[0]*asdde/asdd;
-	ev_.g_nw++;
+	   unsigned int nweights = evet->weights().size();
+	   if(ev_.MAXWEIGHTS<nweights+1){
+		  cout << "WARNING: expected MAXN weights ("<<ev_.MAXWEIGHTS<<") is smaller than the N weights in MC ("<<nweights<<")."<<endl;
+		  cout <<"\t\t... will store only the first " << ev_.MAXWEIGHTS << "weights."<<endl;
+		  nweights = ev_.MAXWEIGHTS-1;
+	  }
+      double asdd=evet->originalXWGTUP(); // oridinal event weight from 
+      for(unsigned int i=0  ; i<nweights;i++){
+	    double asdde=evet->weights()[i].wgt;
+	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*asdde/asdd;
+	    ev_.g_nw++;
       }
     }
 
@@ -385,10 +403,10 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
         ev_.ng++;
 
         //gen level selection
-        if(genLep->pt()>20 && fabs(genLep->eta())<2.5) ngleptons_++;
+        if(genLep->pt()>25 && fabs(genLep->eta())<2.5) ngleptons_++;
       }
   }
-
+    
   edm::Handle<std::vector<reco::GenParticle> > genPhotons;
   iEvent.getByToken(genPhotonsToken_,genPhotons);
   if(genPhotons.isValid()){
@@ -408,6 +426,11 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
         if(genPhoton->pt()>20 && fabs(genPhoton->eta())<2.5) ngphotons_++;
       }
   }
+
+  if(ev_.MAXGENPAR<ev_.ng){
+    cout << "ERROR: expected MAXN genpar ("<<ev_.MAXGENPAR<<") is smaller than the N genpar in MC ("<<ev_.ng<<")."<<endl;
+	cout <<"\t\t... can cause memory leaks!!!"<<endl;
+  }   
 
   //final state particles
   ev_.g_nchPV=0;
@@ -470,6 +493,10 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
         }
       }
   }
+  if(ev_.MAXGENTOPAR<ev_.ngtop){
+    cout << "ERROR: expected MAXN gentoppar ("<<ev_.MAXGENTOPAR<<") is smaller than the N gentoppar in MC ("<<ev_.ngtop<<")."<<endl;
+	cout <<"\t\t... can cause memory leaks!!!"<<endl;
+  }  
 
   //pseudo-tops
 /*  edm::Handle<reco::GenParticleCollection> particleLevel;
@@ -615,22 +642,26 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       try{
         for (const auto & proton : *recoProtons)
           {
-            //if(!proton.validFit()) continue;
+            if(!proton.validFit()) continue;
 
             CTPPSDetId detid( (*(proton.contributingLocalTracks().begin()))->getRPId() );
+			//apply aperture cuts (Depending on the run number) https://twiki.cern.ch/twiki/bin/viewauth/CMS/TaggedProtonsGettingStarted#Fiducial_cuts
+			if(proton.xi() > PPS_eff_->getXiHigh(detid.arm(),ev_.run,ev_.beamXangle)) continue;
+			
             ev_.fwdtrk_pot[ev_.nfwdtrk]       = 100*detid.arm()+10*detid.station()+detid.rp();
             ev_.fwdtrk_chisqnorm[ev_.nfwdtrk] = proton.normalizedChi2();
             ev_.fwdtrk_method[ev_.nfwdtrk]    = Short_t(proton.method());
 
             ev_.fwdtrk_thetax[ev_.nfwdtrk]    = proton.thetaX();
             ev_.fwdtrk_thetay[ev_.nfwdtrk]    = proton.thetaY();
-            ev_.fwdtrk_vx[ev_.nfwdtrk]        = proton.validFit(); // FIX ME BACK!!!
+            ev_.fwdtrk_vx[ev_.nfwdtrk]        = proton.vx();
             ev_.fwdtrk_vy[ev_.nfwdtrk]        = proton.vy();
             ev_.fwdtrk_vz[ev_.nfwdtrk]        = proton.vz();
             ev_.fwdtrk_time[ev_.nfwdtrk]      = proton.time();
             ev_.fwdtrk_timeError[ev_.nfwdtrk] = proton.timeError();
 
             ev_.fwdtrk_xi[ev_.nfwdtrk]        = proton.xi();
+            ev_.fwdtrk_xiSF[ev_.nfwdtrk]      = PPS_eff_->getEff(proton.xi(),detid.arm(),ev_.run);
             ev_.fwdtrk_xiError[ev_.nfwdtrk]   = proton.xiError();
             ev_.fwdtrk_t[ev_.nfwdtrk]         = proton.t();
             ev_.nfwdtrk++;
@@ -641,7 +672,13 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       }
     }
   }
-  
+  if(ev_.MAXPROTONS<ev_.nfwdtrk || ev_.MAXPROTONS<ev_.nppstrk){
+     cout << "ERROR: MAXPROTONS ("<<ev_.MAXPROTONS<<") is smaller than the N of RP hits/tracks ("<<ev_.nfwdtrk<<"/"<<ev_.nppstrk<<")."<<endl;
+	 cout <<"\t\t... can cause memory leaks!!!"<<endl;
+  }
+	  
+
+	
   //
   //LEPTON SELECTION 
   ev_.nl=0; 
@@ -758,8 +795,13 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	}
       ev_.nl++;
 
-      if( p4.Pt()>20 && fabs(p4.Eta())<2.5 && isLoose) nrecleptons_++;
+      if( p4.Pt()>30 && fabs(p4.Eta())<2.5 && isLoose) nrecleptons_++;
     }
+	
+  if(ev_.MAXRAWMU<ev_.nrawmu){
+     cout << "ERROR: MAXRAWMU ("<<ev_.MAXRAWMU<<") is smaller than the N of raw muons ("<<ev_.nrawmu<<")."<<endl;
+	 cout <<"\t\t... can cause memory leaks!!!"<<endl;
+  }	
 
   // ELECTRON SELECTION: cf. https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
   edm::Handle<edm::View<pat::Electron> > electrons;
@@ -781,17 +823,17 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       if(!passPt || !passEta) continue;
 
       //full id+iso decisions
-      bool isVeto( e.electronID("cutBasedElectronID-Fall17-94X-V1-veto") );
-      int vetoBits( e.userInt("cutBasedElectronID-Fall17-94X-V1-veto")  );
+      bool isVeto( e.electronID("cutBasedElectronID-Fall17-94X-V2-veto") );
+      int vetoBits( e.userInt("cutBasedElectronID-Fall17-94X-V2-veto")  );
       bool passVetoId( (vetoBits | 0xc0)== 0x3ff);  //mask isolation cuts and require all bits active
-      bool isLoose( e.electronID("cutBasedElectronID-Fall17-94X-V1-loose") );
-      int looseBits( e.userInt("cutBasedElectronID-Fall17-94X-V1-loose")  );
+      bool isLoose( e.electronID("cutBasedElectronID-Fall17-94X-V2-loose") );
+      int looseBits( e.userInt("cutBasedElectronID-Fall17-94X-V2-loose")  );
       bool passLooseId( (looseBits | 0xc0)== 0x3ff);  //mask isolation cuts and require all bits active
-      bool isMedium( e.electronID("cutBasedElectronID-Fall17-94X-V1-medium") );
-      int mediumBits( e.userInt("cutBasedElectronID-Fall17-94X-V1-medium")  );
+      bool isMedium( e.electronID("cutBasedElectronID-Fall17-94X-V2-medium") );
+      int mediumBits( e.userInt("cutBasedElectronID-Fall17-94X-V2-medium")  );
       bool passMediumId( (mediumBits | 0xc0)== 0x3ff);  //mask isolation cuts and require all bits active
-      bool isTight( e.electronID("cutBasedElectronID-Fall17-94X-V1-tight") );
-      int tightBits( e.userInt("cutBasedElectronID-Fall17-94X-V1-tight") );
+      bool isTight( e.electronID("cutBasedElectronID-Fall17-94X-V2-tight") );
+      int tightBits( e.userInt("cutBasedElectronID-Fall17-94X-V2-tight") );
       bool passTightId( (tightBits | 0xc0)== 0x3ff);  //mask isolation cuts and require all bits active
 
       bool mvawp80(e.electronID("mvaEleID-Fall17-iso-V2-wp80"));
@@ -878,7 +920,11 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 
       if( corrP4.pt()>20 && passEta && passLooseId ) nrecleptons_++;
     }
-
+  if(ev_.MAXLEP<ev_.nl){
+     cout << "ERROR: MAXLEP ("<<ev_.MAXLEP<<") is smaller than the N of leptons in the sample ("<<ev_.nl<<")."<<endl;
+	 cout <<"\t\t... can cause memory leaks!!!"<<endl;
+  }
+  
   // PHOTON SELECTION: cf. https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedPhotonIdentificationRun2
   ev_.ngamma=0;
   edm::Handle<edm::View<pat::Photon> > photons;
@@ -947,10 +993,14 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       ev_.gamma_sieie[ev_.ngamma]            = g.full5x5_sigmaIetaIeta();
       ev_.gamma_r9[ev_.ngamma]               = g.full5x5_r9();
       ev_.ngamma++;
-      if(ev_.ngamma>50) break;
+      if(ev_.ngamma>ev_.MAXGAMMA) break;
       if( corrP4.pt()>30 && passEta) nrecphotons_++;
     }
-
+  if(ev_.MAXGAMMA==ev_.ngamma){
+     cout << "WARNING: MAXGAMMA ("<<ev_.MAXGAMMA<<") equal to stored N of photons in the sample ("<<ev_.ngamma<<")."<<endl;
+	 cout <<"\t\t... check that the actuall number of photons is not larger!!!"<<endl;
+  }
+  
   // JETS
   ev_.nj=0;
   edm::Handle<edm::View<pat::Jet> > jets;
@@ -961,7 +1011,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   for(auto j = jets->begin();  j != jets->end(); ++j)
     {
       //base kinematics
-      if(j->pt()<15 || fabs(j->eta())>4.7) continue;
+      if(j->pt()<10 || fabs(j->eta())>4.7) continue;
 
       //resolution corrections
       float jerSF[]={1.0,1.0,1.0};
@@ -1009,11 +1059,11 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
           }
         }
 
+
       auto corrP4  = j->p4() * jerSF[0];
 
-      //jet id cf.
-      //2016 https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2016
-      //2017 https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVRun2017
+      //jet id cf. for AK4CHS jets
+      //2017 https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL#Preliminary_Recommendations_for
       float NHF  = j->neutralHadronEnergyFraction();
       float NEMF = j->neutralEmEnergyFraction();
       float CHF  = j->chargedHadronEnergyFraction();
@@ -1025,25 +1075,24 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       float CHM = j->chargedMultiplicity();
 
       bool tightLepVeto(true),looseJetID(true);//,tightJetId(true);
-      if(abs(j->eta())<2.4) {
-        looseJetID = (NHF<0.99 && NEMF<0.99 && NumConst>1 && CHF>0 && CHM>0 && CEMF<0.99);
+      if(abs(j->eta())<2.6) {
+        looseJetID = (NHF<0.90 && NEMF<0.90 && NumConst>1 && CHF>0 && CHM>0);
         //tightJetID = (NHF<0.90 && NEMF<0.90 && NumConst>1 && CHF>0 && CHM>0 && CEMF<0.99);
         tightLepVeto = (NHF<0.90 && NEMF<0.90 && NumConst>1 && MUF<0.8 && CHF>0 && CHM>0 && CEMF<0.80);
       }
       else if(abs(j->eta())<2.7) {
-        looseJetID = (NHF<0.99 && NEMF<0.99 && NumConst>1);
+        looseJetID = (NHF<0.90 && NEMF<0.99 && CHM>0);
         //tightJetID = (NHF<0.90 && NEMF<0.90 && NumConst>1);
-        tightLepVeto = (NHF<0.90 && NEMF<0.90 && NumConst>1 && MUF<0.8);
+        tightLepVeto = (NHF<0.90 && NEMF<0.99 && CHM>0 && MUF<0.8 && CEMF<0.80);
       }
       else if(abs(j->eta())<3.0) {
-        looseJetID = (NHF<0.98 && NEMF>0.01 && NumNeutralParticles>2);
+        looseJetID = (NEMF>0.01 && NEMF<0.99 && NumNeutralParticles>2);
         //tightJetID = (NHF<0.98 && NEMF>0.01 && NumNeutralParticles>2);
-        tightLepVeto = (NHF<0.98 && NEMF>0.01 && NumNeutralParticles>2);
+        tightLepVeto = (NEMF>0.01 && NEMF<0.99 && NumNeutralParticles>2);
       }
       else {
-        looseJetID = (NEMF<0.90 && NumNeutralParticles>10);
-        //tightJetID = (NEMF<0.90 && NumNeutralParticles>10);
-        tightLepVeto = (NEMF<0.90 && NumNeutralParticles>10);
+        looseJetID = (NHF>0.02 && NEMF<0.90 && NumNeutralParticles>10);
+        tightLepVeto = (NHF>0.02 && NEMF<0.90 && NumNeutralParticles>10);
       }
 
       if(jetIdToUse_=="tightLepVeto") { if(!tightLepVeto) continue; }
@@ -1053,6 +1102,10 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       ev_.j_area[ev_.nj]    = j->jetArea();
       ev_.j_jerUp[ev_.nj]   = jerSF[1];
       ev_.j_jerDn[ev_.nj]   = jerSF[2];
+	  if(ev_.MAXJETSYS<jecCorrectionUncs_.size()){
+         cout << "ERROR: MAXJETSYS ("<<ev_.MAXJETSYS<<") is smaller than the N jet syst. MC ("<<jecCorrectionUncs_.size()<<")."<<endl;
+	     cout <<"\t\t... can cause memory leaks!!!"<<endl;
+      }
       for(size_t iunc=0; iunc<jecCorrectionUncs_.size(); iunc++){
         jecCorrectionUncs_[iunc]->setJetPt(j->pt());
         jecCorrectionUncs_[iunc]->setJetEta(j->eta());
@@ -1126,14 +1179,18 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	  clustCands.push_back(std::pair<const reco::Candidate *,int>(pf,ev_.nj-1));
 	}
     }
-
+  if(ev_.MAXJET<ev_.nj){
+     cout << "ERROR: MAXJET ("<<ev_.MAXJETSYS<<") is smaller than the N jets in the sample ("<<ev_.nj<<")."<<endl;
+	 cout <<"\t\t... expect memory leaks!!!"<<endl;
+  }
+	  
   // MET
   edm::Handle<pat::METCollection> mets;
   iEvent.getByToken(metToken_, mets);
   ev_.met_pt  = mets->at(0).pt();
   ev_.met_phi = mets->at(0).phi();
   ev_.met_sig = mets->at(0).significance();
-  for(size_t i=0; i<14; i++){
+  for(size_t i=0; i<ev_.MAXMETSYS; i++){
     ev_.met_ptShifted[i]  = mets->at(0).shiftedPt(pat::MET::METUncertainty(i));
     ev_.met_phiShifted[i] = mets->at(0).shiftedPhi(pat::MET::METUncertainty(i));
   }
@@ -1282,7 +1339,12 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   ev_.nl=0; ev_.ngamma=0; ev_.nj=0; ev_.nbj=0; ev_.nfwdtrk=0; ev_.nrawmu=0;
 
   //analyze the event
-  if(!iEvent.isRealData()) genAnalysis(iEvent,iSetup);
+  ev_.run     = ev_.isData ? iEvent.id().run() : runNumber_;
+  ev_.lumi    = iEvent.luminosityBlock();
+  ev_.event   = iEvent.id().event();
+  ev_.isData  = iEvent.isRealData();
+
+  if(!ev_.isData) genAnalysis(iEvent,iSetup);
   recAnalysis(iEvent,iSetup);
 
   //save event if at least one object at gen or reco level
@@ -1291,10 +1353,6 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	if (FilterType_.find("ttbar")!=std::string::npos)
       if( (ev_.nj<4 || ev_.nbj<1 || nrecleptons_==0)) return;
   }
-  ev_.run     = iEvent.id().run();
-  ev_.lumi    = iEvent.luminosityBlock();
-  ev_.event   = iEvent.id().event();
-  ev_.isData  = iEvent.isRealData();
   tree_->Fill();
 }
 

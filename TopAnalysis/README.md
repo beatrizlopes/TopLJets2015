@@ -9,26 +9,23 @@ marked with the `##OPTIONAL/##END OPTIONAL` markers.
 If compilation fails for some reason repeat the scram b...
 
 ```
-cmsrel CMSSW_10_6_0
-cd CMSSW_10_6_0/src
+cmsrel CMSSW_10_6_10
+cd CMSSW_10_6_10/src
 cmsenv
 
 #EGM id
 git cms-merge-topic cms-egamma:EgammaPostRecoTools
 
-#B-fragmentation analyzer
-mkdir TopQuarkAnalysis 
+#TopTools and B-fragmentation analyzer
+git cms-addpkg TopQuarkAnalysis/TopTools
 cd TopQuarkAnalysis
 git clone -b 94x https://gitlab.cern.ch/psilva/BFragmentationAnalyzer.git
 scram b -j 8
 cd -
 
-#TopTools:
-git cms-addpkg TopQuarkAnalysis/TopTools
-
 #This package
 cd $CMSSW_BASE/src
-git clone https://github.com/pfs/TopLJets2015.git -b 106_protonreco
+git clone https://github.com/michael-pitt/TopLJets2015.git -b 106_protonreco
 cd TopLJets2015
 
 scram b -j 8
@@ -41,9 +38,10 @@ It takes several options from command line (see cfg for details).
 To run locally the ntuplizer, for testing purposes do something like:
 
 ```
-cmsRun test/runMiniAnalyzer_cfg.py runOnData=False era=era2017 outFilename=MC13TeV_TTJets.root
-cmsRun test/runMiniAnalyzer_cfg.py runOnData=True  era=era2017 outFilename=Data13TeV_SinglePhoton.root
-cmsRun test/runL1PrefireAna_cfg.py runOnData=True  era=era2017 outFilename=Data13TeV_SinglePhoton_l1prefire.root
+test=${CMSSW_BASE}/src/TopLJets2015/TopAnalysis/test
+cmsRun ${test}/runMiniAnalyzer_cfg.py runOnData=False era=era2017_B inputFile=file:miniAOD_signal.root outFilename=test_signal.root doPUProtons=False runProtonFastSim=120 ListVars=ttbar
+cmsRun ${test}/runMiniAnalyzer_cfg.py runOnData=False era=era2017_B inputFile=file:miniAOD_ttbar.root outFilename=test_mc.root maxEvents=-1 runProtonFastSim=120 ListVars=ttbar
+cmsRun ${test}/runL1PrefireAna_cfg.py runOnData=True  era=era2017_B inputFile=file:miniAOD_data.root outFilename=test_data.root
 ```
 
 To submit the ntuplizer to the grid start by setting the environment for crab3.

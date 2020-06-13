@@ -8,6 +8,7 @@ ANALYSISVARS={
    'pps_yx':['photons','pps','generator'],
    'pps':   ['pps'],
    'ttbar': ['leptons','jets','met','pps','generator'],
+   'ttbar_sys': ['leptons','jets','met','pps','generator','systematics'],
    'test':  ['generator','pps']
 }
 ANALYSISTRIGGERLISTS={
@@ -162,11 +163,24 @@ ANALYSISJETIDS={
     2016:'looseID'
 }
 
+ANALYSISRUNS={
+    'era2017_B' :297050,
+    'era2017_C1':299368,
+    'era2017_C2':300806,
+    'era2017_D' :302031,
+    'era2017_E' :303825,
+    'era2017_F1':305044,
+    'era2017_F2':305178,
+    'era2017_F3':305967
+}
+
+
 analysis = cms.EDAnalyzer("MiniAnalyzer",
                           saveTree               = cms.bool(True),
                           ListVars               = cms.vstring(ANALYSISVARS['full']),
                           FilterType             = cms.string("full"),
                           applyFilt              = cms.bool(True),
+						  runNumber              = cms.untracked.int32(1),
                           triggerBits            = cms.InputTag("TriggerResults","","HLT"),
                           prescales              = cms.InputTag("patTrigger"),
                           l1prescales            = cms.InputTag("patTrigger","l1min"),
@@ -174,7 +188,8 @@ analysis = cms.EDAnalyzer("MiniAnalyzer",
                           rho                    = cms.InputTag("fixedGridRhoFastjetAll"),
                           vertices               = cms.InputTag("offlineSlimmedPrimaryVertices"),                          
                           muons                  = cms.InputTag("slimmedMuons"),
-                          RoccoR                 = cms.string("muoncorr_db.txt"),                          
+                          RoccoR                 = cms.string("muoncorr_db.txt"),   
+                          PPS_pixelEff           = cms.string("TopLJets2015/TopAnalysis/data/era2017/pixelEfficiencies_multiRP.root"),                        
                           electrons              = cms.InputTag("slimmedElectrons"),
                           photons                = cms.InputTag("slimmedPhotons"),
                           jets                   = cms.InputTag('updatedPatJetsUpdatedJECBTag'),

@@ -4,6 +4,9 @@
 //
 void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<std::string> ListVars)
 {
+  int runSyst = false;
+  for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("systematics")!=std::string::npos) {runSyst=true;}
+  
   //event header
   t->Branch("isData",    &ev.isData,   "isData/O");
   t->Branch("run",       &ev.run,      "run/i");
@@ -79,6 +82,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("l_eta",      ev.l_eta,     "l_eta[nl]/F");
   t->Branch("l_phi",      ev.l_phi,     "l_phi[nl]/F");
   t->Branch("l_mass",     ev.l_mass,    "l_mass[nl]/F");
+  if(runSyst){
   t->Branch("l_scaleUnc1",        ev.l_scaleUnc1,        "l_scaleUnc1[nl]/F");
   t->Branch("l_scaleUnc2",        ev.l_scaleUnc2,        "l_scaleUnc2[nl]/F");
   t->Branch("l_scaleUnc3",        ev.l_scaleUnc3,        "l_scaleUnc3[nl]/F");
@@ -86,6 +90,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("l_scaleUnc5",        ev.l_scaleUnc5,        "l_scaleUnc5[nl]/F");
   t->Branch("l_scaleUnc6",        ev.l_scaleUnc6,        "l_scaleUnc6[nl]/F");
   t->Branch("l_scaleUnc7",        ev.l_scaleUnc7,        "l_scaleUnc7[nl]/F");
+  }
   t->Branch("l_chargedHadronIso", ev.l_chargedHadronIso, "l_chargedHadronIso[nl]/F");
   t->Branch("l_miniIso",          ev.l_miniIso,          "l_miniIso[nl]/F");
   t->Branch("l_relIso",           ev.l_relIso,           "l_relIso[nl]/F");
@@ -105,6 +110,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("gamma_pt",                  ev.gamma_pt,                 "gamma_pt[ngamma]/F");
   t->Branch("gamma_eta",                 ev.gamma_eta,                "gamma_eta[ngamma]/F");
   t->Branch("gamma_phi",                 ev.gamma_phi,                "gamma_phi[ngamma]/F");
+  if(runSyst){
   t->Branch("gamma_scaleUnc1",           ev.gamma_scaleUnc1,          "gamma_scaleUnc1[ngamma]/F");
   t->Branch("gamma_scaleUnc2",           ev.gamma_scaleUnc2,          "gamma_scaleUnc2[ngamma]/F");
   t->Branch("gamma_scaleUnc3",           ev.gamma_scaleUnc3,          "gamma_scaleUnc3[ngamma]/F");
@@ -112,6 +118,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("gamma_scaleUnc5",           ev.gamma_scaleUnc5,          "gamma_scaleUnc5[ngamma]/F");
   t->Branch("gamma_scaleUnc6",           ev.gamma_scaleUnc6,          "gamma_scaleUnc6[ngamma]/F");
   t->Branch("gamma_scaleUnc7",           ev.gamma_scaleUnc7,          "gamma_scaleUnc7[ngamma]/F");
+  }
   t->Branch("gamma_chargedHadronIso",    ev.gamma_chargedHadronIso,   "gamma_chargedHadronIso[ngamma]/F");
   t->Branch("gamma_neutralHadronIso",    ev.gamma_neutralHadronIso,   "gamma_neutralHadronIso[ngamma]/F");
   t->Branch("gamma_photonIso",           ev.gamma_photonIso,          "gamma_photonIso[ngamma]/F");
@@ -128,10 +135,12 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("j_area",     ev.j_area,    "j_area[nj]/F");
   t->Branch("j_jerUp",    ev.j_jerUp,   "j_jerUp[nj]/F");
   t->Branch("j_jerDn",    ev.j_jerDn,   "j_jerDn[nj]/F");
-  //for(int i=0; i<njecUncs; i++) {
-  for(int i=0; i<29; i++) {
-    t->Branch(Form("j_jecUp%d",i),    ev.j_jecUp[i],   Form("j_jecUp%d[nj]/F",i));
-    t->Branch(Form("j_jecDn%d",i),    ev.j_jecDn[i],   Form("j_jecDn%d[nj]/F",i));
+  if(runSyst){
+	  //for(int i=0; i<njecUncs; i++) {
+	  for(int i=0; i<ev.MAXJETSYS; i++) {
+		t->Branch(Form("j_jecUp%d",i),    ev.j_jecUp[i],   Form("j_jecUp%d[nj]/F",i));
+		t->Branch(Form("j_jecDn%d",i),    ev.j_jecDn[i],   Form("j_jecDn%d[nj]/F",i));
+	  }
   }
   t->Branch("j_rawsf",    ev.j_rawsf,   "j_rawsf[nj]/F");
   t->Branch("j_pt",       ev.j_pt,      "j_pt[nj]/F");
@@ -193,8 +202,10 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("met_pt",      &ev.met_pt,     "met_pt/F");
   t->Branch("met_phi",     &ev.met_phi,    "met_phi/F");
   t->Branch("met_sig",     &ev.met_sig,    "met_sig/F");
+  if(runSyst){
   t->Branch("met_ptShifted",   ev.met_ptShifted,    "met_ptShifted[14]/F");
   t->Branch("met_phiShifted",   ev.met_phiShifted,    "met_phiShifted[14]/F");
+  }
   t->Branch("met_filterBits", &ev.met_filterBits, "met_filterBits/I");
   t->Branch("e_met_px",       &ev.e_met_px,     "e_met_px/F");
   t->Branch("e_met_py",       &ev.e_met_py,     "e_met_py/F");
@@ -231,6 +242,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("fwdtrk_chisqnorm", ev.fwdtrk_chisqnorm, "fwdtrk_chisqnorm[nfwdtrk]/F");
   t->Branch("fwdtrk_xi",        ev.fwdtrk_xi,        "fwdtrk_xi[nfwdtrk]/F");
   t->Branch("fwdtrk_xiError",   ev.fwdtrk_xiError,   "fwdtrk_xiError[nfwdtrk]/F");
+  t->Branch("fwdtrk_xiSF",      ev.fwdtrk_xiSF,      "fwdtrk_xiSF[nfwdtrk]/F");
   t->Branch("fwdtrk_t",         ev.fwdtrk_t,         "fwdtrk_t[nfwdtrk]/F");
   } // end store pps
   
@@ -248,13 +260,14 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
 {
 
   //event header
+  
   t->SetBranchAddress("isData",    &ev.isData);
   t->SetBranchAddress("run",       &ev.run);
   t->SetBranchAddress("event",     &ev.event);
   t->SetBranchAddress("lumi",      &ev.lumi);
   t->SetBranchAddress("beamXangle",  &ev.beamXangle);
   t->SetBranchAddress("instLumi",    &ev.instLumi);
-
+  
   if(t->FindBranch("ng")){
   //generator level event
   t->SetBranchAddress("g_pu",      &ev.g_pu);
@@ -304,7 +317,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("triggerBits",        &ev.triggerBits);
   t->SetBranchAddress("addTriggerBits",        &ev.addTriggerBits);
   t->SetBranchAddress("zeroBiasPS",   &ev.zeroBiasPS);
-
+  
   //lepton info
   if(t->FindBranch("nl")){
   t->SetBranchAddress("nl", &ev.nl);
@@ -321,6 +334,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("l_eta",      ev.l_eta);
   t->SetBranchAddress("l_phi",      ev.l_phi);
   t->SetBranchAddress("l_mass",     ev.l_mass);
+  if(t->FindBranch("l_scaleUnc1")){
   t->SetBranchAddress("l_scaleUnc1",        ev.l_scaleUnc1);
   t->SetBranchAddress("l_scaleUnc2",        ev.l_scaleUnc2);
   t->SetBranchAddress("l_scaleUnc3",        ev.l_scaleUnc3);
@@ -328,6 +342,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("l_scaleUnc5",        ev.l_scaleUnc5);
   t->SetBranchAddress("l_scaleUnc6",        ev.l_scaleUnc6);
   t->SetBranchAddress("l_scaleUnc7",        ev.l_scaleUnc7);
+  }
   t->SetBranchAddress("l_chargedHadronIso", ev.l_chargedHadronIso);
   t->SetBranchAddress("l_miniIso",          ev.l_miniIso);
   t->SetBranchAddress("l_relIso",           ev.l_relIso);
@@ -347,6 +362,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("gamma_pt",                  ev.gamma_pt);
   t->SetBranchAddress("gamma_eta",                 ev.gamma_eta);
   t->SetBranchAddress("gamma_phi",                 ev.gamma_phi);
+  if(t->FindBranch("gamma_scaleUnc1")){
   t->SetBranchAddress("gamma_scaleUnc1",           ev.gamma_scaleUnc1);
   t->SetBranchAddress("gamma_scaleUnc2",           ev.gamma_scaleUnc2);
   t->SetBranchAddress("gamma_scaleUnc3",           ev.gamma_scaleUnc3);
@@ -354,6 +370,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("gamma_scaleUnc5",           ev.gamma_scaleUnc5);
   t->SetBranchAddress("gamma_scaleUnc6",           ev.gamma_scaleUnc6);
   t->SetBranchAddress("gamma_scaleUnc7",           ev.gamma_scaleUnc7);
+  }
   t->SetBranchAddress("gamma_chargedHadronIso",    ev.gamma_chargedHadronIso);
   t->SetBranchAddress("gamma_neutralHadronIso",    ev.gamma_neutralHadronIso);
   t->SetBranchAddress("gamma_photonIso",           ev.gamma_photonIso);
@@ -363,19 +380,23 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   }
   
   //jet info
+  
   if(t->FindBranch("nj")){
   t->SetBranchAddress("nj",        &ev.nj);
   t->SetBranchAddress("nbj",       &ev.nbj);
+  
   t->SetBranchAddress("j_g",        ev.j_g);
   t->SetBranchAddress("j_area",     ev.j_area);
   t->SetBranchAddress("j_jerUp",    ev.j_jerUp);
   t->SetBranchAddress("j_jerDn",    ev.j_jerDn);
-  for(int i=0; i<29; i++) {
+  if(t->FindBranch("j_jecUp1")){
+  for(int i=0; i<ev.MAXJETSYS; i++) {
     t->SetBranchAddress(Form("j_jecUp%d",i), ev.j_jecUp[i]);
     t->SetBranchAddress(Form("j_jecDn%d",i), ev.j_jecDn[i]);
   }
-
-  t->SetBranchAddress("j_rawsf",    ev.j_rawsf);
+  }
+  
+  //t->SetBranchAddress("j_rawsf",    ev.j_rawsf);
   t->SetBranchAddress("j_pt",       ev.j_pt);
   t->SetBranchAddress("j_eta",      ev.j_eta);
   t->SetBranchAddress("j_phi",      ev.j_phi);
@@ -411,7 +432,8 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("j_pid",         ev.j_pid);
   t->SetBranchAddress("e_j_px",       ev.e_j_px);
   t->SetBranchAddress("e_j_py",       ev.e_j_py);
-  t->SetBranchAddress("e_j_pz",       ev.e_j_pz);  
+  t->SetBranchAddress("e_j_pz",       ev.e_j_pz);
+  
   }
   
   //PF Sums
@@ -435,8 +457,10 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("met_pt",    &ev.met_pt);
   t->SetBranchAddress("met_phi",   &ev.met_phi);
   t->SetBranchAddress("met_sig",   &ev.met_sig);
+  if(t->FindBranch("met_ptShifted")){
   t->SetBranchAddress("met_ptShifted",   ev.met_ptShifted);
   t->SetBranchAddress("met_phiShifted",   ev.met_phiShifted);
+  }
   t->SetBranchAddress("met_filterBits", &ev.met_filterBits);
   t->SetBranchAddress("e_met_px",    &ev.e_met_px);
   t->SetBranchAddress("e_met_py",    &ev.e_met_py);
@@ -471,6 +495,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("fwdtrk_chisqnorm", ev.fwdtrk_chisqnorm);
   t->SetBranchAddress("fwdtrk_xi",        ev.fwdtrk_xi);
   t->SetBranchAddress("fwdtrk_xiError",   ev.fwdtrk_xiError);
+  t->SetBranchAddress("fwdtrk_xiSF",      ev.fwdtrk_xiSF);
   t->SetBranchAddress("fwdtrk_t",         ev.fwdtrk_t);
   }
   
@@ -482,4 +507,5 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("rawmu_phi", ev.rawmu_phi);
   t->SetBranchAddress("rawmu_pid", ev.rawmu_pid);
   }
+  
 }
