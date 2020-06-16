@@ -8,8 +8,9 @@ creates the crab cfg and submits the job
 """
 def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era2017',submit=False,addParents=False,rawParents=False,xangle=None,listVars='full'):
     
+    if isData: era+='_'+tag[14] # modify era according to the data period
     from TopLJets2015.TopAnalysis.EraConfig import getEraConfiguration
-    globalTag, jecTag, jecDB, jerTag, jerDB = getEraConfiguration(era=era,isData=bool(isData))
+    globalTag, jecTag, jecDB, jerTag, jerDB, _ = getEraConfiguration(era=era,isData=bool(isData))
 
     isZeroBias=True if 'ZeroBias' in dataset else False
 
@@ -32,7 +33,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.write('config.JobType.psetName = "'+cfg+'"\n')
     config_file.write('config.JobType.disableAutomaticOutputCollection = False\n')
     config_file.write('config.JobType.maxMemoryMB = 2500\n')
-    config_file.write('config.JobType.maxJobRuntimeMin = 360\n')
+    config_file.write('config.JobType.maxJobRuntimeMin = 1200\n')
     pyCfgParams = '\'runOnData=%s\',\'era=%s\''%(bool(isData),era)
     if isZeroBias:
         print 'This is a ZeroBias sample will save everything...'
@@ -63,11 +64,11 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
         config_file.write('config.Data.lumiMask = \'%s\'\n' %lumiMask)
         if addParents:
             config_file.write('config.Data.splitting = "FileBased"\n')
-            config_file.write('config.Data.unitsPerJob = 1\n')        
+            config_file.write('config.Data.unitsPerJob = 10\n')        
         else:
-            #config_file.write('config.Data.splitting = "Automatic"\n')
-            config_file.write('config.Data.splitting = "LumiBased"\n')
-            config_file.write('config.Data.unitsPerJob = 15\n')
+            config_file.write('config.Data.splitting = "Automatic"\n')
+            #config_file.write('config.Data.splitting = "LumiBased"\n')
+            #config_file.write('config.Data.unitsPerJob = 15\n')
     else : 
         config_file.write('config.Data.splitting = "FileBased"\n')
         config_file.write('config.Data.unitsPerJob = 4\n')

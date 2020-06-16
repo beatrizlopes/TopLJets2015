@@ -21,7 +21,7 @@ struct MiniEvent_t
   static const int MAXMETSYS    =  14;
   static const int MAXJETSYS    =  29;
   static const int MAXRAWMU     =  50;
-  static const int MAXPROTONS   =  10;
+  static const int MAXPROTONS   =  50;
   
   Bool_t isData;
   UInt_t run,lumi;

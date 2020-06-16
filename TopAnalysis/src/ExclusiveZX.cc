@@ -13,8 +13,6 @@
 #include "TopQuarkAnalysis/TopTools/interface/MEzCalculator.h"
 #include "TopLJets2015/TopAnalysis/interface/L1PrefireEfficiencyWrapper.h"
 
-#include "TopLJets2015/TopAnalysis/src/GetPixEff.cc"
-
 #include <vector>
 #include <set>
 #include <iostream>

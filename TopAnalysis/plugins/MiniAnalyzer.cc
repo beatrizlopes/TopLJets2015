@@ -645,6 +645,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             if(!proton.validFit()) continue;
 
             CTPPSDetId detid( (*(proton.contributingLocalTracks().begin()))->getRPId() );
+
 			//apply aperture cuts (Depending on the run number) https://twiki.cern.ch/twiki/bin/viewauth/CMS/TaggedProtonsGettingStarted#Fiducial_cuts
 			if(proton.xi() > PPS_eff_->getXiHigh(detid.arm(),ev_.run,ev_.beamXangle)) continue;
 			

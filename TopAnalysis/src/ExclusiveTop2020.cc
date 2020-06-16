@@ -38,7 +38,7 @@ void RunExclusiveTop2020(const TString in_fname,
   ///////////////////
   float EBEAM(6500);
   float XIMIN(0.03);
-  float XIMAX(0.2);
+  float XIMAX(0.4);
   bool SKIMME(false);
   
   //////////////////////////////////
