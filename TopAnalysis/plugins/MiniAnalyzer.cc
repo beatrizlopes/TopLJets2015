@@ -176,7 +176,7 @@ private:
   edm::Service<TFileService> fs;
 
   //counters
-  int nrecleptons_,nrecphotons_,ngleptons_,ngphotons_;
+  int nrecleptons_,nrecphotons_,ngleptons_,ngphotons_,nmultiprotons_;
 
   //apply filter to save tree
   bool applyFilt_;
@@ -253,7 +253,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   histContainer_["triggerList"] = fs->make<TH1F>("triggerList", ";Trigger bits;",triggersToUse_.size(),0,triggersToUse_.size());
   histContainer_["triggerPrescale"] = fs->make<TH1D>("triggerPrescale", ";Trigger prescale sum;",triggersToUse_.size(),0,triggersToUse_.size());
   for(size_t i=0; i<triggersToUse_.size(); i++) histContainer_["triggerList"] ->GetXaxis()->SetBinLabel(i+1,triggersToUse_[i].c_str());
-  histContainer_["counter"]    = fs->make<TH1F>("counter", ";Counter;Events",2,0,2);
+  histContainer_["counter"]    = fs->make<TH1F>("counter", ";Counter;Events",3,0,3);
   histContainer_["fidcounter"] = (TH1 *)fs->make<TH2F>("fidcounter",    ";Variation;Events", 1500, 0., 1500.,11,0,11);
   histContainer_["pu"]         = fs->make<TH1F>("pu",      ";Pileup observed;Events / 1",100,0,100);
   histContainer_["putrue"]     = fs->make<TH1F>("putrue",  ";Pileup true;Events / 0.1",100,0,100);
@@ -602,6 +602,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   //PF candidates
   edm::Handle<pat::PackedCandidateCollection> pfcands;
   iEvent.getByToken(pfToken_,pfcands);
+  
 
   //
   //PPS local tracks (if present)
@@ -665,6 +666,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             ev_.fwdtrk_xiSF[ev_.nfwdtrk]      = PPS_eff_->getEff(proton.xi(),detid.arm(),ev_.run);
             ev_.fwdtrk_xiError[ev_.nfwdtrk]   = proton.xiError();
             ev_.fwdtrk_t[ev_.nfwdtrk]         = proton.t();
+			if(ev_.fwdtrk_method[ev_.nfwdtrk]==1) nmultiprotons_++;
             ev_.nfwdtrk++;
           }
       }
@@ -1335,7 +1337,7 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   histContainer_["counter"]->Fill(0);
 
   ngleptons_=0;   ngphotons_=0;
-  nrecleptons_=0; nrecphotons_=0;
+  nrecleptons_=0; nrecphotons_=0; nmultiprotons_=0;
   ev_.g_nw=0; ev_.ng=0; ev_.ngtop=0;
   ev_.nl=0; ev_.ngamma=0; ev_.nj=0; ev_.nbj=0; ev_.nfwdtrk=0; ev_.nrawmu=0;
 
@@ -1347,12 +1349,16 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   if(!ev_.isData) genAnalysis(iEvent,iSetup);
   recAnalysis(iEvent,iSetup);
+  
 
   //save event if at least one object at gen or reco level
   if(!saveTree_) return;
   if(applyFilt_){
-	if (FilterType_.find("ttbar")!=std::string::npos)
-      if( (ev_.nj<4 || ev_.nbj<1 || nrecleptons_==0)) return;
+	if (FilterType_.find("ttbar")!=std::string::npos) if( (ev_.nj<4 || ev_.nbj<1 || nrecleptons_==0)) return;
+    
+	// data - skim on event w/o forward protons but save the event count
+	histContainer_["counter"]->Fill(2);
+    if (FilterType_.find("data")!=std::string::npos) if( nmultiprotons_==0 ) { return;}
   }
   tree_->Fill();
 }

@@ -38,8 +38,8 @@ void RunExclusiveTop2020(const TString in_fname,
   ///////////////////
   float EBEAM(6500);
   float XIMIN(0.03);
-  float XIMAX(0.4);
-  bool SKIMME(false);
+  float XIMAX(0.2);
+  bool SKIMME(true);
   
   //////////////////////////////////
   // Constants used in ttbar reco //
@@ -264,7 +264,7 @@ void RunExclusiveTop2020(const TString in_fname,
 	  boutVars["hasMETrigger"]=(selector.hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v",    ev.triggerBits) ||
 								selector.hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v", ev.triggerBits));
       
-	  boutVars["hasSLT"] = boutVars["hasMTrigger"] || boutVars["hasETrigger"];
+	  boutVars["hasSLT"] = selector.passSingleLeptonTrigger(ev); // boutVars["hasMTrigger"] || boutVars["hasETrigger"];
 	  boutVars["hasDLT"] = (boutVars["hasMMTrigger"]||boutVars["hasEETrigger"]||boutVars["hasEMTrigger"]||boutVars["hasMETrigger"]);
       
 	  if(debug) cout << "runNumber #"<<ev.run<<" pass trigger (hasSLT) = "  << boutVars["hasSLT"] <<endl;
@@ -478,6 +478,9 @@ void RunExclusiveTop2020(const TString in_fname,
 		foutVars["Ypp"] = 0.5*TMath::Log(multi_pos_xi/multi_neg_xi);
 	    if(debug) cout << "multi_n="<<multi_n<<", mpp = " << foutVars["mpp"] << endl;
 	  }	  
+
+	  //if(multi_n!=2 && SKIMME) continue;
+	  //if(foutVars["chi2min"]>XXX && SKIMME) continue;
 
 	  // Save output tree
 	  if(skimtree) outT->Fill();

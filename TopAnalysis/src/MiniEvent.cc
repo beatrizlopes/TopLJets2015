@@ -194,7 +194,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("nPFChCands",   ev.nPFChCands,    "nPFChCands[8]/I");
   t->Branch("sumPFChEn",    ev.sumPFChEn,     "sumPFChEn[8]/F");
   t->Branch("sumPFChPz",    ev.sumPFChPz,     "sumPFChPz[8]/F");
-  t->Branch("sumPFChHt",    ev.sumPFChHt,     "sumPFChHt[8]/F");
+  t->Branch("sumPFChHt",    ev.sumPFChHt,     "sumPFChHt[8]/F");  
   } // end store pflow
   
   //MET

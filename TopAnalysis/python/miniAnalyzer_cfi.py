@@ -7,8 +7,9 @@ ANALYSISVARS={
    'pps_zx':['leptons','pps','generator'],
    'pps_yx':['photons','pps','generator'],
    'pps':   ['pps'],
-   'ttbar': ['leptons','jets','met','pps','generator'],
-   'ttbar_sys': ['leptons','jets','met','pps','generator','systematics'],
+   'ttbar': ['leptons','jets','met','pps','generator','pflow'],
+   'ttbar_data': ['leptons','jets','met','pps','pflow'],
+   'ttbar_sys': ['leptons','jets','met','pps','generator','systematics','pflow'],
    'test':  ['generator','pps']
 }
 ANALYSISTRIGGERLISTS={
