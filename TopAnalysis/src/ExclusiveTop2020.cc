@@ -45,7 +45,7 @@ void RunExclusiveTop2020(const TString in_fname,
   // Constants used in ttbar reco //
   //////////////////////////////////
   float m_TOP = 173.1;
-  float m_W   =  80.379;
+  //float m_W   =  80.379;
   
   //const char* CMSSW_BASE = getenv("CMSSW_BASE");
   MiniEvent_t ev;  
@@ -71,7 +71,7 @@ void RunExclusiveTop2020(const TString in_fname,
   
   
   //CORRECTIONS: B-TAG CALIBRATION
-  BTagSFUtil btvSF(era,BTagEntry::OperatingPoint::OP_MEDIUM,"",0);
+  //BTagSFUtil btvSF(era,BTagEntry::OperatingPoint::OP_MEDIUM,"",4357); // set default seed
 
   //READ TREE FROM FILE
   TFile *f = TFile::Open(in_fname);
@@ -125,6 +125,7 @@ void RunExclusiveTop2020(const TString in_fname,
   
   int jet_n(0);
   float jet_pt[ev.MAXJET];
+  float jet_deepcsv[ev.MAXJET];
 
   TTree *outT=new TTree("tree","tree");
   if(skimtree) {
@@ -145,6 +146,7 @@ void RunExclusiveTop2020(const TString in_fname,
 
 	outT->Branch("jet_n",&jet_n,"jet_n/I");
 	outT->Branch("jet_pt",jet_pt,"jet_pt[jet_n]/F");
+	outT->Branch("jet_deepcsv",jet_deepcsv,"jet_deepcsv[jet_n]/F");
 	
 	// fill custom variables
 	for(size_t i=0; i<sizeof(bvars)/sizeof(TString); i++){
@@ -210,8 +212,8 @@ void RunExclusiveTop2020(const TString in_fname,
   }
   // normalization and event count
   ht.addHist("norm",     new TH1F("h_norm",    ";Category; Events",3,0,3) );
-  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(1,"SumWeighted");
-  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(2,"SumUnweighted");
+  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(1,"SumUnWeighted");
+  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(2,"Sumweighted");
   ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(3,"inc");
   ht.getPlots()["norm"]->SetBinContent(1,counter->GetBinContent(1));
   ht.getPlots()["norm"]->SetBinContent(2,counter->GetBinContent(2));
@@ -227,7 +229,9 @@ void RunExclusiveTop2020(const TString in_fname,
   for (Int_t iev=0;iev<nentries;iev++)
     {
       t->GetEntry(iev);
-      if(iev%1000==0) { printf("\r [%3.0f%%] done", 100.*(float)(iev+1)/(float)nentries); fflush(stdout); }
+      //if(iev%1000==0) { printf("\r [%3.0f%%] done", 100.*(float)(iev+1)/(float)nentries); fflush(stdout); }
+      if(iev%10==0) printf ("\r [%3.0f%%] done", 100.*(float)iev/(float)nentries);
+		
 		
 	  // Reset vars
       // ------------------------------------------------------------------------------------------------------- //
@@ -248,26 +252,24 @@ void RunExclusiveTop2020(const TString in_fname,
       // ------------------------------------------------------------------------------------------------------- //
 
       //trigger
-      boutVars["hasMTrigger"] = false;
-      if(era.Contains("2016")) boutVars["hasMTrigger"]=(selector.hasTriggerBit("HLT_IsoMu24_v", ev.triggerBits) );     
-      if(era.Contains("2017")) boutVars["hasMTrigger"]=(selector.hasTriggerBit("HLT_IsoMu27_v", ev.triggerBits) ); 
-	  boutVars["hasETrigger"]=(selector.hasTriggerBit("HLT_Ele35_WPTight_Gsf_v",                                  ev.triggerBits) || 
-                               selector.hasTriggerBit("HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v",                     ev.triggerBits) ||
-							   selector.hasTriggerBit("HLT_Ele30_eta2p1_WPTight_Gsf_CentralPFJet35_EleCleaned_v", ev.triggerBits));
-	  
-      boutVars["hasMMTrigger"]=(selector.hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v",        ev.triggerBits) ||
-								selector.hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ",                  ev.triggerBits) ||
-								selector.hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v",          ev.triggerBits));
-	  boutVars["hasEETrigger"]=(selector.hasTriggerBit("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v",             ev.triggerBits) ||
-								selector.hasTriggerBit("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v",          ev.triggerBits) );
-	  boutVars["hasEMTrigger"]=(selector.hasTriggerBit("HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v",  ev.triggerBits) );
-	  boutVars["hasMETrigger"]=(selector.hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v",    ev.triggerBits) ||
-								selector.hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v", ev.triggerBits));
+      boutVars["hasMTrigger"] = (selector.hasTriggerBit("HLT_IsoMu27_v", ev.triggerBits) ); 
+	  boutVars["hasETrigger"] = (selector.hasTriggerBit("HLT_Ele35_WPTight_Gsf_v",                                  ev.triggerBits) || 
+                                selector.hasTriggerBit("HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v",                     ev.triggerBits) ||
+							    selector.hasTriggerBit("HLT_Ele30_eta2p1_WPTight_Gsf_CentralPFJet35_EleCleaned_v", ev.triggerBits));
+      boutVars["hasMMTrigger"]= (selector.hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v",        ev.triggerBits) ||
+								 selector.hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ",                  ev.triggerBits) ||
+								 selector.hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v",          ev.triggerBits));
+	  boutVars["hasEETrigger"]= (selector.hasTriggerBit("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v",             ev.triggerBits) ||
+								 selector.hasTriggerBit("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v",          ev.triggerBits) );
+	  boutVars["hasMETrigger"]= (selector.hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v",    ev.triggerBits) ||
+								 selector.hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v", ev.triggerBits));
+	  boutVars["hasEMTrigger"]= (selector.hasTriggerBit("HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v",  ev.triggerBits) ||
+								 selector.hasTriggerBit("HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v", ev.triggerBits));
       
 	  boutVars["hasSLT"] = selector.passSingleLeptonTrigger(ev); // boutVars["hasMTrigger"] || boutVars["hasETrigger"];
 	  boutVars["hasDLT"] = (boutVars["hasMMTrigger"]||boutVars["hasEETrigger"]||boutVars["hasEMTrigger"]||boutVars["hasMETrigger"]);
       
-	  if(debug) cout << "runNumber #"<<ev.run<<" pass trigger (hasSLT) = "  << boutVars["hasSLT"] <<endl;
+	  if(debug) cout << "runNumber #"<<ev.run<<", event = " << ev.event<<", pass trigger (hasSLT) = "  << boutVars["hasSLT"] <<endl;
 	  if(!boutVars["hasSLT"] && SKIMME) continue;
 
       //lepton selection
@@ -276,12 +278,15 @@ void RunExclusiveTop2020(const TString in_fname,
       leptons = selector.selLeptons(leptons,muId,SelectionTool::MVA90,minLeptonPt,2.1);
       bool passLeptons(leptons.size()==1);
 	  if(debug) cout << "passLeptons = "<<passLeptons<< "(nl="<<leptons.size()<<")"<<endl;
-      if(passLeptons && SKIMME) continue;
+      if(!passLeptons && SKIMME) continue;
 	  ioutVars["nl"] = leptons.size();
 	  
-      //select jets
-      btvSF.addBTagDecisions(ev);
-      if(!isData) btvSF.updateBTagDecisions(ev);      
+	  
+	  // ------ update latter with UL recommendations, id needed ------ 
+      //btvSF.addBTagDecisions(ev);
+      //if(!isData) btvSF.updateBTagDecisions(ev); 
+	  
+      //select jets 
       std::vector<Jet> allJets = selector.getGoodJets(ev,minJetPt,2.4,leptons,{});
       bool passJets(allJets.size()>=minJetMultiplicity);
 
@@ -293,7 +298,8 @@ void RunExclusiveTop2020(const TString in_fname,
       for(size_t ij=0; ij<allJets.size(); ij++) {
 		  foutVars["HT"]+=allJets[ij].pt();
 		  jet_pt[ij] = allJets[ij].pt();
-          if(ev.j_btag[allJets[ij].getJetIndex()]>0) {
+		  jet_deepcsv[ij] = ev.j_deepcsv[allJets[ij].getJetIndex()];
+		  if(ev.j_btag[allJets[ij].getJetIndex()]) {
 			  ioutVars["nbj"]++;
 			  bJets.push_back(allJets[ij]);
 		  }
@@ -363,10 +369,11 @@ void RunExclusiveTop2020(const TString in_fname,
         float normWgt(normH? normH->GetBinContent(1) : 1.0);        
         TString period = lumi.assignRunPeriod();
         float puWgt(lumi.pileupWeight(ev.g_pu,period)[0]);
-        EffCorrection_t selSF(1.0,0.0);// = lepEffH.getOfflineCorrection(leptons[0], period);
+        EffCorrection_t selSF(1.0,0.0); // = lepEffH.getOfflineCorrection(leptons[0], period);
+		EffCorrection_t trigSF(1.0,0.0);// = lepEffH.getTriggerCorrection(leptons,{},{},period);
         EffCorrection_t l1prefireProb=l1PrefireWR.getCorrection(allJets,{});
 
-        evWgt  = normWgt*puWgt*selSF.first*l1prefireProb.first;
+        evWgt  = normWgt*puWgt*trigSF.first*selSF.first*l1prefireProb.first;
         evWgt *= (ev.g_nw>0 ? ev.g_w[0] : 1.0);  
 				
 		// truth information (if available)

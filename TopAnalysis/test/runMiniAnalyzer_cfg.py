@@ -234,8 +234,12 @@ if not options.runOnData:
       print '\t MC, set runNumber = ',process.analysis.runNumber
 if 'era2017' in options.era:
       process.analysis.jetIdToUse=ANALYSISJETIDS[2017]
-      process.analysis.triggersToUse=ANALYSISTRIGGERLISTS[2017]
-      print '\t Using 2017 triggers/jet ids'
+      if 'ttbar' in options.ListVars:
+        process.analysis.triggersToUse=ANALYSISTRIGGERLISTS['ttbar2017']
+        print '\t Using 2017 ttbar triggers/jet ids'
+      else:
+        process.analysis.triggersToUse=ANALYSISTRIGGERLISTS[2017]
+        print '\t Using 2017 triggers/jet ids'
 elif 'era2018' in options.era:
       process.analysis.jetIdToUse=ANALYSISJETIDS[2018]
       process.analysis.triggersToUse=ANALYSISTRIGGERLISTS[2018]

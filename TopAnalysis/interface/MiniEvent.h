@@ -8,7 +8,7 @@ struct MiniEvent_t
   MiniEvent_t()
   {
     g_nw=0; g_npsw=0; ng=0; ngtop=0; 
-    ngamma=0; nl=0; nj=0; nbj=0;
+    ngamma=0; nl=0; nj=0;
   }
 
   static const int MAXWEIGHTS   =  10;  // was 1285 in ttbar MC
@@ -65,7 +65,7 @@ struct MiniEvent_t
     gamma_mva[MAXGAMMA], gamma_mvaCats[MAXGAMMA],
     gamma_chargedHadronIso[MAXGAMMA],gamma_neutralHadronIso[MAXGAMMA],gamma_photonIso[MAXGAMMA],gamma_hoe[MAXGAMMA],gamma_r9[MAXGAMMA],gamma_sieie[MAXGAMMA];
 
-  Int_t nj, nbj;
+  Int_t nj;
   Float_t j_pt[MAXJET],j_eta[MAXJET],j_phi[MAXJET],j_mass[MAXJET],j_area[MAXJET],j_rawsf[MAXJET];
   Float_t j_jerUp[MAXJET],j_jerDn[MAXJET],j_jecUp[MAXJETSYS][MAXJET],j_jecDn[MAXJETSYS][MAXJET];
   Float_t j_csv[MAXJET],j_deepcsv[MAXJET],j_pumva[MAXJET],j_emf[MAXJET],j_qg[MAXJET];

@@ -176,7 +176,8 @@ private:
   edm::Service<TFileService> fs;
 
   //counters
-  int nrecleptons_,nrecphotons_,ngleptons_,ngphotons_,nmultiprotons_;
+  int nrecleptons_, nrecphotons_, ngleptons_, ngphotons_, nmultiprotons_;
+  int nrecjets_, nrecbjets_;
 
   //apply filter to save tree
   bool applyFilt_;
@@ -596,8 +597,9 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
           ev_.zeroBiasPS=prescale*l1prescale;
 	}
     }
-  bool passTrigger(ev_.isData ? ev_.triggerBits!=0 : true);
+  bool passTrigger((ev_.triggerBits + ev_.addTriggerBits)!=0);
   if(!passTrigger) return;
+  //if(ev_.isData && !passTrigger) return;
 
   //PF candidates
   edm::Handle<pat::PackedCandidateCollection> pfcands;
@@ -798,7 +800,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	}
       ev_.nl++;
 
-      if( p4.Pt()>30 && fabs(p4.Eta())<2.5 && isLoose) nrecleptons_++;
+      if( p4.Pt()>25 && fabs(p4.Eta())<2.5 && isLoose) nrecleptons_++;
     }
 	
   if(ev_.MAXRAWMU<ev_.nrawmu){
@@ -921,7 +923,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	}
       ev_.nl++;
 
-      if( corrP4.pt()>20 && passEta && passLooseId ) nrecleptons_++;
+      if( corrP4.pt()>25 && passEta && passLooseId ) nrecleptons_++;
     }
   if(ev_.MAXLEP<ev_.nl){
      cout << "ERROR: MAXLEP ("<<ev_.MAXLEP<<") is smaller than the N of leptons in the sample ("<<ev_.nl<<")."<<endl;
@@ -1170,9 +1172,15 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	      ev_.j_vtx3DSig[ev_.nj]       = candSVTagInfo->flightDistance(0).significance();
 	    }
 	}
-
-	  if(ev_.j_btag[ev_.nj]) ev_.nbj++;
-      ev_.nj++;
+	  
+	  // count reconstructed objects (used in the analysis)
+	  if(ev_.j_pt[ev_.nj]>15 && abs(ev_.j_eta[ev_.nj])<2.5){
+		  nrecjets_++;
+		  if(ev_.j_btag[ev_.nj]) nrecbjets_++;
+	  }
+	  
+	  // increment jet index
+      ev_.nj++;	  
 
       //save all PF candidates central jet
       if(fabs(j->eta())>2.5) continue;
@@ -1338,8 +1346,9 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   ngleptons_=0;   ngphotons_=0;
   nrecleptons_=0; nrecphotons_=0; nmultiprotons_=0;
+  nrecjets_=0; nrecbjets_=0;
   ev_.g_nw=0; ev_.ng=0; ev_.ngtop=0;
-  ev_.nl=0; ev_.ngamma=0; ev_.nj=0; ev_.nbj=0; ev_.nfwdtrk=0; ev_.nrawmu=0;
+  ev_.nl=0; ev_.ngamma=0; ev_.nj=0; ev_.nfwdtrk=0; ev_.nrawmu=0;
 
   //analyze the event
   ev_.run     = ev_.isData ? iEvent.id().run() : runNumber_;
@@ -1354,8 +1363,8 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   //save event if at least one object at gen or reco level
   if(!saveTree_) return;
   if(applyFilt_){
-	if (FilterType_.find("ttbar")!=std::string::npos) if( (ev_.nj<4 || ev_.nbj<1 || nrecleptons_==0)) return;
-    
+	if (FilterType_.find("ttbar")!=std::string::npos) if(nrecbjets_<2 || nrecjets_<4 || nrecleptons_==0) return;
+
 	// data - skim on event w/o forward protons but save the event count
 	histContainer_["counter"]->Fill(2);
     if (FilterType_.find("data")!=std::string::npos) if( nmultiprotons_==0 ) { return;}
@@ -1490,7 +1499,8 @@ float MiniAnalyzer::getMiniIsolation(edm::Handle<pat::PackedCandidateCollection>
 void
 MiniAnalyzer::endJob()
 {
-  std::cout << "[MiniAnalyzer::endJob]" << endl;
+  if(saveTree_) std::cout << "store tree with " << tree_->GetEntries() << " entries."<<endl<<"[MiniAnalyzer::endJob]"<<endl;
+  else std::cout << "[MiniAnalyzer::endJob]" << endl;
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------

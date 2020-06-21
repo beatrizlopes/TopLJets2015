@@ -130,7 +130,6 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   //jet info
   for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("jets")!=std::string::npos){
   t->Branch("nj",        &ev.nj,        "nj/I");
-  t->Branch("nbj",       &ev.nbj,       "nbj/I");
   t->Branch("j_g",        ev.j_g,       "j_g[nj]/I");
   t->Branch("j_area",     ev.j_area,    "j_area[nj]/F");
   t->Branch("j_jerUp",    ev.j_jerUp,   "j_jerUp[nj]/F");
@@ -383,7 +382,6 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   
   if(t->FindBranch("nj")){
   t->SetBranchAddress("nj",        &ev.nj);
-  t->SetBranchAddress("nbj",       &ev.nbj);
   
   t->SetBranchAddress("j_g",        ev.j_g);
   t->SetBranchAddress("j_area",     ev.j_area);

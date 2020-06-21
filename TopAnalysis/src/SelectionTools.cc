@@ -33,7 +33,7 @@ SelectionTool::SelectionTool(TString dataset_,bool debug,TH1 *triggerList, Analy
 //
 bool SelectionTool::passSingleLeptonTrigger(MiniEvent_t &ev) {
   //check if triggers have fired and are consistent with the offline selection
-  bool hasETrigger(  hasTriggerBit("HLT_Ele35_eta2p1_WPTight_Gsf_v",           ev.triggerBits) ||
+  bool hasETrigger(  hasTriggerBit("HLT_Ele35_WPTight_Gsf_v",           ev.triggerBits) ||
                      hasTriggerBit("HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v",     ev.triggerBits) ||
                      hasTriggerBit("HLT_Ele30_eta2p1_WPTight_Gsf_CentralPFJet35_EleCleaned_v",     ev.triggerBits) );
   bool hasMTrigger(  //hasTriggerBit("HLT_IsoMu24_2p1_v",                                        ev.triggerBits) || 

@@ -7,6 +7,7 @@
 #include "TopLJets2015/TopAnalysis/interface/PhotonTrigEff.h"
 #include "TopLJets2015/TopAnalysis/interface/TopSummer2019.h"
 #include "TopLJets2015/TopAnalysis/interface/ExclusiveTop2020.h"
+#include "TopLJets2015/TopAnalysis/interface/ExclusiveTop.h"
 
 #include "TH1F.h"
 #include "TFile.h"
@@ -101,6 +102,9 @@ int main(int argc, char* argv[])
   //check method to run
   if(method=="ExclusiveZX::RunExclusiveZX") {
     RunExclusiveZX(in,out,channel,charge,normH,puH,era,debug);
+  }
+  else if(method=="RunExclusiveTop") {
+    RunExclusiveTop(in,out,0,0,normH,puH,era,debug);
   }
   else if(method=="RunExclusiveTop2020") {
     RunExclusiveTop2020(in,out,normH,puH,era,debug,skimtree);
