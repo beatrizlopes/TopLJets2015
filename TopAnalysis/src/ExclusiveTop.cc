@@ -5,6 +5,7 @@
 #include <TSystem.h>
 #include <TGraph.h>
 #include <TLorentzVector.h>
+//#include "TLorentzVector.h"  // !!!!!!!!!!!! IT SHOULD GO WITH ", NOT <
 #include <TGraphAsymmErrors.h>
 #include "TMatrixD.h"
 #include "TMath.h"
@@ -30,7 +31,7 @@
 Modifications form the original code:
 0. copy neutrino calculator from https://github.com/betchart/analytic-nu 
 1. comment CTPPSAnalysisTools dependences, and comment strip reconstruction
-2. met_XX is a float and not a vector
+2. change met_XX to float (not vector)
 3. BTagSFUtil btvSF() different from the branch
 4. attachToMiniEventTree() remove systematics
 5. ADDVAR(&(outVars[fvars[i]]),fvars[i],"/F",outT); // with /F instead of F
@@ -371,7 +372,7 @@ void RunExclusiveTop(TString filename,
     /////////////////////
     // INITIALIZATION //
     ///////////////////
-    //const char* CMSSW_BASE = getenv("CMSSW_BASE");
+    const char* CMSSW_BASE = getenv("CMSSW_BASE");
     // CTPPS reconstruction part
     //ctpps::XiReconstructor proton_reco;
     //proton_reco.feedDispersions(Form("%s/src/TopLJets2015/CTPPSAnalysisTools/data/2017/dispersions.txt", CMSSW_BASE));
@@ -625,8 +626,8 @@ void RunExclusiveTop(TString filename,
 #endif
 
             // lepton trigger*selection weights
-            EffCorrection_t trigSF(1.0,0.0);// = lepEffH.getTriggerCorrection(leptons,{},{},period);
-            EffCorrection_t  selSF(1.0,0.0);// = lepEffH.getOfflineCorrection(leptons[0], period);
+            EffCorrection_t trigSF(1.0,0.0);//lepEffH.getTriggerCorrection(leptons,{},{},period);
+            EffCorrection_t  selSF(1.0,0.0); //lepEffH.getOfflineCorrection(leptons[0], period);
             wgt *= puWgt*trigSF.first*selSF.first;
 
             //top pt weighting
@@ -640,21 +641,6 @@ void RunExclusiveTop(TString filename,
             wgt *= (ev.g_nw>0 ? ev.g_w[0] : 1.0);                   // generator level weights
             plotwgts[0]=wgt;                                        //update weight for plotter
         }
-		
-		
-        //if (ev.isData) {
-        //    const edm::EventID ev_id( ev.run, ev.lumi, ev.event );
-        //    // LHC information retrieval from LUT
-        //    const ctpps::conditions_t lhc_cond = lhc_conds.get( ev_id );
-        //    const double xangle = lhc_cond.crossing_angle;
-        //    for (int ift=0; ift<ev.nfwdtrk; ift++) {
-        //        // only look at strips!
-        //        const unsigned short pot_raw_id = 100*ev.fwdtrk_arm[ift]+/*10*ev.fwdtrk_station[ift]+*/ev.fwdtrk_pot[ift];
-        //        const ctpps::alignment_t align = ctpps_aligns.get( ev_id, pot_raw_id );
-        //        double xi, xi_error;
-        //        proton_reco.reconstruct(xangle, pot_raw_id, ev.fwdtrk_x[ift]/10.+align.x_align, xi, xi_error);
-        //    }
-        //}
 		
 
 
@@ -1336,9 +1322,16 @@ void RunExclusiveTop(TString filename,
             outVars["nu_pt"]=neutrinoP4.Pt();
             outVars["nu_eta"]=neutrinoP4.Rapidity();
             outVars["nu_phi"]=neutrinoP4.Phi();
-
-            outVars["p1_xi"]=ev.fwdtrk_xi[0];
-            outVars["p2_xi"]=ev.fwdtrk_xi[1];
+			
+			for (int ift=0; ift<ev.nfwdtrk; ift++) {
+				const unsigned short pot_raw_id = ev.fwdtrk_pot[ift];
+				if(ev.fwdtrk_method[ift]==1){
+				if (pot_raw_id<100){ outVars["p1_xi"]=ev.fwdtrk_xi[ift];}
+				else { outVars["p2_xi"] = ev.fwdtrk_xi[ift];}
+				}
+			}
+            //outVars["p1_xi"]=ev.fwdtrk_xi[0];
+            //outVars["p2_xi"]=ev.fwdtrk_xi[1];
 
 #ifdef KINFIT_ON
             outVars["nu_pt_uncorrected"] =neutrinoP4_uncorr.Pt();

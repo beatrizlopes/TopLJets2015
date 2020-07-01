@@ -3,6 +3,7 @@ import FWCore.ParameterSet.Config as cms
 ANALYSISVARS={
    'basic': [],
    'full':  ['generator','leptons','photons','jets','pflow','met','pps','rawmu'],
+   'full_sys':  ['generator','leptons','photons','jets','pflow','met','pps','rawmu','systematics'],
    'lepton':['leptons'],
    'pps_zx':['leptons','pps','generator'],
    'pps_yx':['photons','pps','generator'],

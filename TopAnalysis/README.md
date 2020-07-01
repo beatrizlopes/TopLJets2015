@@ -15,6 +15,10 @@ cmsenv
 
 #EGM id
 git cms-merge-topic cms-egamma:EgammaPostRecoTools
+git cms-addpkg EgammaAnalysis/ElectronTools
+rm EgammaAnalysis/ElectronTools/data -rf
+git clone git@github.com:cms-data/EgammaAnalysis-ElectronTools.git EgammaAnalysis/ElectronTools/data
+scram b -j
 
 #TopTools and B-fragmentation analyzer
 git cms-addpkg TopQuarkAnalysis/TopTools
@@ -22,6 +26,14 @@ cd TopQuarkAnalysis
 git clone -b 94x https://gitlab.cern.ch/psilva/BFragmentationAnalyzer.git
 scram b -j 8
 cd -
+
+#Statistical analysis
+git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
+git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
+cd HiggsAnalysis/CombinedLimit
+git fetch origin
+git checkout v8.1.0
+scramv1 b clean; scramv1 b # always make a clean build
 
 #This package
 cd $CMSSW_BASE/src

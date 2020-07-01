@@ -1363,8 +1363,8 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   //save event if at least one object at gen or reco level
   if(!saveTree_) return;
   if(applyFilt_){
-	if (FilterType_.find("ttbar")!=std::string::npos) if(nrecbjets_<2 || nrecjets_<4 || nrecleptons_==0) return;
-
+	//if (FilterType_.find("ttbar")!=std::string::npos) if(nrecbjets_<2 || nrecjets_<4 || nrecleptons_==0) return;
+        if (FilterType_.find("ttbar")!=std::string::npos) if(nrecjets_<4 || nrecleptons_==0) return;
 	// data - skim on event w/o forward protons but save the event count
 	histContainer_["counter"]->Fill(2);
     if (FilterType_.find("data")!=std::string::npos) if( nmultiprotons_==0 ) { return;}

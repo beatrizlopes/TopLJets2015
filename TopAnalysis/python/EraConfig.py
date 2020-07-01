@@ -11,17 +11,7 @@ def getEraConfiguration(era,isData):
         }
     jecFiles    = {
         'era2016':('Summer16_07Aug2017_V11_MC',   'Summer16_07Aug2017All_V11_DATA', 'Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs'),
-        'era2017':('Summer19UL17_V4_MC', 'NEED_FULL_ERA_FOR_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_B':('Summer19UL17_V4_MC', 'Summer19UL17_RunB_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_C':('Summer19UL17_V4_MC', 'Summer19UL17_RunC_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_C1':('Summer19UL17_V4_MC', 'Summer19UL17_RunC_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_C2':('Summer19UL17_V4_MC', 'Summer19UL17_RunC_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_D':('Summer19UL17_V4_MC', 'Summer19UL17_RunD_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_E':('Summer19UL17_V4_MC', 'Summer19UL17_RunE_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_F':('Summer19UL17_V4_MC', 'Summer19UL17_RunF_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_F1':('Summer19UL17_V4_MC', 'Summer19UL17_RunF_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_F2':('Summer19UL17_V4_MC', 'Summer19UL17_RunF_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
-        'era2017_F3':('Summer19UL17_V4_MC', 'Summer19UL17_RunF_V4_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
+        'era2017':('Summer19UL17_V5_MC', 'Summer19UL17_RunBCDEF_V5_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
         'era2017_H':('Fall17_17Nov2017_V32_94X_MC', 'Fall17_17Nov2017_V32_94X_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),                                                
         'era2018':('Autumn18_V19_MC',             'Autumn18_RunABCD_V19_DATA',      'Autumn18_V19_MC_UncertaintySources_AK4PFchs')
         }
@@ -54,7 +44,7 @@ def getEraConfiguration(era,isData):
     era_full=era	
     era=era_full.split('_')[0]                
     globalTag = globalTags[era][isData]
-    jecFile   = jecFiles[era_full][isData]
+    jecFile   = jecFiles[era_full][isData] if 'era2017_H' in era_full else jecFiles[era][isData]
     jecTag    = '_'.join( jecFile.split('_')[0:-1] )
     jecDB     = 'jec_DATA.db'  if isData else 'jec_MC.db'
     jerFile   = jerFiles[era][isData]
