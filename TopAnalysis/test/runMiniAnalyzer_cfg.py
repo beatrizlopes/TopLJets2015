@@ -224,6 +224,8 @@ print (', using ListVars=\''+options.ListVars+'\'') if options.saveTree else ''
  
 if options.runProtonFastSim: 
   print 'INFO:\t Run proton simulation with xangle = ',options.runProtonFastSim,'murad'
+  if options.doPUProtons:
+      process.analysis.PUprotons = cms.InputTag("genPUProtons","genPUProtons")
 if options.RedoProtons: print 'INFO:\t Redo proton recontrsuction'
 
 process.analysis.ListVars = ANALYSISVARS[options.ListVars]
@@ -237,6 +239,9 @@ if 'era2017' in options.era:
       if 'ttbar' in options.ListVars:
         process.analysis.triggersToUse=ANALYSISTRIGGERLISTS['ttbar2017']
         print '\t Using 2017 ttbar triggers/jet ids'
+      elif 'dilep' in options.ListVars:
+        process.analysis.triggersToUse=ANALYSISTRIGGERLISTS['dilep2017']
+        print '\t Using 2017 single lepton and dilepton triggers/jet ids'  
       else:
         process.analysis.triggersToUse=ANALYSISTRIGGERLISTS[2017]
         print '\t Using 2017 triggers/jet ids'

@@ -24,9 +24,9 @@ struct MiniEvent_t
   static const int MAXPROTONS   =  50;
   
   Bool_t isData;
-  UInt_t run,lumi;
+  UInt_t run,lumi,fill;
   ULong64_t event;
-  Float_t beamXangle, instLumi;
+  Float_t beamXangle, instLumi, betaStar;
    
   //gen level event
   Int_t g_id1, g_id2;

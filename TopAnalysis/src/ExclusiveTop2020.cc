@@ -310,7 +310,7 @@ void RunExclusiveTop2020(const TString in_fname,
       }
 	  bool passBJets(bJets.size()>=minBJetMultiplicity);
 	  if(debug) cout << "passBJets = "<<passBJets<< "(nbjets="<<bJets.size()<<")"<<endl;
-	  if(!passBJets && SKIMME) continue;
+	  //if(!passBJets && SKIMME) continue; // anti-selection for proton pool
 	  
       //met
       TLorentzVector met(0,0,0,0);

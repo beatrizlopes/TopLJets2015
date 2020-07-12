@@ -8,6 +8,7 @@
 #include "TopLJets2015/TopAnalysis/interface/TopSummer2019.h"
 #include "TopLJets2015/TopAnalysis/interface/ExclusiveTop2020.h"
 #include "TopLJets2015/TopAnalysis/interface/ExclusiveTop.h"
+#include "TopLJets2015/TopAnalysis/interface/FwdProtons.h"
 
 #include "TH1F.h"
 #include "TFile.h"
@@ -108,6 +109,9 @@ int main(int argc, char* argv[])
   }
   else if(method=="RunExclusiveTop2020") {
     RunExclusiveTop2020(in,out,normH,puH,era,debug,skimtree);
+  }
+  else if(method=="RunFwdProtons") {
+    RunFwdProtons(in,out,normH,puH,era,debug);
   }
   else if(method=="RunTopSummer2019") {
     RunTopSummer2019(in,out,normH,puH,era,debug);

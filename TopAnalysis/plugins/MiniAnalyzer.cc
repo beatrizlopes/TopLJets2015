@@ -137,6 +137,7 @@ private:
   edm::EDGetTokenT<std::vector<reco::GenJet>  > genLeptonsToken_, genJetsToken_;
   edm::EDGetTokenT<reco::METCollection> genMetsToken_;
   edm::EDGetTokenT<pat::PackedGenParticleCollection> genParticlesToken_;
+  edm::EDGetTokenT<reco::GenParticleCollection> genPUProtonsToken_;
   edm::EDGetTokenT<reco::GenParticleCollection> prunedGenParticlesToken_;
   edm::EDGetTokenT<reco::GenParticleCollection> particleLevelToken_;
 
@@ -206,6 +207,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   genJetsToken_(consumes<std::vector<reco::GenJet> >(edm::InputTag("particleLevel:jets"))),
   genMetsToken_(consumes<reco::METCollection>(edm::InputTag("particleLevel:mets"))),
   genParticlesToken_(consumes<pat::PackedGenParticleCollection>(edm::InputTag("packedGenParticles"))),
+  genPUProtonsToken_(consumes<reco::GenParticleCollection>(iConfig.getParameter<edm::InputTag>("PUprotons"))),
   prunedGenParticlesToken_(consumes<reco::GenParticleCollection>(edm::InputTag("prunedGenParticles"))),
   particleLevelToken_(consumes<reco::GenParticleCollection>(edm::InputTag("particleLevel"))),
   triggerBits_(consumes<edm::TriggerResults>(iConfig.getParameter<edm::InputTag>("triggerBits"))),
@@ -244,7 +246,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
     JetCorrectorParameters *p = new JetCorrectorParameters(jecUncFile,name.c_str());
     jecCorrectionUncs_.push_back(new JetCorrectionUncertainty(*p));
   }
-
+  
   muonRC_ = new RoccoR();
   muonRC_->init(iConfig.getParameter<std::string>("RoccoR"));
   //muonRC_->init(edm::FileInPath(iConfig.getParameter<std::string>("RoccoR")).fullPath());
@@ -494,6 +496,31 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
         }
       }
   }
+  
+  //Save pileup protons (for PPS reconstruction)
+  edm::Handle<reco::GenParticleCollection> genPUProtons;
+  iEvent.getByToken(genPUProtonsToken_,genPUProtons);
+  float XIMIN = 0.01, XIMAX = 0.3, EBEAM=6500;
+  if(genPUProtons.isValid()){
+    for (size_t i = 0; i < genPUProtons->size(); ++i)
+      {
+        const reco::GenParticle & genIt = (*genPUProtons)[i];
+        int absid=abs(genIt.pdgId());
+        bool outGoingProton( absid==2212 && genIt.status()==1 && fabs(genIt.eta())>4.7 );
+		bool tagProton( abs(genIt.pz())>(1. - XIMAX)*EBEAM && abs(genIt.pz())<(1. - XIMIN)*EBEAM);
+        if(outGoingProton && tagProton)
+          {
+            ev_.gtop_id[ ev_.ngtop ]  = genIt.pdgId();
+            ev_.gtop_pt[ ev_.ngtop ]  = genIt.pt();
+            ev_.gtop_pz[ ev_.ngtop ]  = genIt.pz();
+            ev_.gtop_eta[ ev_.ngtop ] = genIt.eta();
+            ev_.gtop_phi[ ev_.ngtop ] = genIt.phi();
+            ev_.gtop_m[ ev_.ngtop ]   = genIt.mass();
+            ev_.ngtop++;
+          }
+      }
+  }
+  
   if(ev_.MAXGENTOPAR<ev_.ngtop){
     cout << "ERROR: expected MAXN gentoppar ("<<ev_.MAXGENTOPAR<<") is smaller than the N gentoppar in MC ("<<ev_.ngtop<<")."<<endl;
 	cout <<"\t\t... can cause memory leaks!!!"<<endl;
@@ -1335,11 +1362,15 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     if(hLHCInfo.isValid()){
       ev_.beamXangle=hLHCInfo->crossingAngle();
       ev_.instLumi=hLHCInfo->instLumi();
+      ev_.betaStar=hLHCInfo->betaStar();
+      ev_.fill=hLHCInfo->fillNumber();
     }
   }
   catch(...){
     ev_.beamXangle=0;
     ev_.instLumi=0;
+    ev_.betaStar=0;
+    ev_.fill=0;
   }
 
   histContainer_["counter"]->Fill(0);
@@ -1355,6 +1386,7 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   ev_.lumi    = iEvent.luminosityBlock();
   ev_.event   = iEvent.id().event();
   ev_.isData  = iEvent.isRealData();
+  ev_.fill    = iEvent.isRealData();
 
   if(!ev_.isData) genAnalysis(iEvent,iSetup);
   recAnalysis(iEvent,iSetup);
@@ -1365,6 +1397,7 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   if(applyFilt_){
 	//if (FilterType_.find("ttbar")!=std::string::npos) if(nrecbjets_<2 || nrecjets_<4 || nrecleptons_==0) return;
         if (FilterType_.find("ttbar")!=std::string::npos) if(nrecjets_<4 || nrecleptons_==0) return;
+		if (FilterType_.find("dilep")!=std::string::npos) if(nrecleptons_<2) return;
 	// data - skim on event w/o forward protons but save the event count
 	histContainer_["counter"]->Fill(2);
     if (FilterType_.find("data")!=std::string::npos) if( nmultiprotons_==0 ) { return;}
