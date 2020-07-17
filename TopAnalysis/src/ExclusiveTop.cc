@@ -616,14 +616,15 @@ void RunExclusiveTop(TString filename,
 #ifdef HISTOGRAMS_ON
         ht.fill("evt_count", 4, plotwgts); // count events after selection on number of Bjets
 #endif
-if ( (p1_xi ==0 ) || (p2_xi == 0) )        continue; // ONLY events with 2 protons
+        if ( ev.isData && (p1_xi ==0 ) || (p2_xi == 0) )        continue; // ONLY events with 2 protons
 #ifdef HISTOGRAMS_ON
         ht.fill("evt_count", 5, plotwgts); // count events after selection of two protons
 #endif
 
-  #ifdef HISTOGRAMS_ON
+#ifdef HISTOGRAMS_ON
         ht.fill("puwgtctr",0,plotwgts);
-#endif      
+#endif  
+    
         if (!ev.isData) {
             wgt  = (normH? normH->GetBinContent(1) : 1.0);          // norm weight
             double puWgt(lumi.pileupWeight(ev.g_pu,period)[0]);     // pu weight
@@ -633,7 +634,7 @@ if ( (p1_xi ==0 ) || (p2_xi == 0) )        continue; // ONLY events with 2 proto
             ht.fill("puwgtctr",1,puPlotWgts);
 #endif
             
-            // lepton trigger*selection weights
+            // lepton trigger*selection weights (update the code later)
             EffCorrection_t trigSF(1.0,0.0);//lepEffH.getTriggerCorrection(leptons,{},{},period);
             EffCorrection_t  selSF(1.0,0.0); //lepEffH.getOfflineCorrection(leptons[0], period);
             wgt *= puWgt*trigSF.first*selSF.first;
