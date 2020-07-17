@@ -36,7 +36,7 @@ class SelectionTool {
   /////////////////////////////////////////////////////////////////////////////////////////
 
   bool passSingleLeptonTrigger(MiniEvent_t &ev);
-  TString flagFinalState(MiniEvent_t &ev, std::vector<Particle> leptons={}, std::vector<Particle> photons={}, bool isCR=false, bool isQCDTemp = false, bool isSRfake = false); //QCDTemp can be true only if it is CR 
+  TString flagFinalState(MiniEvent_t &ev, std::vector<Particle> leptons={}, std::vector<Particle> photons={}); 
   std::vector<Particle> leptons_,vetoLeptons_,photons_,tmpPhotons;
  
   std::vector<Jet> jets_;
@@ -44,6 +44,7 @@ class SelectionTool {
   bool hasTriggerBit(TString triggerName,unsigned int word);
   std::vector<Particle> flaggedLeptons(MiniEvent_t &ev);
   std::vector<Particle> selLeptons(std::vector<Particle> &flaggedLeptons,int muQualBit=LOOSE, int eleQualBit=LOOSE, double minPt=0., double maxEta=99., std::vector<Particle> veto={});
+  std::vector<Particle> selLeptons(std::vector<Particle> &flaggedLeptons,int qualBit=LOOSE, double minPt=0., double maxEta=99., std::vector<Particle> veto={});
   std::vector<Particle> &getSelLeptons()  { return leptons_; }
   std::vector<Particle> &getVetoLeptons() { return vetoLeptons_; }
   std::vector<Particle> flaggedPhotons(MiniEvent_t &ev);

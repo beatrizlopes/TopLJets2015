@@ -50,10 +50,10 @@ bool SelectionTool::passSingleLeptonTrigger(MiniEvent_t &ev) {
 
 
 //
-TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> preselLeptons,std::vector<Particle> preselPhotons, bool isCR, bool isQCDTemp, bool isSRfake) {
+TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> preselLeptons,std::vector<Particle> preselPhotons) {
 
- //clear vectors
-  leptons_.clear(); 
+  //clear vectors
+  leptons_.clear();
   photons_.clear();
   vetoLeptons_.clear();
   jets_.clear();
@@ -63,17 +63,9 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
   if(preselPhotons.size()==0) preselPhotons=flaggedPhotons(ev);
 
   //decide the channel based on the lepton multiplicity and set lepton collections
-  std::vector<Particle> tightLeptons( selLeptons(preselLeptons,TIGHT,MVA80) );
-  std::vector<Particle> tightPhotons( selPhotons(preselPhotons,offlinePhoton_, tightLeptons) );
-  std::vector<Particle> inclusivePhotons( selPhotons(preselPhotons,CONTROL, tightLeptons) );
-  tmpPhotons          = selPhotons(preselPhotons,QCDTEMP, tightLeptons);
-  relaxedTightPhotons = selPhotons(preselPhotons,RELAXEDTIGHT, tightLeptons);
-  std::vector<Particle> fakePhotons;
-  for(auto a : inclusivePhotons) {
-    int idx = a.originalReference();
-    if (!this->isFakePhoton(ev,idx)) continue;
-    fakePhotons.push_back(a);
-  }
+  std::vector<Particle> tightLeptons( selLeptons(preselLeptons,TIGHT, 0.) );
+  std::vector<Particle> tightPhotons( selPhotons(preselPhotons,TIGHT, tightLeptons) );
+
   TString chTag("");
   if(anType_==TOP)
     {
@@ -89,55 +81,41 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
         if      (ch==13) chTag = "M";
         else if (ch==11) chTag = "E";
         leptons_=tightLeptons;
-        vetoLeptons_=selLeptons(preselLeptons,VETO, VETO, 0., 99., leptons_);
-      }
-    } else if(anType_==VBF){ 
-      if (!isCR){
-	if(tightLeptons.size()==2){
-	  int ch( abs(tightLeptons[0].id()*tightLeptons[1].id()) );
-	  float mll( (tightLeptons[0]+tightLeptons[1]).M() );
-	  if( ch==13*13 && fabs(mll-91)<15 && (tightLeptons[0].pt()>30 || tightLeptons[1].pt()>30)) chTag="MM";          
-	  leptons_=tightLeptons;
-	} else {
-	  bool passPhoton = (!isSRfake && tightPhotons.size()>=1) || (isSRfake && fakePhotons.size()>=1);
-	  if(passPhoton){
-	    chTag="A";
-	    leptons_   =tightLeptons;
-	  }
-	  if(isSRfake) photons_   = fakePhotons;
-	  else         photons_   = tightPhotons;
-	}
-      } else {
-	if(isSRfake) return "";
-	bool passPhoton = (!isQCDTemp && inclusivePhotons.size()>=1) || (isQCDTemp && tmpPhotons.size()>=1);
-	if(passPhoton) {
-	  chTag="A";
-	  if(!isQCDTemp)      photons_   =inclusivePhotons;
-	  else                photons_   =tmpPhotons;
-	  //cout<< "Number of very loose photons: "<<photons_.size()<<endl;
-	  leptons_   =tightLeptons;
-	} else 	if(tightLeptons.size()==2){
-	  int ch( abs(tightLeptons[0].id()*tightLeptons[1].id()) );
-	  float mll( (tightLeptons[0]+tightLeptons[1]).M() );
-	  if( ch==13*13 && fabs(mll-91)<15 && (tightLeptons[0].pt()>30 || tightLeptons[1].pt()>30)) chTag="MM";          
-	  leptons_=tightLeptons;
-	}
+        vetoLeptons_=selLeptons(preselLeptons,VETO, 0., 99., leptons_);
       }
     }
-  
+  else if(anType_==VBF)
+    {
+      if(tightLeptons.size()==2)
+        {
+          int ch( abs(tightLeptons[0].id()*tightLeptons[1].id()) );
+          float mll( (tightLeptons[0]+tightLeptons[1]).M() );
+          if( ch==13*13 && fabs(mll-91)<15 && (tightLeptons[0].pt()>30 || tightLeptons[1].pt()>30)) chTag="MM";
+          leptons_=tightLeptons;
+        }
+     else if(tightPhotons.size()>=1) {
+        chTag="A";
+        photons_=tightPhotons;
+        leptons_=tightLeptons;
+      }
+    }
+
   //select jets based on the leptons and photon candidates
   float maxJetEta(2.4);
   if(anType_==VBF) maxJetEta=4.7;
-  jets_=getGoodJets(ev,30.,maxJetEta,leptons_,photons_);
-  //getGoodJets(ev,30.,maxJetEta,leptons_,photons_);
+  jets_=getGoodJets(ev,15.,maxJetEta,leptons_,photons_);
 
   //build the met
   met_.SetPtEtaPhiM( ev.met_pt, 0, ev.met_phi, 0. );
 
   //check if triggers have fired and are consistent with the offline selection
-  bool hasETrigger(  hasTriggerBit("HLT_Ele35_WPTight_Gsf_v",                               ev.triggerBits) );
-  bool hasMTrigger(  hasTriggerBit("HLT_IsoMu24_v",                                         ev.triggerBits) ||
-                     hasTriggerBit("HLT_IsoMu24_2p1_v",                                     ev.triggerBits) ||
+  bool hasETrigger(  hasTriggerBit("HLT_Ele35_WPTight_Gsf_v",           ev.triggerBits) ||
+                     //hasTriggerBit("HLT_Ele35_eta2p1_WPTight_Gsf_v",           ev.triggerBits) ||
+                     hasTriggerBit("HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v",     ev.triggerBits) ||
+                     hasTriggerBit("HLT_Ele30_eta2p1_WPTight_Gsf_CentralPFJet35_EleCleaned_v",     ev.triggerBits)
+                      );
+  bool hasMTrigger(  //hasTriggerBit("HLT_IsoMu24_v",                                         ev.triggerBits) ||
+                     //hasTriggerBit("HLT_IsoMu24_eta2p1_v",                                  ev.triggerBits) ||
                      hasTriggerBit("HLT_IsoMu27_v",                                         ev.triggerBits) );
   bool hasEMTrigger( hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v",     ev.triggerBits) ||
                      hasTriggerBit("HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v",  ev.triggerBits) ||
@@ -148,8 +126,8 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
                      hasTriggerBit("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v",         ev.triggerBits) );
   bool hasEETrigger( hasTriggerBit("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v",              ev.triggerBits) ||
                      hasTriggerBit("HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v",           ev.triggerBits) );
-  bool hasPhotonTrigger(false);
-  for(auto &t:photonTriggers_) hasPhotonTrigger |= hasTriggerBit(t, ev.triggerBits);
+  bool hasPhotonTrigger( hasTriggerBit("HLT_Photon75_R9Id90_HE10_IsoM_EBOnly_PFJetsMJJ300DEta3_v", ev.triggerBits) ||
+                         hasTriggerBit("HLT_Photon200_v", ev.triggerBits) );
 
   //check consistency with data
   if(chTag=="EM")
@@ -170,9 +148,16 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
   if(chTag=="MM")
     {
       if(!hasMMTrigger && !hasMTrigger)                         chTag="";
-      if(isMuonEGPD_ || isSingleElectronPD_ || isDoubleEGPD_)   chTag="";
-      if(isSingleMuonPD_ && (hasMMTrigger || !hasMTrigger) )    chTag="";
-      if(isDoubleMuonPD_ && !hasMMTrigger)                      chTag="";
+      if(anType_==TOP)
+        {
+          if(isMuonEGPD_ || isSingleElectronPD_ || isDoubleEGPD_)   chTag="";
+          if(isSingleMuonPD_ && (hasMMTrigger || !hasMTrigger) )    chTag="";
+          if(isDoubleMuonPD_ && !hasMMTrigger)                      chTag="";
+        }
+      if(anType_==VBF)
+        {
+          if(ev.isData && !isSingleMuonPD_ && !hasMTrigger) chTag="";
+        }
     }
   if(chTag=="M")
     {
@@ -189,22 +174,24 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
   if(chTag=="A")
     {
       if(!hasPhotonTrigger) chTag="";
-      if(ev.isData && isCR && !isPhotonPD_ && !isJetHTPD_) chTag = "";
-      if(ev.isData && !isCR && !isPhotonPD_ ) chTag = "";  
-      //if(ev.isData && !isPhotonPD_) chTag="";    
+          if((hasEETrigger || hasETrigger) && chTag == "A"){
+                cout<< "----------------- This is EE in fact!" <<endl;
+                chTag = "";
+          }
+      if(ev.isData && !isPhotonPD_) chTag="";
     }
-      
+
   if(debug_) cout << "[flagFinalState] chTag=" << chTag << endl
-		  << "\t Pre-selection lepton mult." << preselLeptons.size() << endl
+                  << "\t Pre-selection lepton mult." << preselLeptons.size() << endl
                   << "\t tight lepton cands=" << tightLeptons.size()  << endl
                   << "\t Pre-selection photon mult." << preselPhotons.size()
-                  << "\t photon cands=" << tightPhotons.size() << endl               
-		  << "\t Trig bits."
-                  << " e=" << hasETrigger << " m=" << hasMTrigger 
-                  << " em=" << hasEMTrigger << " mm=" << hasMMTrigger << " ee=" << hasEETrigger 
+                  << "\t photon cands=" << tightPhotons.size() << endl
+                  << "\t Trig bits."
+                  << " e=" << hasETrigger << " m=" << hasMTrigger
+                  << " em=" << hasEMTrigger << " mm=" << hasMMTrigger << " ee=" << hasEETrigger
                   << " gamma=" << hasPhotonTrigger << endl
-		  << "\t Sel mult. l=" << leptons_.size() << " vl=" << vetoLeptons_.size() 
-                  << " photons=" << photons_.size() 
+                  << "\t Sel mult. l=" << leptons_.size() << " vl=" << vetoLeptons_.size()
+                  << " photons=" << photons_.size()
                   << " j=" << jets_.size() << endl;
 
   //all done
@@ -308,6 +295,33 @@ std::vector<Particle> SelectionTool::flaggedLeptons(MiniEvent_t &ev)
   return leptons;
 }
 
+std::vector<Particle> SelectionTool::selLeptons(std::vector<Particle> &leptons,int qualBit,double minPt, double maxEta,std::vector<Particle> veto){
+  std::vector<Particle> selLeptons;
+  for(size_t i =0; i<leptons.size(); i++)
+    {
+      //check quality flag
+      if( !leptons[i].hasQualityFlag(qualBit) ) continue;
+
+      //check kinematics
+      if(leptons[i].pt()<minPt || fabs(leptons[i].eta())>maxEta) continue;
+
+      //check if this lepton should be vetoed by request
+      bool skipThisLepton(false);
+      for(auto &vetoL : veto){
+        if(vetoL.originalReference()!=leptons[i].originalReference()) continue;
+        skipThisLepton=true;
+        break;
+      }
+      if(skipThisLepton) continue;
+
+
+      //lepton is selected
+      selLeptons.push_back(leptons[i]);
+    }
+
+  //all done here
+  return selLeptons;
+}
 
 //
 std::vector<Particle> SelectionTool::selLeptons(std::vector<Particle> &leptons,int muQualBit,int eleQualBit,double minPt, double maxEta,std::vector<Particle> veto){
