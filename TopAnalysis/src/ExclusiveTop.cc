@@ -46,7 +46,7 @@ double m_W   =  80.379;
 double m_NU  =  0.;
 
 // ---- SWITCHES ----------------------------------------------------------------
-#define DEBUG_ON                // activate in order to activate additional output for debugging and to limit entries
+//#define DEBUG_ON                // activate in order to activate additional output for debugging and to limit entries
 #define HISTOGRAMS_ON           // comment to avoid creating histograms in root file
 #define SAVEERRORS_ON           // comment to avoid saving the quantities error in root file
 
@@ -474,7 +474,6 @@ void RunExclusiveTop(TString filename,
     ht.setNsyst(0);
     ht.addHist("puwgtctr",     new TH1F("puwgtctr",    ";Weight sums;Events",2,0,2));
     ht.addHist("ch_tag",       new TH1F("ch_tag",      ";Channel Tag;Events",10,0,10));
-    ht.addHist("evt_count",    new TH1F("evt_count",   ";Selection Stage;Events",10,0,10));
     ht.addHist("nvtx",         new TH1F("nvtx",        ";Vertex multiplicity;Events",55,-0.5,49.5));
     ht.addHist("njets",        new TH1F("njets",       ";Jet multiplicity;Events",15,-0.5,14.5));
     ht.addHist("nbjets",       new TH1F("nbjets",      ";b jet multiplicity;Events",10,-0.5,9.5));
@@ -506,14 +505,20 @@ void RunExclusiveTop(TString filename,
     ht.addHist("pttop_res_leptonic",  new TH1F("pttop_res_leptonic",";Pt_{top,rec}-Pt_{top,gen} [GeV];Events",50,-150,150));
     ht.addHist("ytop_res_leptonic",   new TH1F("ytop_res_leptonic",";Y_{top,rec}-Y_{top,gen} ;Events",75,-2.5,2.5));
 	
-  // normalization and event count
-  ht.addHist("norm",     new TH1F("h_norm",    ";Category; Events",3,0,3) );
-  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(1,"SumUnWeighted");
-  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(2,"Sumweighted");
-  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(3,"inc");
-  ht.getPlots()["norm"]->SetBinContent(1,counter->GetBinContent(1));
-  ht.getPlots()["norm"]->SetBinContent(2,counter->GetBinContent(2));
-  ht.getPlots()["norm"]->SetBinContent(3,nentries);	
+    // normalization and event count
+    ht.addHist("evt_count",    new TH1F("evt_count",   ";Selection Stage;Events",10,0,10));
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(1,"Total");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(2,"Sumweighted");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(3,"accepted");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(4,"#geq1 p (data)");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(5,"=2 p (data)");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(6,"trigger");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(7,"=1 lep");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(8,"#geq4 jets");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(9,"#geq2 bjets");
+    ht.getPlots()["evt_count"]->SetBinContent(1,counter->GetBinContent(1));
+    ht.getPlots()["evt_count"]->SetBinContent(2,counter->GetBinContent(2));
+    ht.getPlots()["evt_count"]->SetBinContent(3,counter->GetBinContent(3));	
 #endif
     
     std::cout << "--- init done" << std::endl;
@@ -554,7 +559,7 @@ void RunExclusiveTop(TString filename,
         TString chTag = selector.flagFinalState(ev); // writes the name in chTag
         // ch
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 0, plotwgts); // count all events before any selection
+        ht.fill("evt_count", 3, plotwgts); // count all events before any selection
         Int_t ch_tag = 0;
         if      (chTag=="EM")    ch_tag = 1;
         else if (chTag=="MM")    ch_tag = 2;
@@ -563,12 +568,6 @@ void RunExclusiveTop(TString filename,
         else if (chTag=="M")     ch_tag = 5;
         else                     ch_tag = 9;
         ht.fill("ch_tag", ch_tag, plotwgts);
-#endif
-        if(chTag!="E" && chTag!="M" )   continue; // events with electrons (id=11) or muons (id=13)
-        //        if(chTag!="M")                continue; // ONLY events with muons (id=13), not electrons (id=11)
-        //        if(chTag!="E")                continue; // ONLY events with electrons (id=11), not muons (id=13)
-#ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 1, plotwgts); // count events after channel selection
 #endif
         std::vector<Particle> &leptons     = selector.getSelLeptons();
         std::vector<Jet>      &jets        = selector.getJets();
@@ -604,21 +603,25 @@ void RunExclusiveTop(TString filename,
     }
 	
         // ---- EVENT SELECTION --------------------------------------------------------------
-        if (selectedLeptons.size()!=1) continue; // ONLY events with 1 selected lepton
+        if ( ev.isData && ((p1_xi ==0 ) || (p2_xi == 0)) )        continue; // ONLY events with 2 protons
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 2, plotwgts); // count events after selection on number of leptons (SHOULD BE SAME)
+        ht.fill("evt_count", 4, plotwgts); // count events after selection of two protons
+#endif
+	if(chTag!="E" && chTag!="M" )   continue; // events with electrons (id=11) or muons (id=13)
+#ifdef HISTOGRAMS_ON
+        ht.fill("evt_count", 5, plotwgts); // count events after channel selection
+#endif
+	if (selectedLeptons.size()!=1) continue; // ONLY events with 1 selected lepton
+#ifdef HISTOGRAMS_ON
+        ht.fill("evt_count", 6, plotwgts); // count events after selection on number of leptons (SHOULD BE SAME)
 #endif
         if ( jets.size()  < 4 )        continue; // ONLY events with at least 4 jets
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 3, plotwgts); // count events after selection on number of jets
+        ht.fill("evt_count", 7, plotwgts); // count events after selection on number of jets
 #endif
         if ( bJets.size() < 2 )        continue; // ONLY events with at least 2 BJets
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 4, plotwgts); // count events after selection on number of Bjets
-#endif
-        if ( ev.isData && (p1_xi ==0 ) || (p2_xi == 0) )        continue; // ONLY events with 2 protons
-#ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 5, plotwgts); // count events after selection of two protons
+        ht.fill("evt_count", 8, plotwgts); // count events after selection on number of Bjets
 #endif
 
 #ifdef HISTOGRAMS_ON
