@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
     RunExclusiveZX(in,out,channel,charge,normH,puH,era,debug);
   }
   else if(method=="RunExclusiveTop") {
-    RunExclusiveTop(in,out,0,0,normH,puH,era,debug);
+    RunExclusiveTop(in,out,0,0,normH,puH,era,debug,systVar);
   }
   else if(method=="RunExclusiveTop2020") {
     RunExclusiveTop2020(in,out,normH,puH,era,debug,skimtree);

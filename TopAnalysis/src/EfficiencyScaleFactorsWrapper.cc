@@ -35,109 +35,94 @@ void EfficiencyScaleFactorsWrapper::init(TString era)
        << "\t          uncertainties returned are of statistical nature only" << endl
        << "\tDon't forget to fix these and update these items!" << endl;
 
-  //PHOTONS
-  TString gid(era_==2016? "MVAWP80" : "MVAwp80");
-  if(cfgMap_.find("g_id")!=cfgMap_.end()) gid=cfgMap_["g_id"]; 
-  TString url(era+"/2017_Photons"+gid+".root");
-  if(era_==2016) url=era+"/2016LegacyReReco_Photon"+gid+".root";
-  gSystem->ExpandPathName(url);
-  TFile *fIn=TFile::Open(url);
-  scaleFactorsH_["g_id"]=(TH2 *)fIn->Get("EGamma_SF2D")->Clone();
-  scaleFactorsH_["g_id"]->SetDirectory(0);
-  fIn->Close();
-  
-  url=era+"/egammaEffi.txt_EGM2D.root";
-  gSystem->ExpandPathName(url);
-  fIn=TFile::Open(url);
-  scaleFactorsH_["g_rec"]=(TH2 *)fIn->Get("EGamma_SF2D")->Clone();
-  scaleFactorsH_["g_rec"]->SetDirectory(0);     
-  fIn->Close();
+  //ELECTRONS
+  TString e_recoSF,e_idSF;
+  if(era_==2016){
+    e_recoSF=era+"/EGM2D_BtoH_GT20GeV_RecoSF_Legacy2016.root";
+    e_idSF=era+"/2016LegacyReReco_ElectronTight_Fall17V2.root";
+  }else if(era_==2017){
+    e_recoSF=era+"/egammaEffi.txt_EGM2D_runBCDEF_passingRECO.root";
+    e_idSF=era+"/2017_ElectronTight.root";
+  }
+
+  gSystem->ExpandPathName(e_recoSF);
+  TFile *fIn=TFile::Open(e_recoSF);
+  if(fIn && !fIn->IsZombie()) {
+    cout << "electrons: reco SF from " << e_recoSF << endl;
+    scaleFactorsH_["e_rec"]=(TH2 *)fIn->Get("EGamma_SF2D")->Clone();
+    scaleFactorsH_["e_rec"]->SetDirectory(0);
+    fIn->Close();
+  }
+
+  gSystem->ExpandPathName(e_idSF);
+  fIn=TFile::Open(e_idSF);
+  if(fIn && !fIn->IsZombie()) {
+    cout << "electrons: id SF from " << e_idSF << endl;
+    scaleFactorsH_["e_id"]=(TH2 *)fIn->Get("EGamma_SF2D")->Clone();
+    scaleFactorsH_["e_id"]->SetDirectory(0);     
+    fIn->Close();
+  }
+
   
   //MUONS
+  std::vector<float>   lumiWgts;
+  std::vector<TString> m_tkSF, m_idSF,m_isoSF, m_trigSF;
   if(era_==2016){
-    url=era+"/MuonTracking_EfficienciesAndSF_BCDEF.root";
-    gSystem->ExpandPathName(url);
-    fIn=TFile::Open(url);
-    scaleFactorsGr_["m_tk"]=(TGraphAsymmErrors *)fIn->Get("ratio_eff_aeta_dr030e030_corr");
-    fIn->Close();
-
-    url=era+"/MuonTracking_EfficienciesAndSF_GH.root";
-    gSystem->ExpandPathName(url);
-    fIn=TFile::Open(url);
-    scaleFactorsGr_["m_tkGH"]=(TGraphAsymmErrors *)fIn->Get("ratio_eff_aeta_dr030e030_corr");
-    fIn->Close();
-
-
-  } else {
-    std::cout << "No tracking effciency for 2017 muons!!!" << endl;
+    m_tkSF.push_back( era+"/MuonTracking_EfficienciesAndSF_BCDEF.root");
+    m_tkSF.push_back( era+"/MuonTracking_EfficienciesAndSF_GH.root");
+    m_idSF.push_back( era+"/RunBCDEF_SF_ID.root");
+    m_idSF.push_back( era+"/RunGH_SF_ID.root");
+    m_isoSF.push_back( era+"/RunBCDEF_SF_ISO.root");
+    m_isoSF.push_back( era+"/RunGH_SF_ISO.root");
+    lumiWgts.push_back(0.5);
+    lumiWgts.push_back(0.5);
+  }
+  else{
+    m_idSF.push_back( era+"/RunBCDEF_UL_SF_ID.root");
+    m_isoSF.push_back( era+"/RunBCDEF_UL_SF_ISO.root");
+    m_trigSF.push_back( era+"/EfficienciesAndSF_RunBtoF_Nov17Nov2017.root");
+    lumiWgts.push_back(1.0);
   }
 
-  TString mid("TightID");
-  if(cfgMap_.find("m_id")!=cfgMap_.end()) mid=cfgMap_["m_id"];
-  if(era_==2016) {
-    url=era+"/RunBCDEF_SF_MuID.root";
-    gSystem->ExpandPathName(url); 
-    fIn=TFile::Open(url);
-    scaleFactorsH_["m_id"]=(TH2F *)fIn->Get("NUM_"+mid+"_DEN_genTracks_eta_pt")->Clone();
-    scaleFactorsH_["m_id"]->SetDirectory(0);
-    fIn->Close();
-
-    url=era+"/RunGH_SF_MuID.root";
-    gSystem->ExpandPathName(url);
-    fIn=TFile::Open(url);
-    scaleFactorsH_["m_idGH"]=(TH2F *)fIn->Get("NUM_"+mid+"_DEN_genTracks_eta_pt")->Clone();
-    scaleFactorsH_["m_idGH"]->SetDirectory(0);
-    fIn->Close();
-  } else {
-    url=era+"/RunBCDEF_SF_MuID.root"; 
-    fIn=TFile::Open(url);
-    scaleFactorsH_["m_id"]=(TH2F *)fIn->Get("NUM_"+mid+"_DEN_genTracks_pt_abseta")->Clone();
-    scaleFactorsH_["m_id"]->SetDirectory(0);
-    fIn->Close();
+  for(size_t i=0; i<m_tkSF.size(); i++) {
+    gSystem->ExpandPathName(m_tkSF[i]);
+    fIn=TFile::Open(m_tkSF[i]);
+    if(fIn && !fIn->IsZombie()) {
+      cout << "muons: tk SF from " << m_tkSF[i] << " with weight " << lumiWgts[i] << endl;
+      scaleFactorsGr_["m_tkSF"]=(TGraphAsymmErrors *)fIn->Get("ratio_eff_aeta_dr030e030_corr");
+      fIn->Close();
+    }
   }
-
-  TString miso("TightRelIso"),mid4iso(mid);
-  if(cfgMap_.find("m_iso")!=cfgMap_.end())    miso=cfgMap_["m_iso"];
-  if(cfgMap_.find("m_id4iso")!=cfgMap_.end()) mid4iso=cfgMap_["m_id4iso"];
-  if(era_==2016) { 
-    url=era+"/RunBCDEF_SF_MuISO.root";
-    gSystem->ExpandPathName(url);
-    fIn=TFile::Open(url);
-    scaleFactorsH_["m_iso"]=(TH2F *)fIn->Get("NUM_"+miso+"_DEN_"+mid4iso+"_eta_pt")->Clone();
-    scaleFactorsH_["m_iso"]->SetDirectory(0);
-    fIn->Close();
-    url=era+"/RunGH_SF_MuISO.root";
-    gSystem->ExpandPathName(url);
-    fIn=TFile::Open(url);
-    scaleFactorsH_["m_isoGH"]=(TH2F *)fIn->Get("NUM_"+miso+"_DEN_"+mid4iso+"_eta_pt")->Clone();
-    scaleFactorsH_["m_isoGH"]->SetDirectory(0);
-    fIn->Close();
-  }else {
-    url=era+"/RunBCDEF_SF_MuISO.root";
-    gSystem->ExpandPathName(url);
-    fIn=TFile::Open(url);
-    scaleFactorsH_["m_iso"]=(TH2F *)fIn->Get("NUM_"+miso+"_DEN_"+mid4iso+"_pt_abseta")->Clone();
-    scaleFactorsH_["m_iso"]->SetDirectory(0);
-    fIn->Close();
+  for(size_t i=0; i<m_idSF.size(); i++) {
+    gSystem->ExpandPathName(m_idSF[i]);
+    fIn=TFile::Open(m_idSF[i]);
+    if(fIn && !fIn->IsZombie()) {
+      cout << "muons: id SF from " << m_idSF[i] << " with weight " << lumiWgts[i] << endl;
+      scaleFactorsH_["m_id"]=(TH2F *)fIn->Get("NUM_TightID_DEN_genTracks_pt_abseta")->Clone();
+      scaleFactorsH_["m_id"]->SetDirectory(0);
+      fIn->Close();
+    }
   }
-
-  //ELECTRONS
-  url=era+"/egammaEffi.txt_EGM2D.root";
-  gSystem->ExpandPathName(url);
-  fIn=TFile::Open(url);
-  scaleFactorsH_["e_rec"]=(TH2 *)fIn->Get("EGamma_SF2D")->Clone();
-  scaleFactorsH_["e_rec"]->SetDirectory(0);     
-  fIn->Close();
-  
-  TString eid("MVA80");
-  if(cfgMap_.find("e_id")!=cfgMap_.end()) eid=cfgMap_["e_id"]; 
-  url=era+"/2017_Electron"+eid+".root";
-  if(era_==2016) url=era+"/2016LegacyReReco_Electron"+eid+".root";
-  gSystem->ExpandPathName(url);
-  fIn=TFile::Open(url);      
-  scaleFactorsH_["e_id"]=(TH2 *)fIn->Get("EGamma_SF2D")->Clone();
-  scaleFactorsH_["e_id"]->SetDirectory(0);
-  fIn->Close();
+  for(size_t i=0; i<m_isoSF.size(); i++) {
+    gSystem->ExpandPathName(m_isoSF[i]);
+    fIn=TFile::Open(m_isoSF[i]);
+    if(fIn && !fIn->IsZombie()) {
+      cout << "muons: iso SF from " << m_isoSF[i] << " with weight " << lumiWgts[i] << endl;
+      scaleFactorsH_["m_iso"]=(TH2F *)fIn->Get("NUM_TightRelIso_DEN_TightIDandIPCut_pt_abseta")->Clone();
+      scaleFactorsH_["m_iso"]->SetDirectory(0);
+      fIn->Close();
+    }
+  }  
+  for(size_t i=0; i<m_trigSF.size(); i++) {
+    gSystem->ExpandPathName(m_trigSF[i]);
+    fIn=TFile::Open(m_trigSF[i]);
+    if(fIn && !fIn->IsZombie()) {
+      cout << "muons: Trigger SF from" << m_trigSF[i] << " with weight " << lumiWgts[i] << endl;
+      scaleFactorsH_["m_trig"]=(TH2F *)fIn->Get("IsoMu27_PtEtaBins/abseta_pt_ratio")->Clone();
+      scaleFactorsH_["m_trig"]->SetDirectory(0);
+      fIn->Close();
+    }
+  }
   
 }
 

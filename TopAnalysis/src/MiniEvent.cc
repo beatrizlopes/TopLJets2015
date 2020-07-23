@@ -230,6 +230,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("ppstrk_txUnc",     ev.ppstrk_txUnc,     "ppstrk_txUnc[nppstrk]/F");
   t->Branch("ppstrk_tyUnc",     ev.ppstrk_tyUnc,     "ppstrk_tyUnc[nppstrk]/F");
   t->Branch("ppstrk_chisqnorm", ev.ppstrk_chisqnorm, "ppstrk_chisqnorm[nppstrk]/F");
+  t->Branch("ppstrk_RecoInfo",  ev.ppstrk_RecoInfo,  "ppstrk_RecoInfo[nppstrk]/S");
   //t->Branch("ppstrk_t",         ev.ppstrk_t,         "ppstrk_t[nppstrk]/F");
   //t->Branch("ppstrk_tUnc",      ev.ppstrk_tUnc,      "ppstrk_tUnc[nppstrk]/F");
   t->Branch("nfwdtrk",         &ev.nfwdtrk,          "nfwdtrk/S");
@@ -486,6 +487,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("ppstrk_txUnc",     ev.ppstrk_txUnc);
   t->SetBranchAddress("ppstrk_tyUnc",     ev.ppstrk_tyUnc);
   t->SetBranchAddress("ppstrk_chisqnorm", ev.ppstrk_chisqnorm);
+  t->SetBranchAddress("ppstrk_RecoInfo",  ev.ppstrk_RecoInfo);
   //t->SetBranchAddress("ppstrk_t",         ev.ppstrk_t);
   //t->SetBranchAddress("ppstrk_tUnc",      ev.ppstrk_tUnc);
   t->SetBranchAddress("nfwdtrk",         &ev.nfwdtrk);

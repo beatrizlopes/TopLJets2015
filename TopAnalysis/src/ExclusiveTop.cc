@@ -335,7 +335,8 @@ void RunExclusiveTop(TString filename,
                      TH1F *normH,
                      TH1F *genPU,
                      TString era,
-                     Bool_t debug)
+                     Bool_t debug,
+					 std::string systVar)
 {
     /////////////////////
     // INITIALIZATION //
@@ -391,7 +392,7 @@ void RunExclusiveTop(TString filename,
     LumiTools lumi(era,genPU);
     
     //LEPTON EFFICIENCIES
-    //EfficiencyScaleFactorsWrapper lepEffH(filename.Contains("Data13TeV"),era);
+    EfficiencyScaleFactorsWrapper lepEffH(filename.Contains("Data13TeV"),era);
     
     //B-TAG CALIBRATION
     //BTagSFUtil btvSF(era,"DeepCSV",BTagEntry::OperatingPoint::OP_MEDIUM,"",0);
@@ -406,7 +407,14 @@ void RunExclusiveTop(TString filename,
     outT->Branch("event",&ev.event,"event/l");
     outT->Branch("lumi",&ev.lumi,"lumi/i");
     outT->Branch("nvtx",&ev.nvtx,"nvtx/I");
+    outT->Branch("rho",&ev.rho,"rho/F");
+    outT->Branch("nchPV",&ev.nchPV,"nchPV/I");
     outT->Branch("beamXangle",&ev.beamXangle,"beamXangle/F");
+	
+	// Parton shower weights
+	outT->Branch("g_npsw",    &ev.g_npsw,   "g_npsw/I");
+	outT->Branch("g_psw",      ev.g_psw,    "g_psw[g_npsw]/F");
+	
     
     ADDVAR(&ev.met_pt,"met_pt","/F",outT);
     ADDVAR(&ev.met_phi,"met_phi","/F",outT);
@@ -418,7 +426,7 @@ void RunExclusiveTop(TString filename,
         
         // quantities of objects used to build the ttbar
         "l_px", "l_py", "l_pz",
-        "nu_px", "nu_py", "nu_pz",
+        "nu_px", "nu_py", "nu_pz", "nu_complex",
         "bJet_had_px","bJet_had_py", "bJet_had_pz",
         "bJet_lep_px","bJet_lep_py", "bJet_lep_pz",
         "lightJet0_px", "lightJet0_py", "lightJet0_pz",
@@ -439,12 +447,14 @@ void RunExclusiveTop(TString filename,
 #endif
         
         // quantities for all objects in event
-        "nBjets", "nLightJets", "nJets", "ht",
+        "nBjets", "nLightJets", "nJets", "ht", "cat",
 
         "l_pt", "l_eta", "l_phi", "l_m", "l_E", "lepton_isolation",
         "nu_pt", "nu_eta", "nu_phi",
         "p1_xi", "p2_xi",
-        
+		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt", "pu_wgt",
+		"selSF_wgt_err", "trigSF_wgt_err",
+
         "bJet0_pt","bJet0_eta", "bJet0_phi", "bJet0_m", "bJet0_E",
         "bJet1_pt","bJet1_eta", "bJet1_phi", "bJet1_m", "bJet1_E",
         "bJet2_pt","bJet2_eta", "bJet2_phi", "bJet2_m", "bJet2_E",
@@ -526,6 +536,14 @@ void RunExclusiveTop(TString filename,
     //EVENT SELECTION WRAPPER
     SelectionTool selector(filename, false, triggerList);
     
+	// JEC/JER settings
+	int sys = 0;
+	if(systVar.find("jetUp")!=string::npos) sys = 1;
+	if(systVar.find("jetDn")!=string::npos) sys = -1;
+	if(sys==1){cout << "Running JEC/JER up variation"<<endl;}
+	else if(sys==-1){cout << "Running JEC/JER down variation"<<endl;}
+	else{cout << "Running nominal jet callibration"<<endl;}
+		
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////  LOOP OVER EVENTS  /////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -556,11 +574,11 @@ void RunExclusiveTop(TString filename,
         //////////////////////////
         // RECO LEVEL SELECTION //
         //////////////////////////
-        TString chTag = selector.flagFinalState(ev); // writes the name in chTag
+        TString chTag = selector.flagFinalState(ev, {}, {}, sys); // writes the name in chTag, last argument is JEC/JER systematics
         // ch
+		Int_t ch_tag = 0;
 #ifdef HISTOGRAMS_ON
         ht.fill("evt_count", 3, plotwgts); // count all events before any selection
-        Int_t ch_tag = 0;
         if      (chTag=="EM")    ch_tag = 1;
         else if (chTag=="MM")    ch_tag = 2;
         else if (chTag=="EE")    ch_tag = 3;
@@ -584,7 +602,8 @@ void RunExclusiveTop(TString filename,
         
         // selection of leptons
         for( size_t i_lept=0;i_lept<leptons.size();i_lept++) {
-            if (leptons[i_lept].pt()<25.) continue;
+            if (leptons[i_lept].pt()<30.) continue;
+			if (leptons[i_lept].id()==11 && fabs(leptons[i_lept].eta())<2.1) continue;
             //        if (leptons[i_lept].reliso()>0.10) continue;   //usually tighter
             selectedLeptons.push_back(leptons[i_lept]);
         }
@@ -627,32 +646,45 @@ void RunExclusiveTop(TString filename,
 #ifdef HISTOGRAMS_ON
         ht.fill("puwgtctr",0,plotwgts);
 #endif  
-    
         if (!ev.isData) {
             wgt  = (normH? normH->GetBinContent(1) : 1.0);          // norm weight
             double puWgt(lumi.pileupWeight(ev.g_pu,period)[0]);     // pu weight
             std::vector<double>puPlotWgts(1,puWgt);
+			outVars["pu_wgt"] = puWgt;
             
 #ifdef HISTOGRAMS_ON
             ht.fill("puwgtctr",1,puPlotWgts);
 #endif
             
             // lepton trigger*selection weights (update the code later)
-            EffCorrection_t trigSF(1.0,0.0);//lepEffH.getTriggerCorrection(leptons,{},{},period);
-            EffCorrection_t  selSF(1.0,0.0); //lepEffH.getOfflineCorrection(leptons[0], period);
-            wgt *= puWgt*trigSF.first*selSF.first;
+            EffCorrection_t trigSF = lepEffH.getTriggerCorrection(leptons,{},{},period);
+            EffCorrection_t  selSF = lepEffH.getOfflineCorrection(leptons[0], period);
+			outVars["trigSF_wgt"] = trigSF.first;
+			outVars["trigSF_wgt_err"] = trigSF.second;
+			outVars["selSF_wgt"] = selSF.first;
+			outVars["selSF_wgt_err"] = selSF.second;
+            wgt *= outVars["pu_wgt"]*outVars["trigSF_wgt"]*outVars["selSF_wgt"];
             
             //top pt weighting
-            double topptsf = 1.0;
+            outVars["toppt_wgt"] = 1.0;
             if(isTTbar) {
                 for (int igen=0; igen<ev.ngtop; igen++) {
                     if(abs(ev.gtop_id[igen])!=6) continue;
-                    topptsf *= TMath::Exp(0.0615-0.0005*ev.gtop_pt[igen]);
+                    outVars["toppt_wgt"] *= TMath::Exp(0.0615-0.0005*ev.gtop_pt[igen]);
                 }
             }
-            wgt *= (ev.g_nw>0 ? ev.g_w[0] : 1.0);                   // generator level weights
+			wgt *= outVars["toppt_wgt"];
+			
+			// generator weights
+			outVars["gen_wgt"] = (ev.g_nw>0 ? ev.g_w[0] : 1.0);
+            wgt *= outVars["gen_wgt"];                              // generator level weights
+			
             plotwgts[0]=wgt;                                        //update weight for plotter
+			outVars["weight"] = wgt;
+			
+			// Systematic uncertainties:
         }
+		else {outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = outVars["selSF_wgt"] = outVars["trigSF_wgt"] = outVars["pu_wgt"] = 1;}
         
         //if (ev.isData) {
         //    const edm::EventID ev_id( ev.run, ev.lumi, ev.event );
@@ -706,11 +738,11 @@ void RunExclusiveTop(TString filename,
 
             // create list of all combinations
             // for the time being only the first 2 LightJets are used
-            if (bJets.size()==2) {
+            if (bJets.size()>=2) {
                 marker.push_back( {0,0,1,1} );
                 marker.push_back( {1,0,1,0} );
             }
-            if (bJets.size()==3) {
+            if (bJets.size()>=3) {
                 marker.push_back( {0,0,1,2} );
                 marker.push_back( {2,0,1,0} );
                 marker.push_back( {1,0,1,2} );
@@ -743,7 +775,6 @@ void RunExclusiveTop(TString filename,
             lightJet0 = lightJets[ combination[1] ].p4();
             lightJet1 = lightJets[  combination[2] ].p4();
 			
-
             t_rec_had = bJet_had + lightJet0 + lightJet1;   // b+q+q
             t_rec_lep = bJet_lep + leptons[0].p4() + neutrino;            // b+l+nu
 
@@ -979,6 +1010,7 @@ void RunExclusiveTop(TString filename,
             outVars["nu_px"]=neutrino.Px();
             outVars["nu_py"]=neutrino.Py();
             outVars["nu_pz"]=neutrino.Pz();
+            outVars["nu_complex"] = neutrinoPzComputer.IsComplex() ? 1 : 0;
             outVars["bJet_had_px"]=bJet_had.Px();
             outVars["bJet_had_py"]=bJet_had.Py();
             outVars["bJet_had_pz"]=bJet_had.Pz();
@@ -1028,6 +1060,7 @@ void RunExclusiveTop(TString filename,
             outVars["nBjets"]=bJets.size();
             outVars["nLightJets"]=lightJets.size();
             outVars["ht"]=scalarht;
+            outVars["cat"]=float(ch_tag);
 
             outVars["l_pt"]=leptons[0].Pt();
             outVars["l_eta"]=leptons[0].Rapidity();

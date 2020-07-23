@@ -187,13 +187,15 @@ void RunFwdProtons(const TString in_fname,
     ht.getPlots()["ratevsrun"]->GetXaxis()->SetBinLabel(i,Form("%d",key.first));
   }
   // normalization and event count
-  ht.addHist("norm",     new TH1F("h_norm",    ";Category; Events",3,0,3) );
+  ht.addHist("norm",     new TH1F("h_norm",    ";Category; Events",4,0,4) );
   ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(1,"SumUnWeighted");
   ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(2,"Sumweighted");
-  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(3,"inc");
+  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(3,"accepted");
+  ht.getPlots()["norm"]->GetXaxis()->SetBinLabel(4,"nentries");
   ht.getPlots()["norm"]->SetBinContent(1,counter->GetBinContent(1));
   ht.getPlots()["norm"]->SetBinContent(2,counter->GetBinContent(2));
-  ht.getPlots()["norm"]->SetBinContent(3,nentries);
+  ht.getPlots()["norm"]->SetBinContent(3,counter->GetBinContent(3));
+  ht.getPlots()["norm"]->SetBinContent(nentries,counter->GetBinContent(3));
   
   std::cout << "initialization done" << std::endl;
 

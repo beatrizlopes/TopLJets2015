@@ -50,7 +50,7 @@ bool SelectionTool::passSingleLeptonTrigger(MiniEvent_t &ev) {
 
 
 //
-TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> preselLeptons,std::vector<Particle> preselPhotons) {
+TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> preselLeptons,std::vector<Particle> preselPhotons, int sys_) {
 
   //clear vectors
   leptons_.clear();
@@ -103,7 +103,7 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
   //select jets based on the leptons and photon candidates
   float maxJetEta(2.4);
   if(anType_==VBF) maxJetEta=4.7;
-  jets_=getGoodJets(ev,15.,maxJetEta,leptons_,photons_);
+  jets_=getGoodJets(ev,15.,maxJetEta,leptons_,photons_, sys_);
 
   //build the met
   met_.SetPtEtaPhiM( ev.met_pt, 0, ev.met_phi, 0. );
@@ -443,7 +443,7 @@ std::vector<Particle> SelectionTool::selPhotons(std::vector<Particle> &photons,i
 
 
 //
-std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, double maxEta, std::vector<Particle> leptons,std::vector<Particle> photons) {
+std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, double maxEta, std::vector<Particle> leptons,std::vector<Particle> photons, int sys) {
   std::vector<Jet> jets;
   
   for (int k=0; k<ev.nj; k++) {
@@ -460,8 +460,8 @@ std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, doubl
     }
     if(overlapsWithPhysicsObject) continue;
     
-    //jet kinematic selection
-    if(jp4.Pt() < minPt || abs(jp4.Eta()) > maxEta) continue;
+    //jet kinematic selection 1
+    if(abs(jp4.Eta()) > maxEta) continue;
 
     //flavor based on b tagging
     int flavor = 0;
@@ -494,6 +494,11 @@ std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, doubl
     jecUp=TMath::Sqrt(jecUp);
     jecDn=TMath::Sqrt(jecDn);
     jet.setScaleUnc(0.5*(jecUp+jecDn));
+	
+    //jet kinematic selection 2
+	if(sys==1 && jp4.Pt()*(1+jecUp) < minPt) continue;
+	else if(sys==-1 && jp4.Pt()*(1-jecDn) < minPt) continue;
+	else if(sys==0 && jp4.Pt() < minPt) continue;
 
     if(debug_)
       cout << "Jet #" << jets.size() 

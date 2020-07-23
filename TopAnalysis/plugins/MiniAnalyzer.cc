@@ -653,6 +653,11 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
         ev_.ppstrk_txUnc[ev_.nppstrk]     = trk.getTxUnc();
         ev_.ppstrk_tyUnc[ev_.nppstrk]     = trk.getTyUnc();
         ev_.ppstrk_chisqnorm[ev_.nppstrk] = trk.getChiSquaredOverNDF();
+		
+		// https://github.com/cms-sw/cmssw/blob/master/DataFormats/CTPPSReco/interface/CTPPSPixelLocalTrackRecoInfo.h
+		CTPPSpixelLocalTrackReconstructionInfo  trackInfo = trk.getPixelTrackRecoInfo();
+        ev_.ppstrk_RecoInfo[ev_.nppstrk]  = Short_t(trackInfo);
+
         /* UFSD only (2018)
         ev_.ppstrk_t[ev_.nppstrk] = trk.getTime();
         ev_.ppstrk_tUnc[ev_.nppstrk] = trk.getTimeUnc();

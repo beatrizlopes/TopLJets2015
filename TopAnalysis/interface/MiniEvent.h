@@ -97,7 +97,7 @@ struct MiniEvent_t
     fwdtrk_chisqnorm[MAXPROTONS],fwdtrk_xi[MAXPROTONS],fwdtrk_xiError[MAXPROTONS],fwdtrk_xiSF[MAXPROTONS],fwdtrk_t[MAXPROTONS];
   
   //PPS tracks (needed for low PU run)
-  Short_t nppstrk,ppstrk_pot[MAXPROTONS];
+  Short_t nppstrk,ppstrk_pot[MAXPROTONS],ppstrk_RecoInfo[MAXPROTONS];
   Float_t ppstrk_x[MAXPROTONS],ppstrk_y[MAXPROTONS], ppstrk_xUnc[MAXPROTONS],ppstrk_yUnc[MAXPROTONS],
     ppstrk_tx[MAXPROTONS],ppstrk_ty[MAXPROTONS],ppstrk_txUnc[MAXPROTONS],ppstrk_tyUnc[MAXPROTONS],
     ppstrk_chisqnorm[MAXPROTONS];
