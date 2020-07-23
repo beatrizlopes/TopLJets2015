@@ -461,7 +461,7 @@ std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, doubl
     if(overlapsWithPhysicsObject) continue;
     
     //jet kinematic selection 1
-    if(abs(jp4.Eta()) > maxEta) continue;
+    if(jp4.Pt() < 10 || abs(jp4.Eta()) > maxEta) continue;
 
     //flavor based on b tagging
     int flavor = 0;
@@ -496,9 +496,9 @@ std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, doubl
     jet.setScaleUnc(0.5*(jecUp+jecDn));
 	
     //jet kinematic selection 2
-	if(sys==1 && jp4.Pt()*(1+jecUp) < minPt) continue;
-	else if(sys==-1 && jp4.Pt()*(1-jecDn) < minPt) continue;
-	else if(sys==0 && jp4.Pt() < minPt) continue;
+	if(sys==1 && (jp4.Pt()*(1+jecUp) < minPt)) continue;
+	else if(sys==-1 && (jp4.Pt()*(1-jecDn) < minPt)) continue;
+	else if(sys==0 && (jp4.Pt() < minPt)) continue;
 
     if(debug_)
       cout << "Jet #" << jets.size() 

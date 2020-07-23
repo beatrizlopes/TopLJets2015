@@ -534,7 +534,7 @@ void RunExclusiveTop(TString filename,
     std::cout << "--- init done" << std::endl;
     
     //EVENT SELECTION WRAPPER
-    SelectionTool selector(filename, false, triggerList);
+    SelectionTool selector(filename, false, triggerList, SelectionTool::AnalysisType::TOP);
     
 	// JEC/JER settings
 	int sys = 0;
@@ -603,7 +603,7 @@ void RunExclusiveTop(TString filename,
         // selection of leptons
         for( size_t i_lept=0;i_lept<leptons.size();i_lept++) {
             if (leptons[i_lept].pt()<30.) continue;
-			if (leptons[i_lept].id()==11 && fabs(leptons[i_lept].eta())<2.1) continue;
+			if (leptons[i_lept].id()==11 && fabs(leptons[i_lept].eta())>2.1) continue;
             //        if (leptons[i_lept].reliso()>0.10) continue;   //usually tighter
             selectedLeptons.push_back(leptons[i_lept]);
         }
@@ -1197,6 +1197,7 @@ void RunExclusiveTop(TString filename,
         } // end of if(bJets.size()>=2 && lightJets.size()>=2)
     } // end of loop over events
         std::cout << std::endl;
+		std::cout << "saved " << outT->GetEntries() << " events " << std::endl;
         //close input file
         f->Close();
 
