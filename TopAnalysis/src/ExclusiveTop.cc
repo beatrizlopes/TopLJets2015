@@ -355,6 +355,7 @@ void RunExclusiveTop(TString filename,
     
     //  bool isTTbar( filename.Contains("_TTJets") or (normH and TString(normH->GetTitle()).Contains("_TTJets")));
     bool isTTbar = 1;
+	bool isData = filename.Contains("Data13TeV");
     
     //PREPARE OUTPUT
     TString baseName=gSystem->BaseName(outname);
@@ -392,7 +393,7 @@ void RunExclusiveTop(TString filename,
     LumiTools lumi(era,genPU);
     
     //LEPTON EFFICIENCIES
-    EfficiencyScaleFactorsWrapper lepEffH(filename.Contains("Data13TeV"),era);
+    EfficiencyScaleFactorsWrapper lepEffH(isData,era);
     
     //B-TAG CALIBRATION
     //BTagSFUtil btvSF(era,"DeepCSV",BTagEntry::OperatingPoint::OP_MEDIUM,"",0);
@@ -401,6 +402,20 @@ void RunExclusiveTop(TString filename,
     //JEC/JER
     JECTools jec(era);
     
+    // BOOK PROTON TREE (DATA ONLY)
+	TTree *outPT=new TTree("protons","protons");
+    outPT->Branch("run",&ev.run,"run/i");
+    outPT->Branch("event",&ev.event,"event/l");
+    outPT->Branch("lumi",&ev.lumi,"lumi/i");
+    outPT->Branch("nvtx",&ev.nvtx,"nvtx/I");
+    outPT->Branch("rho",&ev.rho,"rho/F");
+    outPT->Branch("nchPV",&ev.nchPV,"nchPV/I");
+    outPT->Branch("beamXangle",&ev.beamXangle,"beamXangle/F");
+    float m_protonVars_p1_xi=0, m_protonVars_p2_xi=0;
+	outPT->Branch("p1_xi",&m_protonVars_p1_xi);
+	outPT->Branch("p2_xi",&m_protonVars_p2_xi);
+	
+		
     // BOOK OUTPUT TREE
     TTree *outT=new TTree("tree","tree");
     outT->Branch("run",&ev.run,"run/i");
@@ -412,13 +427,15 @@ void RunExclusiveTop(TString filename,
     outT->Branch("beamXangle",&ev.beamXangle,"beamXangle/F");
 	
 	// Parton shower weights
-	outT->Branch("g_npsw",    &ev.g_npsw,   "g_npsw/I");
-	outT->Branch("g_psw",      ev.g_psw,    "g_psw[g_npsw]/F");
-	
+	if(!isData){
+	  outT->Branch("g_npsw",    &ev.g_npsw,   "g_npsw/I");
+	  outT->Branch("g_psw",      ev.g_psw,    "g_psw[g_npsw]/F");
+	}
     
-    ADDVAR(&ev.met_pt,"met_pt","/F",outT);
+	ADDVAR(&ev.met_pt,"met_pt","/F",outT);
     ADDVAR(&ev.met_phi,"met_phi","/F",outT);
     ADDVAR(&ev.met_sig,"met_sig","/F",outT);
+	
     TString fvars[]={
         "t_pt","t_eta", "t_phi", "t_m", "t_charge", "t_isHadronic",
         "tbar_pt","tbar_eta", "tbar_phi", "tbar_m",
@@ -452,8 +469,8 @@ void RunExclusiveTop(TString filename,
         "l_pt", "l_eta", "l_phi", "l_m", "l_E", "lepton_isolation",
         "nu_pt", "nu_eta", "nu_phi",
         "p1_xi", "p2_xi",
-		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt", "pu_wgt",
-		"selSF_wgt_err", "trigSF_wgt_err",
+		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt",
+		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err",
 
         "bJet0_pt","bJet0_eta", "bJet0_phi", "bJet0_m", "bJet0_E",
         "bJet1_pt","bJet1_eta", "bJet1_phi", "bJet1_m", "bJet1_E",
@@ -477,6 +494,8 @@ void RunExclusiveTop(TString filename,
         outVars[fvars[i]]=0.;
         ADDVAR(&(outVars[fvars[i]]),fvars[i],"/F",outT);
     }
+    ADDVAR(&(outVars["nJets"]),"nJets","/F",outPT);
+    ADDVAR(&(outVars["nBjets"]),"nBjets","/F",outPT);
 
 #ifdef HISTOGRAMS_ON
     //BOOK HISTOGRAMS
@@ -621,6 +640,9 @@ void RunExclusiveTop(TString filename,
         }
     }
 	
+        outVars["nJets"]=jets.size();
+        outVars["nBjets"]=bJets.size();
+ 
         // ---- EVENT SELECTION --------------------------------------------------------------
         if ( ev.isData && ((p1_xi ==0 ) || (p2_xi == 0)) )        continue; // ONLY events with 2 protons
 #ifdef HISTOGRAMS_ON
@@ -631,6 +653,14 @@ void RunExclusiveTop(TString filename,
         ht.fill("evt_count", 5, plotwgts); // count events after channel selection
 #endif
 	if (selectedLeptons.size()!=1) continue; // ONLY events with 1 selected lepton
+	
+// Store proton pool for nbj<2 events:
+	if(ev.isData && bJets.size() < 2){
+		m_protonVars_p1_xi = p1_xi;
+		m_protonVars_p2_xi = p2_xi;
+		outPT->Fill();
+	}
+	
 #ifdef HISTOGRAMS_ON
         ht.fill("evt_count", 6, plotwgts); // count events after selection on number of leptons (SHOULD BE SAME)
 #endif
@@ -646,11 +676,12 @@ void RunExclusiveTop(TString filename,
 #ifdef HISTOGRAMS_ON
         ht.fill("puwgtctr",0,plotwgts);
 #endif  
+        outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = outVars["selSF_wgt"] = outVars["trigSF_wgt"] = 1;
+        outVars["pu_wgt"] = outVars["ptag_wgt"] = outVars["ptag_wgt_err"] = 1;
         if (!ev.isData) {
             wgt  = (normH? normH->GetBinContent(1) : 1.0);          // norm weight
             double puWgt(lumi.pileupWeight(ev.g_pu,period)[0]);     // pu weight
             std::vector<double>puPlotWgts(1,puWgt);
-			outVars["pu_wgt"] = puWgt;
             
 #ifdef HISTOGRAMS_ON
             ht.fill("puwgtctr",1,puPlotWgts);
@@ -661,9 +692,11 @@ void RunExclusiveTop(TString filename,
             EffCorrection_t  selSF = lepEffH.getOfflineCorrection(leptons[0], period);
 			outVars["trigSF_wgt"] = trigSF.first;
 			outVars["trigSF_wgt_err"] = trigSF.second;
+			if(!outVars["trigSF_wgt"]) cout << "WARNING: trigSF = 0, check your selection! " << endl;
 			outVars["selSF_wgt"] = selSF.first;
 			outVars["selSF_wgt_err"] = selSF.second;
-            wgt *= outVars["pu_wgt"]*outVars["trigSF_wgt"]*outVars["selSF_wgt"];
+			if(!outVars["trigSF_wgt"]) cout << "WARNING: trigSF = 0, check your selection! " << endl;
+            wgt *= outVars["trigSF_wgt"]*outVars["selSF_wgt"];
             
             //top pt weighting
             outVars["toppt_wgt"] = 1.0;
@@ -677,6 +710,7 @@ void RunExclusiveTop(TString filename,
 			
 			// generator weights
 			outVars["gen_wgt"] = (ev.g_nw>0 ? ev.g_w[0] : 1.0);
+			
             wgt *= outVars["gen_wgt"];                              // generator level weights
 			
             plotwgts[0]=wgt;                                        //update weight for plotter
@@ -684,7 +718,6 @@ void RunExclusiveTop(TString filename,
 			
 			// Systematic uncertainties:
         }
-		else {outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = outVars["selSF_wgt"] = outVars["trigSF_wgt"] = outVars["pu_wgt"] = 1;}
         
         //if (ev.isData) {
         //    const edm::EventID ev_id( ev.run, ev.lumi, ev.event );
@@ -1056,8 +1089,6 @@ void RunExclusiveTop(TString filename,
 #endif
             
             // quantities for all objects in event
-            outVars["nJets"]=jets.size();
-            outVars["nBjets"]=bJets.size();
             outVars["nLightJets"]=lightJets.size();
             outVars["ht"]=scalarht;
             outVars["cat"]=float(ch_tag);
@@ -1213,6 +1244,7 @@ void RunExclusiveTop(TString filename,
         }
     #endif
         outT->Write();
+        if(isData) outPT->Write();
         fOut->Close();
 }  // end of RunExclusiveTop()
 
