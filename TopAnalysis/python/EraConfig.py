@@ -6,7 +6,7 @@ def getEraConfiguration(era,isData):
 
     globalTags = {
         'era2016':('102X_mc2017_realistic_v6', '106X_dataRun2_v11'),
-        'era2017':('102X_mc2017_realistic_v6', '106X_dataRun2_v11'),
+        'era2017':('102X_mc2017_realistic_v6', '106X_dataRun2_v28'),
         'era2018':('102X_mc2017_realistic_v6', '106X_dataRun2_v11')
         }
     jecFiles    = {

@@ -10,6 +10,8 @@ ANALYSISVARS={
    'pps':   ['pps'],
    'ttbar': ['leptons','jets','met','pps','generator','pflow'],
    'dilep': ['leptons','pps','generator','pflow'],
+   'dilep_sys': ['leptons','pps','generator','pflow','systematics'],
+   'dilep_data': ['leptons','pps','pflow'],
    'ttbar_data': ['leptons','jets','met','pps','pflow'],
    'ttbar_sys': ['leptons','jets','met','pps','generator','systematics','pflow'],
    'test':  ['generator','pps']
@@ -136,12 +138,7 @@ ANALYSISTRIGGERLISTS={
           'HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v',
           'HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v',
           'HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v',
-          'HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v',
-          'HLT_PFHT380_SixJet32_DoubleBTagCSV_p075_v',
-          'HLT_PFHT430_SixJet40_BTagCSV_p080_v ',
-          'HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2_v',
-          'HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5_v',
-          'HLT_PFHT380_SixPFJet32_DoublePFBTagDeepCSV_2p2_v'
+          'HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v'
       ],      
     2016:['HLT_Ele32_eta2p1_WPTight_Gsf_v',
           'HLT_IsoMu24_v',

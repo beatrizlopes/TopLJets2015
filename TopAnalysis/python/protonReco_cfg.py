@@ -44,7 +44,29 @@ def ctppsCustom(process):
   # define conditions
   SetConditions(process)
   
-	
+def setupProtonReco(process, reMiniAOD = False):
+
+  if reMiniAOD:
+    # override alignment
+    process.CondDBAlignment = CondDB.clone( connect = "frontier://FrontierProd/CMS_CONDITIONS" )
+    process.PoolDBESSourceAlignment = cms.ESSource("PoolDBESSource", process.CondDBAlignment,
+      toGet = cms.VPSet(cms.PSet(record = cms.string("RPRealAlignmentRecord"),tag = cms.string("CTPPSRPAlignment_real_offline_v8")))
+    )
+    process.esPreferDBFileAlignment = cms.ESPrefer("PoolDBESSource", "PoolDBESSourceAlignment")
+    
+    # override optics
+    process.CondDBOptics = CondDB.clone( connect = "frontier://FrontierProd/CMS_CONDITIONS" )
+    process.PoolDBESSourceOptics = cms.ESSource("PoolDBESSource",process.CondDBOptics,DumpStat = cms.untracked.bool(False),
+      toGet = cms.VPSet(cms.PSet(record = cms.string('CTPPSOpticsRcd'),tag = cms.string("PPSOpticalFunctions_offline_v7")))
+    )
+    process.esPreferDBFileOptics = cms.ESPrefer("PoolDBESSource", "PoolDBESSourceOptics")
+  else:
+    process.load("CalibPPS.ESProducers.ctppsAlignment_cff")
+
+  # reconstruction (load standard sequence)
+  process.load("RecoCTPPS.Configuration.recoCTPPS_cff")
+  
+	  
 
 def SetConditions(process):
   

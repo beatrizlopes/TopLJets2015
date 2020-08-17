@@ -6,6 +6,7 @@
 #include "TopLJets2015/TopAnalysis/interface/VBFVectorBoson.h"
 #include "TopLJets2015/TopAnalysis/interface/PhotonTrigEff.h"
 #include "TopLJets2015/TopAnalysis/interface/TopSummer2019.h"
+#include "TopLJets2015/TopAnalysis/interface/ExclusiveDiTau.h"
 #include "TopLJets2015/TopAnalysis/interface/ExclusiveTop2020.h"
 #include "TopLJets2015/TopAnalysis/interface/ExclusiveTop.h"
 #include "TopLJets2015/TopAnalysis/interface/FwdProtons.h"
@@ -107,6 +108,9 @@ int main(int argc, char* argv[])
   else if(method=="RunExclusiveTop") {
     RunExclusiveTop(in,out,0,0,normH,puH,era,debug,systVar);
   }
+  else if(method=="RunExclusiveDiTau") {
+    RunExclusiveDiTau(in,out,puH,era,debug,systVar);
+  }  
   else if(method=="RunExclusiveTop2020") {
     RunExclusiveTop2020(in,out,normH,puH,era,debug,skimtree);
   }

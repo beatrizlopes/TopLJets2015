@@ -102,8 +102,9 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
 
   //select jets based on the leptons and photon candidates
   float maxJetEta(2.4);
+  float minJetPt(15.); // the nominal is 15GeV
   if(anType_==VBF) maxJetEta=4.7;
-  jets_=getGoodJets(ev,15.,maxJetEta,leptons_,photons_, sys_);
+  jets_=getGoodJets(ev,minJetPt,maxJetEta,leptons_,photons_, sys_);
 
   //build the met
   met_.SetPtEtaPhiM( ev.met_pt, 0, ev.met_phi, 0. );

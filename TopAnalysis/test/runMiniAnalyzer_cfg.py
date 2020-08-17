@@ -22,6 +22,11 @@ options.register('runWithAOD', False,
                  VarParsing.varType.bool,
                  "run with AOD"
                  )
+options.register('runOnAOD', False,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.bool,
+                 "run on AOD"
+                 )
 options.register('redoProtonRecoFromRAW', False,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
@@ -153,7 +158,7 @@ customizeJetTools(process=process,
 if options.runProtonFastSim:
   process.load(ppscff)
 
-if options.RedoProtons and not options.redoProtonRecoFromRAW:
+if options.RedoProtons and (not options.redoProtonRecoFromRAW or not options.runOnAOD):
   print  'ERROR: In order to properly apply the alignment and timing calibration, the reconstruction needs to start with RecHits (for Si strips and pixels) and Digis (for timing RPs). All this input can be found in AOD files, however it is not available in miniAOD.'
   print  'For more info see: https://twiki.cern.ch/twiki/bin/view/CMS/TaggedProtonsRecommendations'
 
@@ -226,7 +231,6 @@ if options.runProtonFastSim:
   print 'INFO:\t Run proton simulation with xangle = ',options.runProtonFastSim,'murad'
   if options.doPUProtons:
       process.analysis.PUprotons = cms.InputTag("genPUProtons","genPUProtons")
-if options.RedoProtons: print 'INFO:\t Redo proton recontrsuction'
 
 process.analysis.ListVars = ANALYSISVARS[options.ListVars]
 process.analysis.FilterType = options.ListVars
@@ -272,6 +276,8 @@ try:
 except:
       print '\te/g post reco not found, will take e/g as it is'
       
+if options.runOnAOD:
+  print 'I don\'t know how to run on AODs!!!!!'
       
 if process.updatedPatJetsUpdatedJECBTag:
       process.custom_jec_seq=cms.Sequence(process.QGTagger * process.patJetCorrFactorsUpdatedJECBTag * process.updatedPatJetsUpdatedJECBTag)
@@ -285,12 +291,14 @@ if not (options.runOnData or options.noParticleLevel or options.runProtonFastSim
       toSchedule.append( process.mctruth )
 
 if options.RedoProtons or options.redoProtonRecoFromRAW:
-      #from TopLJets2015.TopAnalysis.protonReco_cfg import SetConditions
-      process.load("CalibPPS.ESProducers.ctppsAlignment_cff")
-      process.load("EventFilter.CTPPSRawToDigi.ctppsRawToDigi_cff")
-      process.load("RecoCTPPS.Configuration.recoCTPPS_cff")
-      #SetConditions(process)
-      process.ppsReco=cms.Path(process.ctppsRawToDigi*process.recoCTPPS)
+      print 'INFO:\t Redo proton recontrsuction'
+      from TopLJets2015.TopAnalysis.protonReco_cfg import setupProtonReco
+      if options.redoProtonRecoFromRAW:
+        process.load("EventFilter.CTPPSRawToDigi.ctppsRawToDigi_cff")
+      setupProtonReco(process,reMiniAOD=True)
+      if options.redoProtonRecoFromRAW:
+        process.ppsReco=cms.Path(process.ctppsRawToDigi*process.recoCTPPSTask)
+      else: process.ppsReco=cms.Path(pprocess.recoCTPPSTask)
       toSchedule.append(process.ppsReco)
 
 if options.runProtonFastSim:

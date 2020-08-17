@@ -494,8 +494,8 @@ void RunExclusiveTop(TString filename,
         outVars[fvars[i]]=0.;
         ADDVAR(&(outVars[fvars[i]]),fvars[i],"/F",outT);
     }
-    ADDVAR(&(outVars["nJets"]),"nJets","/F",outPT);
-    ADDVAR(&(outVars["nBjets"]),"nBjets","/F",outPT);
+    ADDVAR(&(outVars["nJets"]),"nJets","/I",outPT);
+    ADDVAR(&(outVars["nBjets"]),"nBjets","/I",outPT);
 
 #ifdef HISTOGRAMS_ON
     //BOOK HISTOGRAMS
@@ -587,6 +587,7 @@ void RunExclusiveTop(TString filename,
         // CORRECTIONS //
         /////////////////
         btvSF.addBTagDecisions(ev);
+        //if(!isData) btvSF.updateBTagDecisions(ev); // check it !!!
         btvSF.updateBTagDecisions(ev);
         jec.smearJetEnergies(ev);
         
