@@ -95,13 +95,16 @@ options.register('applyFilt', True,
 options.register('ListVars','full',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.string,
-                 "List of variables to use [full,lepjet, lep, jet]"
+                 "List of variables to use [full, ttbar, dilep, ...]"
                  )				 
 options.parseArguments()
 
 #start process
 from Configuration.StandardSequences.Eras import eras
-process = cms.Process("MiniAnalysis", eras.Run2_2017)
+if options.RedoProtons or options.redoProtonRecoFromRAW:
+  from Configuration.ProcessModifiers.run2_miniAOD_UL_cff import run2_miniAOD_UL
+  process = cms.Process("MiniAnalysis", eras.Run2_2017) # , run2_miniAOD_UL  ----------- FIXME
+else: process = cms.Process("MiniAnalysis", eras.Run2_2017)
 
 #get the configuration to apply
 from TopLJets2015.TopAnalysis.EraConfig import getEraConfiguration
@@ -293,12 +296,13 @@ if not (options.runOnData or options.noParticleLevel or options.runProtonFastSim
 if options.RedoProtons or options.redoProtonRecoFromRAW:
       print 'INFO:\t Redo proton recontrsuction'
       from TopLJets2015.TopAnalysis.protonReco_cfg import setupProtonReco
-      if options.redoProtonRecoFromRAW:
-        process.load("EventFilter.CTPPSRawToDigi.ctppsRawToDigi_cff")
+      #if options.redoProtonRecoFromRAW:
+      #  process.load("EventFilter.CTPPSRawToDigi.ctppsRawToDigi_cff")
       setupProtonReco(process,reMiniAOD=True)
-      if options.redoProtonRecoFromRAW:
-        process.ppsReco=cms.Path(process.ctppsRawToDigi*process.recoCTPPSTask)
-      else: process.ppsReco=cms.Path(pprocess.recoCTPPSTask)
+      #if options.redoProtonRecoFromRAW:
+      #  process.ppsReco=cms.Path(process.ctppsRawToDigi*process.recoCTPPSTask)
+      #else: process.ppsReco=cms.Path(process.recoCTPPSTask)
+      process.ppsReco=cms.Path(process.recoCTPPSTask)
       toSchedule.append(process.ppsReco)
 
 if options.runProtonFastSim:

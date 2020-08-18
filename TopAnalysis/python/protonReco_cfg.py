@@ -45,8 +45,10 @@ def ctppsCustom(process):
   SetConditions(process)
   
 def setupProtonReco(process, reMiniAOD = False):
-
+  
   if reMiniAOD:
+    process.load("CondCore.CondDB.CondDB_cfi")
+    from CondCore.CondDB.CondDB_cfi import CondDB
     # override alignment
     process.CondDBAlignment = CondDB.clone( connect = "frontier://FrontierProd/CMS_CONDITIONS" )
     process.PoolDBESSourceAlignment = cms.ESSource("PoolDBESSource", process.CondDBAlignment,
@@ -66,6 +68,12 @@ def setupProtonReco(process, reMiniAOD = False):
   # reconstruction (load standard sequence)
   process.load("RecoCTPPS.Configuration.recoCTPPS_cff")
   
+  # reconstruction (remove modules which do not need re-running)
+  process.recoCTPPSTask.remove(process.totemRPClusterProducer)
+  process.recoCTPPSTask.remove(process.totemRPRecHitProducer)
+  process.recoCTPPSTask.remove(process.ctppsPixelClusters)
+  process.recoCTPPSTask.remove(process.ctppsPixelRecHits)
+
 	  
 
 def SetConditions(process):

@@ -984,13 +984,13 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 
       //full id+iso decisions
       //bool isLoose( g.electronID("cutBasedPhotonID-Fall17-94X-V1-loose") );
-      int looseBits( g.userInt("cutBasedPhotonID-Fall17-94X-V1-loose") );
+      int looseBits( g.userInt("cutBasedPhotonID-Fall17-94X-V2-loose") );
       //bool passLooseId( (looseBits & 0x3) == 0x3 ); //require first two bits (h/e + sihih)
       //bool isMedium( g.electronID("cutBasedPhotonID-Fall17-94X-V1-medium") );
-      int mediumBits( g.userInt("cutBasedPhotonID-Fall17-94X-V1-medium") );
+      int mediumBits( g.userInt("cutBasedPhotonID-Fall17-94X-V2-medium") );
       //bool passMediumId( (mediumBits & 0x3)== 0x3); //require first two bits (h/e + sihih)
       //bool isTight( g.photonID("acutBasedPhotonID-Fall17-94X-V1-tight") );
-      int tightBits( g.userInt("cutBasedPhotonID-Fall17-94X-V1-tight") );
+      int tightBits( g.userInt("cutBasedPhotonID-Fall17-94X-V2-tight") );
       //bool passTightId( (tightBits & 0x3)== 0x3);  //require first two bits (h/e + sihih)
       bool ismvawp80( g.photonID("mvaPhoID-RunIIFall17-v2-wp80"));
       bool ismvawp90( g.photonID("mvaPhoID-RunIIFall17-v2-wp90"));
