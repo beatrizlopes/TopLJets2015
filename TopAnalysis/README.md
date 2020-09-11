@@ -14,11 +14,12 @@ cd CMSSW_10_6_15/src
 cmsenv
 
 #EGM id
-git cms-merge-topic cms-egamma:EgammaPostRecoTools
-git cms-addpkg EgammaAnalysis/ElectronTools
-rm EgammaAnalysis/ElectronTools/data -rf
-git clone git@github.com:cms-data/EgammaAnalysis-ElectronTools.git EgammaAnalysis/ElectronTools/data
-scram b -j
+git cms-init
+git clone git@github.com:cms-egamma/EgammaPostRecoTools.git  EgammaUser/EgammaPostRecoTools
+cd  EgammaUser/EgammaPostRecoTools
+git checkout master
+cd -
+scram b -j 8
 
 #TopTools and B-fragmentation analyzer
 git cms-addpkg TopQuarkAnalysis/TopTools

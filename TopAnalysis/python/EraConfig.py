@@ -10,14 +10,14 @@ def getEraConfiguration(era,isData):
         'era2018':('106X_upgrade2018_realistic_v11_L1v1', '106X_dataRun2_v28')
         }
     jecFiles    = {
-        'era2016':('Summer16_07Aug2017_V11_MC',   'Summer16_07Aug2017All_V11_DATA', 'Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs'),
-        'era2017':('Summer19UL17_V5_MC', 'Summer19UL17_RunBCDEF_V5_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),
+        'era2016':('Summer16_07Aug2017_V11_MC', 'Summer16_07Aug2017All_V11_DATA', 'Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs'),
+        'era2017':('Summer19UL17_V5_MC',        'Summer19UL17_RunBCDEF_V5_DATA',  'Summer19UL17_V5_MC_UncertaintySources_AK4PFchs'),
         'era2017_H':('Fall17_17Nov2017_V32_94X_MC', 'Fall17_17Nov2017_V32_94X_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'),                                                
-        'era2018':('Autumn18_V19_MC',             'Autumn18_RunABCD_V19_DATA',      'Autumn18_V19_MC_UncertaintySources_AK4PFchs')
+        'era2018':('Autumn18_V19_MC',           'Autumn18_RunABCD_V19_DATA',      'Autumn18_V19_MC_UncertaintySources_AK4PFchs')
         }
     jerFiles    = {
         'era2016':('Summer16_25nsV1_MC',         'Summer16_25nsV1_DATA'),
-        'era2017':('Fall17_V3b_MC',         'Fall17_V3b_DATA'),
+        'era2017':('Summer19UL17_JRV2_MC', 'Summer19UL17_JRV2_DATA'),
         'era2017_H':('Fall17_V3b_MC',         'Fall17_V3b_DATA'),
         'era2018':('Autumn18_V7b_MC',    'Autumn18_V7b_DATA'),
         }
