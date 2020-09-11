@@ -479,7 +479,7 @@ std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, doubl
     jecUp=pow(1-ev.j_jerUp[k],2);
     jecDn=pow(1-ev.j_jerDn[k],2);
    
-    for(int iunc=0; iunc<29; iunc++){
+    for(int iunc=0; iunc<0; iunc++){ // FEXMI 29
            
       //see python/miniAnalyzer_cfi.py for these
       if(iunc==6 && jflav!=21) continue; //FlavorPureGluon

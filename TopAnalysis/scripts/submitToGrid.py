@@ -45,6 +45,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
       else:
         print 'Parent is AOD'
         pyCfgParams += ',\'runWithAOD=True\''
+        pyCfgParams += ',\'redoProtonRecoFromRAW=True\''
     if xangle: pyCfgParams += ',\'runProtonFastSim=%s\''%xangle
     pyCfgParams += ',\'ListVars=%s\''%listVars
     config_file.write('config.JobType.pyCfgParams = [%s]\n'%pyCfgParams)
@@ -52,6 +53,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.write('\n')
     config_file.write('config.section_("Data")\n')
     config_file.write('config.Data.inputDataset = "%s"\n' % dataset)
+    config_file.write('config.Data.secondaryInputDataset = "%s"\n' % dataset.replace('MINIAOD','AOD'))
     config_file.write('config.Data.inputDBS = "global"\n')
 
     config_file.write('config.Data.useParent = %s\n'% bool(addParents) )
