@@ -15,7 +15,7 @@ def customizeEGM(process,era,runWithAOD=False):
         runEnergyCorrections=True
 
     setupEgammaPostRecoSeq(process,
-                           isMiniAOD=True,
+                           isMiniAOD=(not runWithAOD),
                            era=egmEra,
                            runEnergyCorrections=runEnergyCorrections)
 
@@ -23,6 +23,6 @@ def customizeEGM(process,era,runWithAOD=False):
         print 'Adapting e/g sources to AOD'
         process.electronMVAValueMapProducer.src = cms.InputTag("")
         process.photonMVAValueMapProducer.src = cms.InputTag("")
-        process.photonIDValueMapProducer.src = cms.InputTag("")
-    
+        #process.photonIDValueMapProducer.src = cms.InputTag("")
+
     process.egammaPostReco=cms.Path(process.egammaPostRecoSeq)

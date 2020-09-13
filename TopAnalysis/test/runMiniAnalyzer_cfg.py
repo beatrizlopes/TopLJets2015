@@ -103,7 +103,10 @@ options.parseArguments()
 from Configuration.StandardSequences.Eras import eras
 if options.RedoProtons or options.redoProtonRecoFromRAW:
   from Configuration.ProcessModifiers.run2_miniAOD_UL_cff import run2_miniAOD_UL
-  process = cms.Process("MiniAnalysis", eras.Run2_2017) # , run2_miniAOD_UL  ----------- FIXME
+  process = cms.Process("MiniAnalysis", eras.Run2_2017, run2_miniAOD_UL)
+  if not options.runWithAOD: #re-reco is not available with miniAODs
+    print 'set runWithAOD = True'
+    options.runWithAOD=True
 else: process = cms.Process("MiniAnalysis", eras.Run2_2017)
 
 #get the configuration to apply
