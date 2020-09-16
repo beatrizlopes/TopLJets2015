@@ -33,7 +33,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.write('config.JobType.psetName = "'+cfg+'"\n')
     config_file.write('config.JobType.disableAutomaticOutputCollection = False\n')
     config_file.write('config.JobType.maxMemoryMB = 2500\n')
-    if not isData: config_file.write('config.JobType.maxJobRuntimeMin = 1200\n') #due to split=Automatic in data
+    if not isData or addParents: config_file.write('config.JobType.maxJobRuntimeMin = 1500\n') #due to split=Automatic in data
     pyCfgParams = '\'runOnData=%s\',\'era=%s\''%(bool(isData),era)
     if isZeroBias:
         print 'This is a ZeroBias sample will save everything...'
@@ -53,20 +53,18 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.write('\n')
     config_file.write('config.section_("Data")\n')
     config_file.write('config.Data.inputDataset = "%s"\n' % dataset)
-    config_file.write('config.Data.secondaryInputDataset = "%s"\n' % dataset.replace('MINIAOD','AOD'))
-    config_file.write('config.Data.inputDBS = "global"\n')
-
-    config_file.write('config.Data.useParent = %s\n'% bool(addParents) )
     if addParents:
-        config_file.write('config.Data.ignoreLocality = True\n')    
-    else:
-        config_file.write('config.Data.ignoreLocality = False\n')    
+       config_file.write('config.Data.secondaryInputDataset = "%s"\n' % dataset.replace('MINIAOD','AOD'))
+       config_file.write('config.Data.ignoreLocality = True\n')
+    else: 
+       config_file.write('config.Data.ignoreLocality = False\n')
+    config_file.write('config.Data.inputDBS = "global"\n')
 
     if isData :         
         config_file.write('config.Data.lumiMask = \'%s\'\n' %lumiMask)
         if addParents:
             config_file.write('config.Data.splitting = "FileBased"\n')
-            config_file.write('config.Data.unitsPerJob = 10\n')        
+            config_file.write('config.Data.unitsPerJob = 4\n')        
         else:
             config_file.write('config.Data.splitting = "Automatic"\n')
             #config_file.write('config.Data.splitting = "LumiBased"\n')

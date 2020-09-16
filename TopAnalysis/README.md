@@ -9,16 +9,17 @@ marked with the `##OPTIONAL/##END OPTIONAL` markers.
 If compilation fails for some reason repeat the scram b...
 
 ```
-cmsrel CMSSW_10_6_15
-cd CMSSW_10_6_15/src
+cmsrel CMSSW_10_6_16
+cd CMSSW_10_6_16/src
 cmsenv
 
-#EGM id
+#EGM id https://twiki.cern.ch/twiki/bin/view/CMS/EgammaUL2016To2018#Recipe_for_running_Scales_and_sm
 git cms-init
-git clone git@github.com:cms-egamma/EgammaPostRecoTools.git  EgammaUser/EgammaPostRecoTools
-cd  EgammaUser/EgammaPostRecoTools
-git checkout master
-cd -
+git cms-merge-topic jainshilpi:ULV1_backport10616_forUsers
+git clone https://github.com/jainshilpi/EgammaPostRecoTools.git -b ULV0 
+mv EgammaPostRecoTools/python/EgammaPostRecoTools.py RecoEgamma/EgammaTools/python/.
+git clone https://github.com/jainshilpi/EgammaAnalysis-ElectronTools.git -b UL2017SSV2 EgammaAnalysis/ElectronTools/data/
+git cms-addpkg EgammaAnalysis/ElectronTools
 scram b -j 8
 
 #TopTools and B-fragmentation analyzer
