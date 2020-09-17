@@ -104,9 +104,6 @@ from Configuration.StandardSequences.Eras import eras
 if options.RedoProtons or options.redoProtonRecoFromRAW:
   from Configuration.ProcessModifiers.run2_miniAOD_UL_cff import run2_miniAOD_UL
   process = cms.Process("MiniAnalysis", eras.Run2_2017, run2_miniAOD_UL)
-  if not options.runWithAOD: #re-reco is not available with miniAODs
-    print 'set runWithAOD = True'
-    options.runWithAOD=True
 else: process = cms.Process("MiniAnalysis", eras.Run2_2017)
 
 #get the configuration to apply
@@ -125,7 +122,7 @@ process.load('Configuration.StandardSequences.MagneticField_38T_cff')
 
 #EGM customization
 from TopLJets2015.TopAnalysis.customizeEGM_cff import customizeEGM
-customizeEGM(process=process,era=options.era,runWithAOD=options.runWithAOD)
+customizeEGM(process=process,era=options.era,runOnAOD=options.runOnAOD)
 
 # global tag
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
