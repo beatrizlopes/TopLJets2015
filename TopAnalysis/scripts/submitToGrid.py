@@ -33,11 +33,14 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.write('config.JobType.psetName = "'+cfg+'"\n')
     config_file.write('config.JobType.disableAutomaticOutputCollection = False\n')
     config_file.write('config.JobType.maxMemoryMB = 2500\n')
-    if not isData or addParents: config_file.write('config.JobType.maxJobRuntimeMin = 1500\n') #due to split=Automatic in data
+    if not isData or addParents: config_file.write('config.JobType.maxJobRuntimeMin = 1200\n') #due to split=Automatic in data
     pyCfgParams = '\'runOnData=%s\',\'era=%s\''%(bool(isData),era)
     if isZeroBias:
         print 'This is a ZeroBias sample will save everything...'
         pyCfgParams += '\'applyFilt=False\'\n'
+    if 'signal' in tag:
+      print 'Running over signal switch off PU protons'
+      pyCfgParams += ',\'doPUProtons=False\''
     if addParents:
       if rawParents:
         print 'Parent is RAW'
@@ -84,6 +87,12 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.close()
     
     if submit : os.system('alias crab=\'/cvmfs/cms.cern.ch/crab3/crab-env-bootstrap.sh\' && crab submit -c %s' % crabConfigFile )
+
+def isSignal(tag):
+  if 'DYToMuMu_pomflux' in tag: return True
+  if 'GGToEE' in tag: return True
+  if 'GGToMuMu' in tag: return True
+  return False
 
 """
 steer the script
@@ -132,7 +141,26 @@ def main():
         if len(sample[2])==0 : 
             print 'Ignoring',tag,'no dataset is set in the json file'
             continue 
-        submitProduction(tag=tag,
+        if isSignal(tag):
+          for xangle in ['120', '130', '140', '150']:
+            for sim_era in [opt.era+'_B',opt.era+'_F']:
+              tag = tag + '_signal_xa%s_%s' % (xangle, sim_era)
+              submitProduction(tag=tag,
+                         lfnDirBase=lfnDirBase,
+                         dataset=sample[2],
+                         isData=sample[1],
+                         lumiMask=opt.lumiMask,
+                         cfg=opt.cfg,
+                         era=sim_era,
+                         workDir=opt.workDir,
+                         submit=opt.submit,
+                         xangle=xangle,
+                         addParents=opt.addParents,
+                         rawParents=opt.rawParents,
+                         listVars=opt.listVars)
+
+        else:
+          submitProduction(tag=tag,
                          lfnDirBase=lfnDirBase,
                          dataset=sample[2],
                          isData=sample[1],

@@ -253,4 +253,7 @@ analysis = cms.EDAnalyzer("MiniAnalyzer",
                           ctppsLocalTracks       = cms.InputTag('ctppsLocalTrackLiteProducer'),
                           tagRecoProtons         = cms.InputTag('ctppsProtons',"singleRP"),
                           tagMultiRecoProtons    = cms.InputTag('ctppsProtons',"multiRP"),
+                          #extra info from AODs
+                          tagStripHits           = cms.InputTag('totemRPRecHitProducer'),
+                          tagStripPatterns       = cms.InputTag('totemRPUVPatternFinder'),
                           )

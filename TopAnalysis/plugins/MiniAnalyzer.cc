@@ -16,6 +16,8 @@
 //         Created:  Sun, 13 Jul 2014 06:22:18 GMT
 //
 //
+
+// Main tools
 #include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
@@ -25,8 +27,19 @@
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
-#include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLiteFwd.h"
 
+// TOTEM/PPS related
+#include "DataFormats/CTPPSReco/interface/TotemRPRecHit.h"
+#include "DataFormats/CTPPSReco/interface/TotemRPUVPattern.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLite.h"
+#include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLiteFwd.h"
+#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
+#include "DataFormats/ProtonReco/interface/ForwardProton.h"
+#include "TopLJets2015/TopAnalysis/interface/PPSEff.h"
+#include "DataFormats/CTPPSDetId/interface/TotemRPDetId.h"
+
+// Other tools
+#include "DataFormats/Common/interface/DetSetVector.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
@@ -46,10 +59,6 @@
 #include "FWCore/Framework/interface/TriggerNamesService.h"
 #include "DataFormats/PatCandidates/interface/PackedTriggerPrescales.h"
 #include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
-#include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLite.h"
-#include "DataFormats/CTPPSReco/interface/CTPPSLocalTrackLiteFwd.h"
-#include "DataFormats/CTPPSDetId/interface/CTPPSDetId.h"
-#include "DataFormats/ProtonReco/interface/ForwardProton.h"
 #include "JetMETCorrections/Modules/interface/JetResolution.h"
 #include "CondFormats/JetMETObjects/interface/JetResolutionObject.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
@@ -62,7 +71,6 @@
 #include "TopLJets2015/TopAnalysis/interface/MyIPTools.h"
 #include "TopLJets2015/TopAnalysis/interface/JetShapes.h"
 #include "TopLJets2015/TopAnalysis/interface/RoccoR.h"
-#include "TopLJets2015/TopAnalysis/interface/PPSEff.h"
 #include "DataFormats/TrackReco/interface/HitPattern.h"
 #include "PhysicsTools/SelectorUtils/interface/PFJetIDSelectionFunctor.h"
 #include "DataFormats/Common/interface/ValueMap.h"
@@ -151,6 +159,8 @@ private:
   edm::EDGetTokenT<edm::View<pat::Jet> > jetToken_;
   edm::EDGetTokenT<pat::METCollection> metToken_;
   edm::EDGetTokenT<pat::PackedCandidateCollection> pfToken_;
+  edm::EDGetTokenT<edm::DetSetVector<TotemRPRecHit>> tokenStripHits_;
+  edm::EDGetTokenT<edm::DetSetVector<TotemRPUVPattern>> tokenStripPatterns_;
   edm::EDGetTokenT<std::vector<CTPPSLocalTrackLite> > ctppsToken_;
   std::vector< edm::EDGetTokenT<std::vector<reco::ForwardProton> > > tokenRecoProtons_;
 
@@ -177,7 +187,7 @@ private:
   edm::Service<TFileService> fs;
 
   //counters
-  int nrecleptons_, nrecphotons_, ngleptons_, ngphotons_, nmultiprotons_;
+  int nrecleptons_, nrecphotons_, ngleptons_, ngphotons_, nmultiprotons_[2];
   int nrecjets_, nrecbjets_;
 
   //apply filter to save tree
@@ -220,6 +230,8 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   jetToken_(consumes<edm::View<pat::Jet> >(iConfig.getParameter<edm::InputTag>("jets"))),
   metToken_(consumes<pat::METCollection>(iConfig.getParameter<edm::InputTag>("mets"))),
   pfToken_(consumes<pat::PackedCandidateCollection>(iConfig.getParameter<edm::InputTag>("pfCands"))),
+  tokenStripHits_( mayConsume<edm::DetSetVector<TotemRPRecHit>>(iConfig.getParameter<edm::InputTag>("tagStripHits")) ),
+  tokenStripPatterns_( consumes<edm::DetSetVector<TotemRPUVPattern>>(iConfig.getParameter<edm::InputTag>("tagStripPatterns")) ),
   ctppsToken_(consumes<std::vector<CTPPSLocalTrackLite> >(iConfig.getParameter<edm::InputTag>("ctppsLocalTracks"))),
   BadChCandFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badChCandFilter"))),
   BadPFMuonFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badPFMuonFilter"))),
@@ -257,6 +269,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   histContainer_["triggerPrescale"] = fs->make<TH1D>("triggerPrescale", ";Trigger prescale sum;",triggersToUse_.size(),0,triggersToUse_.size());
   for(size_t i=0; i<triggersToUse_.size(); i++) histContainer_["triggerList"] ->GetXaxis()->SetBinLabel(i+1,triggersToUse_[i].c_str());
   histContainer_["counter"]    = fs->make<TH1F>("counter", ";Counter;Events",3,0,3);
+  histContainer_["RPcount"]    = fs->make<TH2F>("RPcount", ";Nhits (arm=0);NHits (arm=1)",3,0,3,3,0,3);
   histContainer_["fidcounter"] = (TH1 *)fs->make<TH2F>("fidcounter",    ";Variation;Events", 1500, 0., 1500.,11,0,11);
   histContainer_["pu"]         = fs->make<TH1F>("pu",      ";Pileup observed;Events / 1",100,0,100);
   histContainer_["putrue"]     = fs->make<TH1F>("putrue",  ";Pileup true;Events / 0.1",100,0,100);
@@ -447,7 +460,7 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
     for (size_t i = 0; i < genParticles->size(); ++i)
       {
         const pat::PackedGenParticle & genIt = (*genParticles)[i];
-        if(genIt.pt()<0.5) continue;
+        if(genIt.pt()<0.9) continue;
         if(genIt.charge()==0) continue;
         ev_.g_nchPV++;
         pvP4+=genIt.p4();
@@ -581,11 +594,20 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   //VERTICES
   edm::Handle<reco::VertexCollection> vertices;
   iEvent.getByToken(vtxToken_, vertices);
-  if (vertices->empty()) return; // skip the event if no PV found
+  if (vertices->size()<2) return; // skip the event only 1 PV found
   const reco::Vertex &primVtx = vertices->front();
   reco::VertexRef primVtxRef(vertices,0);
    ev_.nvtx=vertices->size();
   if(ev_.nvtx==0) return;
+  ev_.zPV2 = fabs(primVtx.z() - vertices->at(1).z());
+  unsigned int _second_vertex_index = 1;
+  for (size_t ipv = 2; ipv < vertices->size(); ++ipv) {
+	  float dz = fabs(primVtx.z() - vertices->at(ipv).z());
+	  if (dz < ev_.zPV2) {
+		  ev_.zPV2 = dz;
+		  _second_vertex_index = ipv;
+	  }
+  }
 
   //RHO
   edm::Handle< double > rhoH;
@@ -628,11 +650,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   if(!passTrigger) return;
   //if(ev_.isData && !passTrigger) return;
 
-  //PF candidates
-  edm::Handle<pat::PackedCandidateCollection> pfcands;
-  iEvent.getByToken(pfToken_,pfcands);
-  
-
+  	    
   //
   //PPS local tracks (if present)
   //
@@ -667,7 +685,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   }
 
   //
-  //PPS protons (if present), loop over multi- and single-RP reco
+  //PPS protons, loop over multi- and single-RP reco
   //
   ev_.nfwdtrk=0;
   for(size_t ip=0; ip<tokenRecoProtons_.size(); ip++){
@@ -687,7 +705,6 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             ev_.fwdtrk_pot[ev_.nfwdtrk]       = 100*detid.arm()+10*detid.station()+detid.rp();
             ev_.fwdtrk_chisqnorm[ev_.nfwdtrk] = proton.normalizedChi2();
             ev_.fwdtrk_method[ev_.nfwdtrk]    = Short_t(proton.method());
-
             ev_.fwdtrk_thetax[ev_.nfwdtrk]    = proton.thetaX();
             ev_.fwdtrk_thetay[ev_.nfwdtrk]    = proton.thetaY();
             ev_.fwdtrk_vx[ev_.nfwdtrk]        = proton.vx();
@@ -700,7 +717,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             ev_.fwdtrk_xiSF[ev_.nfwdtrk]      = PPS_eff_->getEff(proton.xi(),detid.arm(),ev_.run);
             ev_.fwdtrk_xiError[ev_.nfwdtrk]   = proton.xiError();
             ev_.fwdtrk_t[ev_.nfwdtrk]         = proton.t();
-			if(ev_.fwdtrk_method[ev_.nfwdtrk]==1) nmultiprotons_++;
+			if(ev_.fwdtrk_method[ev_.nfwdtrk]==1) nmultiprotons_[detid.arm()]++;
             ev_.nfwdtrk++;
           }
       }
@@ -708,14 +725,75 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
         cout << e.what() << endl;
       }
     }
-  }
+  }// end loop over all protons (single-, multi-RP)
+  
+    
+  // For 2017 check number of strip hits to count for truth/unsuff zero hits
+  // Jan's presentation: https://indico.cern.ch/event/935869/
+  // https://github.com/CTPPS/cmssw/blob/pps_event_cat/Validation/CTPPS/plugins/CTPPSEventCategoryPlotter.cc##L162
+  edm::Handle<edm::DetSetVector<TotemRPRecHit>> hStripHits;
+  iEvent.getByToken(tokenStripHits_,hStripHits);
+  
+  edm::Handle<edm::DetSetVector<TotemRPUVPattern>> hStripPatterns;  
+  iEvent.getByToken(tokenStripPatterns_, hStripPatterns);
+  
+  if ( hStripHits.isValid() && hStripPatterns.isValid() ) { // true only for AOD
+      	  
+	  // Count number of planes with nHits>5:
+	  unsigned int  n_too_full_u[2] = {0,0}, n_too_full_v[2] = {0,0};
+	  for (const auto &dsRecHits : *hStripHits){
+        TotemRPDetId planeId(dsRecHits.detId());
+        unsigned int armId = planeId.arm();
+        unsigned int planeIdx = planeId.plane();
+		
+		if(dsRecHits.size()>5){
+		  if ((planeIdx % 2) == 1)
+            n_too_full_u[armId]++;
+          else
+            n_too_full_v[armId]++;
+	    }
+      }
+	  
+	  // count number of fit patterns
+	  unsigned int u_patterns[2] = {0,0}, v_patterns[2] = {0,0};
+      for (const auto &dsPatterns : *hStripPatterns)
+      {
+        TotemRPDetId rpId(dsPatterns.detId());
+        unsigned int armId = rpId.arm();
+
+        for (const auto &pat : dsPatterns)
+        {
+          if (! pat.getFittable()) continue;
+
+          if (pat.getProjection() == TotemRPUVPattern::projU)
+            u_patterns[armId]++;
+          if (pat.getProjection() == TotemRPUVPattern::projV)
+            v_patterns[armId]++;
+        }
+      }
+	  
+	  // if nTracks>=1 and 0 multiRP assume events with nTracks>1 and increment the proton counter
+	  for(int i=0;i<2;i++) {
+		  bool is_suff = ((u_patterns[i]>= 1 || n_too_full_u[i]>=3) && (v_patterns[i]>= 1 || n_too_full_v[i]>=3));
+		  if(nmultiprotons_[i]==0 &&  is_suff) nmultiprotons_[i]=2;
+	  }
+	  
+	  //for(int i=0;i<2;i++){
+	  //cout << "For rpId="<<i*100+3<<": n_too_full_u="<<n_too_full_u[i]<<" , u_patterns = " << u_patterns[i];
+	  //cout << " n_too_full_v="<<n_too_full_v[i]<<" , v_patterns = " << v_patterns[i]<< ", suff  = " << is_suff[i] << endl;
+      //}
+	  
+  } // end if(hStripHits.isValid() && hStripPatterns.isValid()))  
+  
   if(ev_.MAXPROTONS<ev_.nfwdtrk || ev_.MAXPROTONS<ev_.nppstrk){
      cout << "ERROR: MAXPROTONS ("<<ev_.MAXPROTONS<<") is smaller than the N of RP hits/tracks ("<<ev_.nfwdtrk<<"/"<<ev_.nppstrk<<")."<<endl;
 	 cout <<"\t\t... can cause memory leaks!!!"<<endl;
   }
 	  
-
-	
+  //PF candidates (used for muon mini isolation) 
+  edm::Handle<pat::PackedCandidateCollection> pfcands;
+  iEvent.getByToken(pfToken_,pfcands);
+  	
   //
   //LEPTON SELECTION 
   ev_.nl=0; 
@@ -824,11 +902,14 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 				) / p4.Pt();
       ev_.l_ip3d[ev_.nl]    = -9999.;
       ev_.l_ip3dsig[ev_.nl] = -9999;
+	  ev_.l_dz[ev_.nl] = -1;
       if(mu.innerTrack().get())
 	{
 	  std::pair<bool,Measurement1D> ip3dRes = getImpactParameter<reco::TrackRef>(mu.innerTrack(), primVtxRef, iSetup, true);
 	  ev_.l_ip3d[ev_.nl]    = ip3dRes.second.value();
 	  ev_.l_ip3dsig[ev_.nl] = ip3dRes.second.significance();
+	  
+	  ev_.l_dz[ev_.nl] = fabs(mu.innerTrack()->dz(primVtx.position()));
 	}
       ev_.nl++;
 
@@ -883,11 +964,11 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 
       //impact parameter cuts
       //see details in https://twiki.cern.ch/twiki/bin/view/CMS/CutBasedElectronIdentificationRun2
-      bool passIpCuts(true);
+      bool passIpCuts(true); float dz = -1;
       if(e.gsfTrack().isNonnull())
 	{
 	  float dxy(fabs(e.gsfTrack()->dxy(primVtx.position())));
-	  float dz(fabs(e.gsfTrack()->dz(primVtx.position())));
+	  dz = (fabs(e.gsfTrack()->dz(primVtx.position())));
 	  if(fabs(e.superCluster()->eta()) < 1.4442)
 	    {
 	      if(dxy>0.05 || dz>0.10) passIpCuts=false;
@@ -930,6 +1011,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 			 );
 
       ev_.l_charge[ev_.nl]   = e.charge();
+      ev_.l_dz[ev_.nl]   = dz;
       ev_.l_pt[ev_.nl]       = corrP4.pt();
       ev_.l_highpt[ev_.nl]   = corrP4.pt();
       ev_.l_eta[ev_.nl]      = corrP4.eta();
@@ -1278,9 +1360,16 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   }
 
   //PF candidates
-  LorentzVector vtxPt(0,0,0,0);
+  LorentzVector vtxPt[8]; 
   ev_.nchPV=0; ev_.sumPVChPt=0; ev_.sumPVChPz=0; ev_.sumPVChHt=0;
+
   for(int i=0; i<8; i++){
+	vtxPt[i].SetXYZT(0,0,0,0);
+	ev_.nchPV_v[i]=0;
+	ev_.sumPVChPt_v[i]=0;
+	ev_.sumPVChPz_v[i]=0;
+	ev_.sumPVChHt_v[i]=0;
+	
     ev_.nPFCands[i]=0;
     ev_.sumPFHt[i]=0;
     ev_.sumPFEn[i]=0;
@@ -1312,18 +1401,70 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
         ev_.sumPFChHt[ieta] += pf->pt();
         ev_.sumPFChEn[ieta] += pf->energy();
         ev_.sumPFChPz[ieta] += fabs(pf->pz());
-        bool passChargeSel(pf->pt()>0.9 && fabs(pf->eta())<2.5);
-        const pat::PackedCandidate::PVAssoc pvassoc=pf->fromPV();
+        bool passChargeSel(pf->pt()>0.9 && fabs(pf->eta())<2.5); // split 2.1 and 2.5
+        const pat::PackedCandidate::PVAssoc pvassoc=pf->fromPV(); 
+		const pat::PackedCandidate::PVAssoc pvassoc2=pf->fromPV(_second_vertex_index); 
+		int _bin;
         if(passChargeSel && pvassoc>=pat::PackedCandidate::PVTight){
-          vtxPt+=pf->p4();
           ev_.nchPV++;
           ev_.sumPVChPz+=fabs(pf->pz());
           ev_.sumPVChHt+=pf->pt();
-        }
+		  
+		  // Add extra PV variables
+		  _bin = 0;
+		  ev_.nchPV_v[_bin]++;
+		  ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+		  ev_.sumPVChHt_v[_bin]+=pf->pt();
+		  vtxPt[_bin]+=pf->p4();
+		  if(fabs(pf->eta())<2.1) {_bin = 1;
+			  ev_.nchPV_v[_bin]++;
+			  ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			  ev_.sumPVChHt_v[_bin]+=pf->pt();
+			  vtxPt[_bin]+=pf->p4();
+		      if(pvassoc>pat::PackedCandidate::PVTight) {_bin=3;
+			    ev_.nchPV_v[_bin]++;
+			    ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			    ev_.sumPVChHt_v[_bin]+=pf->pt();
+			    vtxPt[_bin]+=pf->p4();
+		      }
+		  }
+		  if(pvassoc>pat::PackedCandidate::PVTight) {_bin=2;
+			    ev_.nchPV_v[_bin]++;
+			    ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			    ev_.sumPVChHt_v[_bin]+=pf->pt();
+			    vtxPt[_bin]+=pf->p4();
+		  }
+		}
+		if(passChargeSel && pvassoc2>=pat::PackedCandidate::PVTight){
+		  _bin = 4;
+		  ev_.nchPV_v[_bin]++;
+		  ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+		  ev_.sumPVChHt_v[_bin]+=pf->pt();
+		  vtxPt[_bin]+=pf->p4();
+		  if(fabs(pf->eta())<2.1) {_bin = 4+1;
+			  ev_.nchPV_v[_bin]++;
+			  ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			  ev_.sumPVChHt_v[_bin]+=pf->pt();
+			  vtxPt[_bin]+=pf->p4();
+		      if(pvassoc2>pat::PackedCandidate::PVTight) {_bin=4+3;
+			    ev_.nchPV_v[_bin]++;
+			    ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			    ev_.sumPVChHt_v[_bin]+=pf->pt();
+			    vtxPt[_bin]+=pf->p4();
+		      }
+		  }
+		  if(pvassoc2>pat::PackedCandidate::PVTight) {_bin=4+2;
+			    ev_.nchPV_v[_bin]++;
+			    ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			    ev_.sumPVChHt_v[_bin]+=pf->pt();
+			    vtxPt[_bin]+=pf->p4();
+		  }
+		}		
       }
     }
-
-  ev_.sumPVChPt=vtxPt.pt();
+  ev_.sumPVChPt=vtxPt[0].pt();
+  for(int i=0; i<8; i++)
+    ev_.sumPVChPt_v[i]=vtxPt[i].pt();
 }
 
 //cf. https://twiki.cern.ch/twiki/bin/viewauth/CMS/SWGuideMuonIdRun2#Soft_Muon
@@ -1380,17 +1521,16 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   histContainer_["counter"]->Fill(0);
 
   ngleptons_=0;   ngphotons_=0;
-  nrecleptons_=0; nrecphotons_=0; nmultiprotons_=0;
+  nrecleptons_=0; nrecphotons_=0; nmultiprotons_[0]=nmultiprotons_[1]=0;
   nrecjets_=0; nrecbjets_=0;
   ev_.g_nw=0; ev_.ng=0; ev_.ngtop=0;
   ev_.nl=0; ev_.ngamma=0; ev_.nj=0; ev_.nfwdtrk=0; ev_.nrawmu=0;
 
   //analyze the event
+  ev_.isData  = iEvent.isRealData();
   ev_.run     = ev_.isData ? iEvent.id().run() : runNumber_;
   ev_.lumi    = iEvent.luminosityBlock();
   ev_.event   = iEvent.id().event();
-  ev_.isData  = iEvent.isRealData();
-  ev_.fill    = iEvent.isRealData();
 
   if(!ev_.isData) genAnalysis(iEvent,iSetup);
   recAnalysis(iEvent,iSetup);
@@ -1400,11 +1540,22 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   if(!saveTree_) return;
   if(applyFilt_){
 	//if (FilterType_.find("ttbar")!=std::string::npos) if(nrecbjets_<2 || nrecjets_<4 || nrecleptons_==0) return;
-        if (FilterType_.find("ttbar")!=std::string::npos) if(nrecjets_<4 || nrecleptons_==0) return;
-		if (FilterType_.find("dilep")!=std::string::npos) if(nrecleptons_<2) return;
+      if (FilterType_.find("ttbar")!=std::string::npos) {
+		  if(nrecjets_<4 || nrecleptons_==0) return;
+		  if(!ev_.isData && nrecbjets_<2) return;
+	  }
+	  if (FilterType_.find("dilep")!=std::string::npos) if(nrecleptons_<2) return;
 	// data - skim on event w/o forward protons but save the event count
 	histContainer_["counter"]->Fill(2);
-    if (FilterType_.find("data")!=std::string::npos) if( nmultiprotons_==0 ) { return;}
+	if(ev_.isData) histContainer_["RPcount"]->Fill(nmultiprotons_[0],nmultiprotons_[1]);
+	
+    if (ev_.isData){ 
+		if (FilterType_.find("ttbar")!=std::string::npos)
+			if( nmultiprotons_[0]!=1 ||  nmultiprotons_[1]!=1 )
+				return;
+		if (FilterType_.find("dilep")!=std::string::npos)
+			if( nmultiprotons_[0]!=1 &&  nmultiprotons_[1]!=1 ) return;
+	}
   }
   tree_->Fill();
 }

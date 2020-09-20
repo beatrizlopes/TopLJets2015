@@ -79,6 +79,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("l_pid",      ev.l_pid,     "l_pid[nl]/I");
   t->Branch("l_g",        ev.l_g,       "l_g[nl]/I");
   t->Branch("l_charge",   ev.l_charge,  "l_charge[nl]/I");
+  t->Branch("l_dz",       ev.l_dz,      "l_dz[nl]/F");
   t->Branch("l_mva",      ev.l_mva,     "l_mva[nl]/F");
   t->Branch("l_mvaCats",  ev.l_mvaCats, "l_mvaCats[nl]/F");
   t->Branch("l_highpt",   ev.l_highpt,  "l_highpt[nl]/F");
@@ -186,11 +187,16 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   
   //pf sums
   for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("pflow")!=std::string::npos){
-  t->Branch("nchPV",        &ev.nchPV,         "nchPV/I");
-  t->Branch("sumPVChPt",    &ev.sumPVChPt,     "sumPVChPt/F");
-  t->Branch("sumPVChPz",    &ev.sumPVChPz,     "sumPVChPz/F");
-  t->Branch("sumPVChHt",    &ev.sumPVChHt,     "sumPVChHt/F");
-  t->Branch("nPFCands",     ev.nPFCands,       "nPFCands[8]/I");
+  t->Branch("nchPV",        &ev.nchPV,        "nchPV/I");
+  t->Branch("zPV2",         &ev.zPV2,         "zPV2/F");
+  t->Branch("sumPVChPt",    &ev.sumPVChPt,    "sumPVChPt/F");
+  t->Branch("sumPVChPz",    &ev.sumPVChPz,    "sumPVChPz/F");
+  t->Branch("sumPVChHt",    &ev.sumPVChHt,    "sumPVChHt/F");
+  t->Branch("nchPV_v",      ev.nchPV_v,       "nchPV_v[8]/I");
+  t->Branch("sumPVChPt_v",  ev.sumPVChPt_v,   "sumPVChPt_v[8]/F");
+  t->Branch("sumPVChPz_v",  ev.sumPVChPz_v,   "sumPVChPz_v[8]/F");
+  t->Branch("sumPVChHt_v",  ev.sumPVChHt_v,   "sumPVChHt_v[8]/F");
+  t->Branch("nPFCands",     ev.nPFCands,      "nPFCands[8]/I");
   t->Branch("sumPFEn",      ev.sumPFEn,       "sumPFEn[8]/F");
   t->Branch("sumPFPz",      ev.sumPFPz,       "sumPFPz[8]/F");
   t->Branch("sumPFHt",      ev.sumPFHt,       "sumPFHt[8]/F");
@@ -337,6 +343,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("l_pid",      ev.l_pid);
   t->SetBranchAddress("l_g",        ev.l_g);
   t->SetBranchAddress("l_charge",   ev.l_charge);
+  t->SetBranchAddress("l_dz",       ev.l_dz);
   t->SetBranchAddress("l_highpt",   ev.l_highpt);
   t->SetBranchAddress("l_pt",       ev.l_pt);
   t->SetBranchAddress("l_eta",      ev.l_eta);
@@ -446,9 +453,14 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   //PF Sums
   if(t->FindBranch("nchPV")){
   t->SetBranchAddress("nchPV",        &ev.nchPV);
+  t->SetBranchAddress("zPV2",         &ev.zPV2);
   t->SetBranchAddress("sumPVChPt",    &ev.sumPVChPt);
   t->SetBranchAddress("sumPVChPz",    &ev.sumPVChPz);
   t->SetBranchAddress("sumPVChHt",    &ev.sumPVChHt);
+  t->SetBranchAddress("nchPV_v",      ev.nchPV_v);
+  t->SetBranchAddress("sumPVChPt",    ev.sumPVChPt_v);
+  t->SetBranchAddress("sumPVChPz",    ev.sumPVChPz_v);
+  t->SetBranchAddress("sumPVChHt",    ev.sumPVChHt_v);
   t->SetBranchAddress("nPFCands",     ev.nPFCands);
   t->SetBranchAddress("sumPFEn",      ev.sumPFEn);
   t->SetBranchAddress("sumPFPz",      ev.sumPFPz);

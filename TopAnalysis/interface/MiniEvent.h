@@ -53,7 +53,7 @@ struct MiniEvent_t
   Int_t nl;
   Bool_t l_isPromptFinalState[MAXLEP], l_isDirectPromptTauDecayProductFinalState[MAXLEP];
   Int_t l_id[MAXLEP],l_charge[MAXLEP],l_pid[MAXLEP],l_g[MAXLEP];
-  Float_t l_pt[MAXLEP],l_eta[MAXLEP],l_phi[MAXLEP], l_mass[MAXLEP], l_highpt[MAXLEP],
+  Float_t l_pt[MAXLEP],l_eta[MAXLEP],l_phi[MAXLEP], l_dz[MAXLEP], l_mass[MAXLEP], l_highpt[MAXLEP],
     l_scaleUnc1[MAXLEP], l_scaleUnc2[MAXLEP], l_scaleUnc3[MAXLEP], l_scaleUnc4[MAXLEP], l_scaleUnc5[MAXLEP], l_scaleUnc6[MAXLEP], l_scaleUnc7[MAXLEP],
     l_miniIso[MAXLEP], l_chargedHadronIso[MAXLEP], l_relIso[MAXLEP], l_ip3d[MAXLEP], l_ip3dsig[MAXLEP],l_mva[MAXLEP],l_mvaCats[MAXLEP];
 
@@ -84,11 +84,12 @@ struct MiniEvent_t
   Int_t met_filterBits;
 
   //event energy fluxes (PF-based)
-  Int_t nchPV;
+  Int_t nchPV, nchPV_v[8]; Float_t zPV2;
   Float_t sumPVChPt,sumPVChPz,sumPVChHt;
+  Float_t sumPVChPt_v[8],sumPVChPz_v[8],sumPVChHt_v[8];
   Int_t nPFCands[8],nPFChCands[8];
   Float_t sumPFHt[8],sumPFEn[8],sumPFPz[8],sumPFChHt[8],sumPFChEn[8],sumPFChPz[8];
-
+		  
   //CTPPS protons
   Short_t nfwdtrk,fwdtrk_pot[MAXPROTONS],fwdtrk_method[MAXPROTONS];
   Float_t fwdtrk_thetax[MAXPROTONS],fwdtrk_thetay[MAXPROTONS],
