@@ -58,7 +58,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
     config_file.write('config.Data.inputDataset = "%s"\n' % dataset)
     if addParents:
        config_file.write('config.Data.secondaryInputDataset = "%s"\n' % dataset.replace('MINIAOD','AOD'))
-       config_file.write('config.Data.ignoreLocality = True\n')
+       config_file.write('config.Data.ignoreLocality = False\n')
     else: 
        config_file.write('config.Data.ignoreLocality = False\n')
     config_file.write('config.Data.inputDBS = "global"\n')
@@ -67,7 +67,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
         config_file.write('config.Data.lumiMask = \'%s\'\n' %lumiMask)
         if addParents:
             config_file.write('config.Data.splitting = "FileBased"\n')
-            config_file.write('config.Data.unitsPerJob = 4\n')        
+            config_file.write('config.Data.unitsPerJob = 1\n')        
         else:
             config_file.write('config.Data.splitting = "Automatic"\n')
             #config_file.write('config.Data.splitting = "LumiBased"\n')
@@ -140,12 +140,13 @@ def main():
         if not submit : continue
         if len(sample[2])==0 : 
             print 'Ignoring',tag,'no dataset is set in the json file'
-            continue 
+            continue
+        if '2017B_SingleElectron' in tag or '2017C_SingleElectron' in tag: continue # opt.addParents=False # 2017B,C AOD only on TAPE 
         if isSignal(tag):
           for xangle in ['120', '130', '140', '150']:
             for sim_era in [opt.era+'_B',opt.era+'_F']:
-              tag = tag + '_signal_xa%s_%s' % (xangle, sim_era)
-              submitProduction(tag=tag,
+              newtag = tag + '_signal_xa%s_%s' % (xangle, sim_era)
+              submitProduction(tag=newtag,
                          lfnDirBase=lfnDirBase,
                          dataset=sample[2],
                          isData=sample[1],
