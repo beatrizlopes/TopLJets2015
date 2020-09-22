@@ -141,7 +141,7 @@ def main():
         if len(sample[2])==0 : 
             print 'Ignoring',tag,'no dataset is set in the json file'
             continue
-        if '2017B_SingleElectron' in tag or '2017C_SingleElectron' in tag: continue # opt.addParents=False # 2017B,C AOD only on TAPE 
+        if '2017B_SingleElectron' in tag or '2017C_SingleElectron' in tag: opt.addParents=False # 2017B,C AOD only on TAPE 
         if isSignal(tag):
           for xangle in ['120', '130', '140', '150']:
             for sim_era in [opt.era+'_B',opt.era+'_F']:
