@@ -94,7 +94,7 @@ void RunExclusiveDiTau(const TString in_fname,
   const int MAXPR = 10;
   Int_t nRecoProtCand;
   Float_t pr_xi[MAXPR], pr_t[MAXPR];//, pr_ThX[MAXPR], pr_ThY[MAXPR]; 
-  Short_t pr_rpid[MAXPR], pr_ismultirp[MAXPR]; //,  pr_arm[MAXPR];
+  Short_t pr_rpid[MAXPR], pr_ismultirp[MAXPR],  pr_arm[MAXPR];
   
   // BOOK PROTON TREE (DATA ONLY)
   TTree *outPT=new TTree("protons","protons");
@@ -103,7 +103,7 @@ void RunExclusiveDiTau(const TString in_fname,
   outPT->Branch("LumiSection",&ev.lumi,"LumiSection/i");
   outPT->Branch("nvtx",&ev.nvtx,"nvtx/I");
   outPT->Branch("rho",&ev.rho,"rho/F");
-  outPT->Branch("nchPV",&ev.nchPV,"nchPV/I");
+  outPT->Branch("ExtraPfCands",&ev.nchPV,"ExtraPfCands/I");
   outPT->Branch("CrossingAngle",&ev.beamXangle,"CrossingAngle/F");
   
   outPT->Branch("nRecoProtCand",&nRecoProtCand,"nRecoProtCand/I");
@@ -112,7 +112,7 @@ void RunExclusiveDiTau(const TString in_fname,
   //outPT->Branch("ProtCand_ThX",pr_ThX,"ProtCand_ThX[nRecoProtCand]/F");
   //outPT->Branch("ProtCand_ThY",pr_ThY,"ProtCand_ThY[nRecoProtCand]/F");
   outPT->Branch("ProtCand_rpid",pr_rpid,"ProtCand_rpid[nRecoProtCand]/S");
-  //outPT->Branch("ProtCand_arm",pr_arm,"ProtCand_arm[nRecoProtCand]/S");
+  outPT->Branch("ProtCand_arm",pr_arm,"ProtCand_arm[nRecoProtCand]/S");
   outPT->Branch("ProtCand_ismultirp",pr_ismultirp,"ProtCand_ismultirp[nRecoProtCand]/S");
 	
 
@@ -146,7 +146,8 @@ void RunExclusiveDiTau(const TString in_fname,
   Int_t nLepCand;
   Float_t LepCand_pt[MAXLEP], LepCand_eta[MAXLEP], LepCand_phi[MAXLEP], LepCand_e[MAXLEP]; 
   Short_t LepCand_charge[MAXLEP], LepCand_id[MAXLEP]; 
-    
+  Float_t ExtraPfCands_v1, ExtraPfCands_v2, ExtraPfCands_v3;   
+  Float_t ExtraPfCandsPV1_v0, ExtraPfCandsPV1_v1, ExtraPfCandsPV1_v2, ExtraPfCandsPV1_v3;   
   // BOOK OUTPUT TREE
   TTree *outT=new TTree("tree","tree");
   outT->Branch("Run",&ev.run,"Run/i");
@@ -154,16 +155,23 @@ void RunExclusiveDiTau(const TString in_fname,
   outT->Branch("LumiSection",&ev.lumi,"LumiSection/i");
   outT->Branch("nvtx",&ev.nvtx,"nvtx/I");
   outT->Branch("rho",&ev.rho,"rho/F");
-  outT->Branch("nchPV",&ev.nchPV,"nchPV/I");
+  outT->Branch("ExtraPfCands",&ev.nchPV,"ExtraPfCands/I");
   outT->Branch("zPV2",&ev.zPV2,"zPV2/F");
   outT->Branch("sumPVChPt",&ev.sumPVChPt,"sumPVChPt/F");
   outT->Branch("sumPVChPz",&ev.sumPVChPz,"sumPVChPz/F");
   outT->Branch("sumPVChHt",&ev.sumPVChHt,"sumPVChHt/F");
-  outT->Branch("nchPV_v",ev.nchPV_v,"nchPV[8]/I");
   outT->Branch("sumPVChPt_v",ev.sumPVChPt_v,"sumPVChPt_v[8]/F");
   outT->Branch("sumPVChPz_v",ev.sumPVChPz_v,"sumPVChPz_v[8]/F");
   outT->Branch("sumPVChHt_v",ev.sumPVChHt_v,"sumPVChHt_v[8]/F");
   outT->Branch("CrossingAngle",&ev.beamXangle,"CrossingAngle/F");
+
+  outT->Branch("ExtraPfCands_v1",&ExtraPfCands_v1,"ExtraPfCandsv1/F");
+  outT->Branch("ExtraPfCands_v2",&ExtraPfCands_v2,"ExtraPfCandsv2/F");
+  outT->Branch("ExtraPfCands_v3",&ExtraPfCands_v3,"ExtraPfCandsv3/F");
+  outT->Branch("ExtraPfCandsPV1v0",&ExtraPfCandsPV1_v0,"ExtraPfCandsPV1v0/F");
+  outT->Branch("ExtraPfCandsPV1v1",&ExtraPfCandsPV1_v1,"ExtraPfCandsPV1v1/F");
+  outT->Branch("ExtraPfCandsPV1v2",&ExtraPfCandsPV1_v2,"ExtraPfCandsPV1v2/F");
+  outT->Branch("ExtraPfCandsPV1v3",&ExtraPfCandsPV1_v3,"ExtraPfCandsPV1v3/F");
 
   outT->Branch("nRecoProtCand",&nRecoProtCand,"nRecoProtCand/I");
   outT->Branch("ProtCand_xi",pr_xi,"ProtCand_xi[nRecoProtCand]/F");
@@ -171,7 +179,7 @@ void RunExclusiveDiTau(const TString in_fname,
   //outT->Branch("ProtCand_ThX",pr_ThX,"ProtCand_ThX[nRecoProtCand]/F");
   //outT->Branch("ProtCand_ThY",pr_ThY,"ProtCand_ThY[nRecoProtCand]/F");
   outT->Branch("ProtCand_rpid",pr_rpid,"ProtCand_rpid[nRecoProtCand]/S");
-  //outT->Branch("ProtCand_arm",pr_arm,"ProtCand_arm[nRecoProtCand]/S");
+  outT->Branch("ProtCand_arm",pr_arm,"ProtCand_arm[nRecoProtCand]/S");
   outT->Branch("ProtCand_ismultirp",pr_ismultirp,"ProtCand_ismultirp[nRecoProtCand]/S");
 
   outT->Branch("nLepCand",&nLepCand,"nLepCand/I");
@@ -297,7 +305,7 @@ void RunExclusiveDiTau(const TString in_fname,
       // selection of leptons
 	  nLepCand = 0;
       for( size_t i_lept=0;i_lept<leptons.size();i_lept++) {	  
-	    if (leptons[i_lept].pt()<30.) continue;
+	    if (leptons[i_lept].pt()<35.) continue;
 		if (leptons[i_lept].id()==11 && fabs(leptons[i_lept].eta())>2.1) continue;
 		// if (leptons[i_lept].reliso()>0.10) continue;   //usually tighter
 		selectedLeptons.push_back(leptons[i_lept]);
@@ -323,10 +331,19 @@ void RunExclusiveDiTau(const TString in_fname,
 		  //pr_ThY[nRecoProtCand] = ev.fwdtrk_thetay[ift];
 		  
 		  pr_rpid[nRecoProtCand] = pot_raw_id;
-		  //pr_arm[nRecoProtCand] = pot_raw_id / 100;
+		  pr_arm[nRecoProtCand] = pot_raw_id / 100;
 		  pr_ismultirp[nRecoProtCand] = ev.fwdtrk_method[ift];
 		  nRecoProtCand++;
       }
+	  
+	  // nTrack selection options:
+	  ExtraPfCands_v1 = ev.nchPV_v[1];
+	  ExtraPfCands_v1 = ev.nchPV_v[2];
+	  ExtraPfCands_v1 = ev.nchPV_v[3];
+	  ExtraPfCandsPV1_v0 = ev.nchPV_v[4];
+	  ExtraPfCandsPV1_v1 = ev.nchPV_v[5];
+	  ExtraPfCandsPV1_v2 = ev.nchPV_v[6];
+	  ExtraPfCandsPV1_v3 = ev.nchPV_v[7];
 	  
 	  // ---- EVENT SELECTION --------------------------------------------------------------
 	  //if ( ev.isData && ((foutVars["p1_xi"] ==0 ) && (foutVars["p2_xi"] == 0)) && SKIMME )        continue; // ONLY events with >0 protons
