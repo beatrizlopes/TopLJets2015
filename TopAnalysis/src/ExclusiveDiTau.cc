@@ -45,7 +45,7 @@ void RunExclusiveDiTau(const TString in_fname,
   MiniEvent_t ev;  
 
   //preselection cuts to apply
-  float minLeptonPt(30);
+  float minLeptonPt(35);
   float minJetPt(25);  
   
   //CORRECTIONS: LUMINOSITY+PILEUP
@@ -93,7 +93,7 @@ void RunExclusiveDiTau(const TString in_fname,
   // Proton variables:
   const int MAXPR = 10;
   Int_t nRecoProtCand;
-  Float_t pr_xi[MAXPR], pr_t[MAXPR];//, pr_ThX[MAXPR], pr_ThY[MAXPR]; 
+  Float_t pr_xi[MAXPR], pr_t[MAXPR], pr_ThX[MAXPR], pr_ThY[MAXPR]; 
   Short_t pr_rpid[MAXPR], pr_ismultirp[MAXPR],  pr_arm[MAXPR];
   
   // BOOK PROTON TREE (DATA ONLY)
@@ -109,8 +109,8 @@ void RunExclusiveDiTau(const TString in_fname,
   outPT->Branch("nRecoProtCand",&nRecoProtCand,"nRecoProtCand/I");
   outPT->Branch("ProtCand_xi",pr_xi,"ProtCand_xi[nRecoProtCand]/F");
   outPT->Branch("ProtCand_t",pr_t,"ProtCand_t[nRecoProtCand]/F");
-  //outPT->Branch("ProtCand_ThX",pr_ThX,"ProtCand_ThX[nRecoProtCand]/F");
-  //outPT->Branch("ProtCand_ThY",pr_ThY,"ProtCand_ThY[nRecoProtCand]/F");
+  outPT->Branch("ProtCand_ThX",pr_ThX,"ProtCand_ThX[nRecoProtCand]/F");
+  outPT->Branch("ProtCand_ThY",pr_ThY,"ProtCand_ThY[nRecoProtCand]/F");
   outPT->Branch("ProtCand_rpid",pr_rpid,"ProtCand_rpid[nRecoProtCand]/S");
   outPT->Branch("ProtCand_arm",pr_arm,"ProtCand_arm[nRecoProtCand]/S");
   outPT->Branch("ProtCand_ismultirp",pr_ismultirp,"ProtCand_ismultirp[nRecoProtCand]/S");
@@ -122,7 +122,7 @@ void RunExclusiveDiTau(const TString in_fname,
   std::map<TString,bool> boutVars;
   for(size_t i=0; i<sizeof(bvars)/sizeof(TString); i++) boutVars[bvars[i]]=false;
   
-  TString ivars[]={"nBjets","nJets","Lep0Id","Lep1Id"};
+  TString ivars[]={"nBjets","nJets","Lep0Id","Lep1Id","ch_tag"};
   std::map<TString,Int_t> ioutVars;
   for(size_t i=0; i<sizeof(ivars)/sizeof(TString); i++) ioutVars[ivars[i]]=0;
   
@@ -147,7 +147,7 @@ void RunExclusiveDiTau(const TString in_fname,
   Float_t LepCand_pt[MAXLEP], LepCand_eta[MAXLEP], LepCand_phi[MAXLEP], LepCand_e[MAXLEP]; 
   Short_t LepCand_charge[MAXLEP], LepCand_id[MAXLEP]; 
   Float_t ExtraPfCands_v1, ExtraPfCands_v2, ExtraPfCands_v3;   
-  Float_t ExtraPfCandsPV1_v0, ExtraPfCandsPV1_v1, ExtraPfCandsPV1_v2, ExtraPfCandsPV1_v3;   
+  //Float_t ExtraPfCandsPV1_v0, ExtraPfCandsPV1_v1, ExtraPfCandsPV1_v2, ExtraPfCandsPV1_v3;   
   // BOOK OUTPUT TREE
   TTree *outT=new TTree("tree","tree");
   outT->Branch("Run",&ev.run,"Run/i");
@@ -168,16 +168,16 @@ void RunExclusiveDiTau(const TString in_fname,
   outT->Branch("ExtraPfCands_v1",&ExtraPfCands_v1,"ExtraPfCandsv1/F");
   outT->Branch("ExtraPfCands_v2",&ExtraPfCands_v2,"ExtraPfCandsv2/F");
   outT->Branch("ExtraPfCands_v3",&ExtraPfCands_v3,"ExtraPfCandsv3/F");
-  outT->Branch("ExtraPfCandsPV1v0",&ExtraPfCandsPV1_v0,"ExtraPfCandsPV1v0/F");
-  outT->Branch("ExtraPfCandsPV1v1",&ExtraPfCandsPV1_v1,"ExtraPfCandsPV1v1/F");
-  outT->Branch("ExtraPfCandsPV1v2",&ExtraPfCandsPV1_v2,"ExtraPfCandsPV1v2/F");
-  outT->Branch("ExtraPfCandsPV1v3",&ExtraPfCandsPV1_v3,"ExtraPfCandsPV1v3/F");
+  //outT->Branch("ExtraPfCandsPV1v0",&ExtraPfCandsPV1_v0,"ExtraPfCandsPV1v0/F");
+  //outT->Branch("ExtraPfCandsPV1v1",&ExtraPfCandsPV1_v1,"ExtraPfCandsPV1v1/F");
+  //outT->Branch("ExtraPfCandsPV1v2",&ExtraPfCandsPV1_v2,"ExtraPfCandsPV1v2/F");
+  //outT->Branch("ExtraPfCandsPV1v3",&ExtraPfCandsPV1_v3,"ExtraPfCandsPV1v3/F");
 
   outT->Branch("nRecoProtCand",&nRecoProtCand,"nRecoProtCand/I");
   outT->Branch("ProtCand_xi",pr_xi,"ProtCand_xi[nRecoProtCand]/F");
   outT->Branch("ProtCand_t",pr_t,"ProtCand_t[nRecoProtCand]/F");
-  //outT->Branch("ProtCand_ThX",pr_ThX,"ProtCand_ThX[nRecoProtCand]/F");
-  //outT->Branch("ProtCand_ThY",pr_ThY,"ProtCand_ThY[nRecoProtCand]/F");
+  outT->Branch("ProtCand_ThX",pr_ThX,"ProtCand_ThX[nRecoProtCand]/F");
+  outT->Branch("ProtCand_ThY",pr_ThY,"ProtCand_ThY[nRecoProtCand]/F");
   outT->Branch("ProtCand_rpid",pr_rpid,"ProtCand_rpid[nRecoProtCand]/S");
   outT->Branch("ProtCand_arm",pr_arm,"ProtCand_arm[nRecoProtCand]/S");
   outT->Branch("ProtCand_ismultirp",pr_ismultirp,"ProtCand_ismultirp[nRecoProtCand]/S");
@@ -215,8 +215,7 @@ void RunExclusiveDiTau(const TString in_fname,
   ADDVAR(&(ioutVars["nJets"]),"nJets","/I",outPT);
   ADDVAR(&(ioutVars["nBjets"]),"nBjets","/I",outPT);
   outPT->Branch("nLepCand",&nLepCand,"nLepCand/I");
-  
-
+    
   //BOOK HISTOGRAMS  
   HistTool ht;
   ht.setNsyst(0);
@@ -236,7 +235,7 @@ void RunExclusiveDiTau(const TString in_fname,
   std::cout << "initialization done" << std::endl;
 
   //EVENT SELECTION WRAPPER (GETS LISTS OF PHYSICS OBJECTS FROM THE INPUT)
-  SelectionTool selector(in_fname, false, triggerList);
+  SelectionTool selector(in_fname, false, triggerList, SelectionTool::AnalysisType::DILEP);
 
   // JEC/JER settings
   int sys = 0;
@@ -276,7 +275,8 @@ void RunExclusiveDiTau(const TString in_fname,
       btvSF.addBTagDecisions(ev);
       if(!ev.isData) btvSF.updateBTagDecisions(ev);
       jec.smearJetEnergies(ev);
-
+	  
+	  TString chTag = selector.flagFinalState(ev, {}, {}, sys);
 
       //trigger
       boutVars["hasMTrigger"] = (selector.hasTriggerBit("HLT_IsoMu27_v", ev.triggerBits) ); 
@@ -305,7 +305,7 @@ void RunExclusiveDiTau(const TString in_fname,
       // selection of leptons
 	  nLepCand = 0;
       for( size_t i_lept=0;i_lept<leptons.size();i_lept++) {	  
-	    if (leptons[i_lept].pt()<35.) continue;
+	    if (leptons[i_lept].pt()<minLeptonPt) continue;
 		if (leptons[i_lept].id()==11 && fabs(leptons[i_lept].eta())>2.1) continue;
 		// if (leptons[i_lept].reliso()>0.10) continue;   //usually tighter
 		selectedLeptons.push_back(leptons[i_lept]);
@@ -327,8 +327,8 @@ void RunExclusiveDiTau(const TString in_fname,
 		  
 		  pr_xi[nRecoProtCand] = xi;
 		  pr_t[nRecoProtCand] = ev.fwdtrk_t[ift];
-		  //pr_ThX[nRecoProtCand] = ev.fwdtrk_thetax[ift];
-		  //pr_ThY[nRecoProtCand] = ev.fwdtrk_thetay[ift];
+		  pr_ThX[nRecoProtCand] = ev.fwdtrk_thetax[ift];
+		  pr_ThY[nRecoProtCand] = ev.fwdtrk_thetay[ift];
 		  
 		  pr_rpid[nRecoProtCand] = pot_raw_id;
 		  pr_arm[nRecoProtCand] = pot_raw_id / 100;
@@ -338,18 +338,18 @@ void RunExclusiveDiTau(const TString in_fname,
 	  
 	  // nTrack selection options:
 	  ExtraPfCands_v1 = ev.nchPV_v[1];
-	  ExtraPfCands_v1 = ev.nchPV_v[2];
-	  ExtraPfCands_v1 = ev.nchPV_v[3];
-	  ExtraPfCandsPV1_v0 = ev.nchPV_v[4];
-	  ExtraPfCandsPV1_v1 = ev.nchPV_v[5];
-	  ExtraPfCandsPV1_v2 = ev.nchPV_v[6];
-	  ExtraPfCandsPV1_v3 = ev.nchPV_v[7];
+	  ExtraPfCands_v2 = ev.nchPV_v[2];
+	  ExtraPfCands_v3 = ev.nchPV_v[3];
+	  //ExtraPfCandsPV1_v0 = ev.nchPV_v[4];
+	  //ExtraPfCandsPV1_v1 = ev.nchPV_v[5];
+	  //ExtraPfCandsPV1_v2 = ev.nchPV_v[6];
+	  //ExtraPfCandsPV1_v3 = ev.nchPV_v[7];
 	  
 	  // ---- EVENT SELECTION --------------------------------------------------------------
 	  //if ( ev.isData && ((foutVars["p1_xi"] ==0 ) && (foutVars["p2_xi"] == 0)) && SKIMME )        continue; // ONLY events with >0 protons
 	  ht.fill("evt_count", 4, plotwgts); // count events after selection of protons
-	  
-	  if(!boutVars["hasSLT"] && !boutVars["hasDLT"] && SKIMME)   continue; // events with electrons (id=11) or muons (id=13)
+
+	  if(chTag!="EE" && chTag!="MM" && SKIMME)   continue; // events with electrons (id=11) or muons (id=13)
 	  ht.fill("evt_count", 5, plotwgts); // count events after channel selection
 		
 	  if (nLepCand<2){
@@ -363,6 +363,8 @@ void RunExclusiveDiTau(const TString in_fname,
 	  // Proceed with event processing
 	  
 	  // Lepton variables:
+	  if(chTag=="EE") ioutVars["ch_tag"]=11;
+	  else ioutVars["ch_tag"]=13;
 	  boutVars["isOS"] = (selectedLeptons[0].charge()==-selectedLeptons[1].charge());
 	  boutVars["isOF"] = (selectedLeptons[0].id()+selectedLeptons[1].id());
       foutVars["InvMass"] =  (selectedLeptons[0].p4()+selectedLeptons[1].p4()).M();

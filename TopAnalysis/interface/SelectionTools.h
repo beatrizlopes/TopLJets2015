@@ -16,7 +16,7 @@ class SelectionTool {
 
  public:
 
-  enum AnalysisType	{TOP=0,VBF=1};
+  enum AnalysisType	{TOP=0, VBF=1, DILEP=2};
 
   SelectionTool(TString dataset_="",bool debug=false,TH1 *triggerList=0, AnalysisType analysisType = TOP);
   ~SelectionTool() {}

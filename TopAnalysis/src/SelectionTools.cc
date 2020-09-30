@@ -99,6 +99,17 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
         leptons_=tightLeptons;
       }
     }
+	else if(anType_==DILEP)
+    {
+      if(tightLeptons.size()>=2){
+        int ch( abs(tightLeptons[0].id()*tightLeptons[1].id()) );
+        if      (ch==11*13) chTag = "EM";
+        else if (ch==13*13) chTag = "MM";
+        else if (ch==11*11) chTag = "EE";
+        leptons_=tightLeptons;
+      }
+    }
+	
 
   //select jets based on the leptons and photon candidates
   float maxJetEta(2.4);
@@ -110,6 +121,7 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
   met_.SetPtEtaPhiM( ev.met_pt, 0, ev.met_phi, 0. );
 
   //check if triggers have fired and are consistent with the offline selection
+  bool hasSETrigger(  hasTriggerBit("HLT_Ele35_WPTight_Gsf_v",           ev.triggerBits) );
   bool hasETrigger(  hasTriggerBit("HLT_Ele35_WPTight_Gsf_v",           ev.triggerBits) ||
                      //hasTriggerBit("HLT_Ele35_eta2p1_WPTight_Gsf_v",           ev.triggerBits) ||
                      hasTriggerBit("HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v",     ev.triggerBits) ||
@@ -145,6 +157,10 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
       if(isMuonEGPD_ || isSingleMuonPD_ || isDoubleMuonPD_)      chTag="";
       if(isSingleElectronPD_ && (hasEETrigger || !hasETrigger) ) chTag="";
       if(isDoubleEGPD_      && !hasEETrigger)                    chTag="";
+      if(anType_==DILEP)
+        {
+          if(!hasSETrigger) chTag="";
+        }		  
     }
   if(chTag=="MM")
     {
@@ -159,6 +175,10 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
         {
           if(ev.isData && !isSingleMuonPD_ && !hasMTrigger) chTag="";
         }
+      if(anType_==DILEP)
+        {
+          if(!hasMTrigger) chTag="";
+        }		
     }
   if(chTag=="M")
     {
@@ -644,7 +664,16 @@ TString SelectionTool::flagGenFinalState(MiniEvent_t &ev, std::vector<Particle> 
         }
       if(genPhotons_.size()>=1) chTag="A";
     }
-  
+  if(anType_==DILEP)
+    {
+      if(genLeptons_.size()>=2)
+        {
+        int chId(abs(genLeptons_[0].id()*genLeptons_[1].id()));
+			if      (chId==11*13) chTag = "EM";
+			else if (chId==13*13) chTag = "MM";
+			else if (chId==11*11) chTag = "EE";
+        }
+    }  
   return chTag;
 }
 
