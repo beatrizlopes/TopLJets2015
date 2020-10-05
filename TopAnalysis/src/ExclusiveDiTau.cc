@@ -228,6 +228,7 @@ void RunExclusiveDiTau(const TString in_fname,
   ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(5,"nothing");
   ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(6,"trigger");
   ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(7,"#geq2 lep");
+  ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(8,"OS, OF");
   ht.getPlots()["evt_count"]->SetBinContent(1,counter->GetBinContent(1));
   ht.getPlots()["evt_count"]->SetBinContent(2,counter->GetBinContent(2));
   ht.getPlots()["evt_count"]->SetBinContent(3,counter->GetBinContent(3));
@@ -276,7 +277,7 @@ void RunExclusiveDiTau(const TString in_fname,
       if(!ev.isData) btvSF.updateBTagDecisions(ev);
       jec.smearJetEnergies(ev);
 	  
-	  TString chTag = selector.flagFinalState(ev, {}, {}, sys);
+	  //TString chTag = selector.flagFinalState(ev, {}, {}, sys);
 
       //trigger
       boutVars["hasMTrigger"] = (selector.hasTriggerBit("HLT_IsoMu27_v", ev.triggerBits) ); 
@@ -301,11 +302,11 @@ void RunExclusiveDiTau(const TString in_fname,
       std::vector<Particle> selectedLeptons;	  
       SelectionTool::QualityFlags muId(SelectionTool::TIGHT);
       leptons = selector.selLeptons(leptons,muId,SelectionTool::MVA90,minLeptonPt,2.4);
+      //leptons = selector.selLeptons(leptons,SelectionTool::TIGHT, 0.);
 
       // selection of leptons
 	  nLepCand = 0;
       for( size_t i_lept=0;i_lept<leptons.size();i_lept++) {	  
-	    if (leptons[i_lept].pt()<minLeptonPt) continue;
 		if (leptons[i_lept].id()==11 && fabs(leptons[i_lept].eta())>2.1) continue;
 		// if (leptons[i_lept].reliso()>0.10) continue;   //usually tighter
 		selectedLeptons.push_back(leptons[i_lept]);
@@ -349,7 +350,7 @@ void RunExclusiveDiTau(const TString in_fname,
 	  //if ( ev.isData && ((foutVars["p1_xi"] ==0 ) && (foutVars["p2_xi"] == 0)) && SKIMME )        continue; // ONLY events with >0 protons
 	  ht.fill("evt_count", 4, plotwgts); // count events after selection of protons
 
-	  if(chTag!="EE" && chTag!="MM" && SKIMME)   continue; // events with electrons (id=11) or muons (id=13)
+	  if(!boutVars["hasSLT"] && SKIMME)   continue; // events with single lepton trigger
 	  ht.fill("evt_count", 5, plotwgts); // count events after channel selection
 		
 	  if (nLepCand<2){
@@ -357,16 +358,18 @@ void RunExclusiveDiTau(const TString in_fname,
 	  }
 	  
 	  if (nLepCand<2 && SKIMME) continue; // more than 2 selected leptons
-      ht.fill("evt_count", 6, plotwgts); // count events after selection on number of leptons (SHOULD BE SAME)
-	  
+      ht.fill("evt_count", 6, plotwgts); 
+
+	  boutVars["isOS"] = (selectedLeptons[0].charge()==-selectedLeptons[1].charge());
+	  boutVars["isOF"] = (selectedLeptons[0].id()+selectedLeptons[1].id());
+	  if ((!boutVars["isOS"] || !boutVars["isOF"]) && SKIMME) continue; // OS and DF leptons
+      ht.fill("evt_count", 7, plotwgts); 
+	  	  
 	  
 	  // Proceed with event processing
 	  
 	  // Lepton variables:
-	  if(chTag=="EE") ioutVars["ch_tag"]=11;
-	  else ioutVars["ch_tag"]=13;
-	  boutVars["isOS"] = (selectedLeptons[0].charge()==-selectedLeptons[1].charge());
-	  boutVars["isOF"] = (selectedLeptons[0].id()+selectedLeptons[1].id());
+	  ioutVars["ch_tag"]=selectedLeptons[0].id();
       foutVars["InvMass"] =  (selectedLeptons[0].p4()+selectedLeptons[1].p4()).M();
       foutVars["Yll"] =  (selectedLeptons[0].p4()+selectedLeptons[1].p4()).Rapidity();
       foutVars["pTll"] = (selectedLeptons[0].p4()+selectedLeptons[1].p4()).Pt();
