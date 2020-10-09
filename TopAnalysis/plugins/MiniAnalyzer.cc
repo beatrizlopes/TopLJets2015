@@ -268,7 +268,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   histContainer_["triggerList"] = fs->make<TH1F>("triggerList", ";Trigger bits;",triggersToUse_.size(),0,triggersToUse_.size());
   histContainer_["triggerPrescale"] = fs->make<TH1D>("triggerPrescale", ";Trigger prescale sum;",triggersToUse_.size(),0,triggersToUse_.size());
   for(size_t i=0; i<triggersToUse_.size(); i++) histContainer_["triggerList"] ->GetXaxis()->SetBinLabel(i+1,triggersToUse_[i].c_str());
-  histContainer_["counter"]    = fs->make<TH1F>("counter", ";Counter;Events",3,0,3);
+  histContainer_["counter"]    = fs->make<TH1F>("counter", ";Counter;Events",4,0,4);
   histContainer_["RPcount"]    = fs->make<TH2F>("RPcount", ";Nhits (arm=0);NHits (arm=1)",3,0,3,3,0,3);
   histContainer_["fidcounter"] = (TH1 *)fs->make<TH2F>("fidcounter",    ";Variation;Events", 1500, 0., 1500.,11,0,11);
   histContainer_["pu"]         = fs->make<TH1F>("pu",      ";Pileup observed;Events / 1",100,0,100);
@@ -342,23 +342,37 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   histContainer_["counter"]->Fill(1,ev_.g_w[0]);
 
   //alternative weights for systematics
+  // see https://twiki.cern.ch/twiki/bin/viewauth/CMS/LHEReaderCMSSW#Retrieving_the_weights for details
+  // convention from https://twiki.cern.ch/twiki/pub/CMS/TopModGen/pwg-rwl.txt
   edm::Handle<LHEEventProduct> evet;
   iEvent.getByToken(generatorlheToken_, evet);
-  if(false && evet.isValid()) // switch off additinal weights, for some reason ttbar has 1285 weights :/ 
-  // see https://twiki.cern.ch/twiki/bin/viewauth/CMS/LHEReaderCMSSW#Retrieving_the_weights for details
+  if(evet.isValid()) 
     {
-	   unsigned int nweights = evet->weights().size();
-	   if(ev_.MAXWEIGHTS<nweights+1){
-		  cout << "WARNING: expected MAXN weights ("<<ev_.MAXWEIGHTS<<") is smaller than the N weights in MC ("<<nweights<<")."<<endl;
-		  cout <<"\t\t... will store only the first " << ev_.MAXWEIGHTS << "weights."<<endl;
-		  nweights = ev_.MAXWEIGHTS-1;
-	  }
-      double asdd=evet->originalXWGTUP(); // oridinal event weight from 
-      for(unsigned int i=0  ; i<nweights;i++){
-	    double asdde=evet->weights()[i].wgt;
-	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*asdde/asdd;
-	    ev_.g_nw++;
-      }
+	   unsigned int ren_up = 1002;
+	   unsigned int ren_dn = 1003;
+	   unsigned int fac_up = 1004;
+	   unsigned int fac_dn = 1007;
+	   unsigned int com_up = 1005;
+	   unsigned int com_dn = 1009;
+	   unsigned int nom_wt = 1001;
+	   
+	   unsigned int nweights = 1;
+
+       //double asdd=evet->originalXWGTUP(); // original event weight 
+       double asdd=evet->weights()[nom_wt].wgt; // original event weight 
+       //for(unsigned int i=0  ; i<nweights;i++){
+	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[ren_up].wgt/asdd; ev_.g_nw++;
+	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[ren_dn].wgt/asdd; ev_.g_nw++;
+	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[fac_up].wgt/asdd; ev_.g_nw++;
+	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[fac_dn].wgt/asdd; ev_.g_nw++;
+	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[com_up].wgt/asdd; ev_.g_nw++;
+	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[com_dn].wgt/asdd; ev_.g_nw++;
+       //}
+	   if(ev_.MAXWEIGHTS<ev_.g_nw){
+		 cout << "WARNING: expected MAXN weights ("<<ev_.MAXWEIGHTS<<") is smaller than the N weights in MC ("<<nweights<<")."<<endl;
+		 cout <<"\t\t... will store only the first " << ev_.MAXWEIGHTS << "weights."<<endl;
+		 ev_.g_nw = ev_.MAXWEIGHTS-1;
+	   }	  
     }
 
   //
@@ -1242,7 +1256,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       ev_.j_id[ev_.nj]      = j->userInt("pileupJetId:fullId");
       ev_.j_csv[ev_.nj]     = j->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags");
       ev_.j_deepcsv[ev_.nj] = j->bDiscriminator("pfDeepCSVJetTags:probb") + j->bDiscriminator("pfDeepCSVJetTags:probbb");
-      ev_.j_btag[ev_.nj]    = (ev_.j_deepcsv[ev_.nj]>0.4941);
+      ev_.j_btag[ev_.nj]    = (ev_.j_deepcsv[ev_.nj]>0.4506);
       ev_.j_emf[ev_.nj]     = CEMF+NEMF;
 	  
 	  // jet momentum uncertainties (for exclusive ttbar analysis):
@@ -1519,7 +1533,6 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   }
 
   histContainer_["counter"]->Fill(0);
-
   ngleptons_=0;   ngphotons_=0;
   nrecleptons_=0; nrecphotons_=0; nmultiprotons_[0]=nmultiprotons_[1]=0;
   nrecjets_=0; nrecbjets_=0;
@@ -1548,11 +1561,11 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	// data - skim on event w/o forward protons but save the event count
 	histContainer_["counter"]->Fill(2);
 	if(ev_.isData) histContainer_["RPcount"]->Fill(nmultiprotons_[0],nmultiprotons_[1]);
+	if(nrecbjets_!=0) histContainer_["counter"]->Fill(3);
 	
     if (ev_.isData){ 
 		if (FilterType_.find("ttbar")!=std::string::npos)
-			if( nmultiprotons_[0]!=1 ||  nmultiprotons_[1]!=1 )
-				return;
+			if( nmultiprotons_[0]!=1 ||  nmultiprotons_[1]!=1 ) return;
 		//if (FilterType_.find("dilep")!=std::string::npos)
 		//	if( nmultiprotons_[0]!=1 &&  nmultiprotons_[1]!=1 ) return;
 	}
@@ -1571,16 +1584,31 @@ void
 MiniAnalyzer::endRun(const edm::Run& iRun,
 		     const EventSetup& iSetup)
 {
-  try{
+  //try{
 
-    cout << "[MiniAnalyzer::endRun]" << endl;
-
-    edm::Handle<LHERunInfoProduct> lheruninfo;
-    typedef std::vector<LHERunInfoProduct::Header>::const_iterator headers_const_iterator;
-    iRun.getByToken(generatorRunInfoToken_, lheruninfo );
+    //cout << "[MiniAnalyzer::endRun]" << endl;
+	
+	// Following lines list the generator weights as described in 
+	//https://twiki.cern.ch/twiki/bin/viewauth/CMS/LHEReaderCMSSW#Retrieving_the_weights
+	
+    //edm::Handle<LHERunInfoProduct> lheruninfo;
+    //typedef std::vector<LHERunInfoProduct::Header>::const_iterator headers_const_iterator;
+    //iRun.getByToken(generatorRunInfoToken_, lheruninfo );
 //    iRun.getByLabel( "externalLHEProducer", lheruninfo );
 
-    LHERunInfoProduct myLHERunInfoProduct = *(lheruninfo.product());
+    //LHERunInfoProduct myLHERunInfoProduct = *(lheruninfo.product());
+	
+	// Print all weights and corresponding integers
+	//for (headers_const_iterator iter=myLHERunInfoProduct.headers_begin(); iter!=myLHERunInfoProduct.headers_end(); iter++){
+    //  std::cout << iter->tag() << std::endl;
+    //  std::vector<std::string> lines = iter->lines();
+    //  for (unsigned int iLine = 0; iLine<lines.size(); iLine++) {
+	//	if(lines.at(iLine)=="") continue;
+		//if(lines.at(iLine).find("weightgroup")==std::string::npos) continue;
+    //    std::cout << lines.at(iLine) << std::endl;
+    //  }
+    //}
+/*
     for (headers_const_iterator iter=myLHERunInfoProduct.headers_begin();
 	 iter!=myLHERunInfoProduct.headers_end();
 	 iter++)
@@ -1605,11 +1633,14 @@ MiniAnalyzer::endRun(const edm::Run& iRun,
 	for (unsigned int iLine = 0; iLine<prunedLines.size(); iLine++)
 	  histContainer_[tag]->GetXaxis()->SetBinLabel(iLine+1,prunedLines.at(iLine).c_str());
       }
-  }
-  catch(std::exception &e){
-    std::cout << e.what() << endl
-	      << "Failed to retrieve LHERunInfoProduct" << std::endl;
-  }
+	  */
+  //}
+  //catch(std::exception &e){
+  //  std::cout << e.what() << endl
+//	      << "Failed to retrieve LHERunInfoProduct" << std::endl;
+  //}
+  
+
 }
 
 //-------------
