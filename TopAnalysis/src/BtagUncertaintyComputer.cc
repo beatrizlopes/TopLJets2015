@@ -130,7 +130,7 @@ bool BTagSFUtil::applySF(bool& isBTagged, float Btag_SF, float Btag_eff){
 void BTagSFUtil::startBTVcalibrationReaders(TString era,BTagEntry::OperatingPoint btagOP)
 {
   //start the btag calibration
-  TString btagUncUrl( era+"/DeepCSV_94XSF_V3_B_F.csv"); 
+  TString btagUncUrl( era+"/DeepCSV_106XUL17SF_WPonly.csv"); 
   if(era.Contains("2016")) btagUncUrl=era+"/DeepCSV_2016LegacySF_V1.csv"; 
   gSystem->ExpandPathName(btagUncUrl);
   BTagCalibration btvcalib("DeepCSV",btagUncUrl.Data());
@@ -144,16 +144,16 @@ void BTagSFUtil::startBTVcalibrationReaders(TString era,BTagEntry::OperatingPoin
   btvCalibReaders_[BTagEntry::FLAV_UDSG]->load(btvcalib,BTagEntry::FLAV_UDSG,"incl");
 
   //start calibration readers by CSV re-weighting
-  btvCSVCalibReaders_[BTagEntry::FLAV_B]=new BTagCalibrationReader(BTagEntry::OP_RESHAPING, 
-                                                                   "central", 
-                                                                   {"up_jes","down_jes","up_lf","down_lf","up_hf","down_hf", "up_hfstats1", "down_hfstats1","up_hfstats2","down_hfstats2","up_lfstats1","down_lfstats1","up_lfstats2","down_lfstats2"});
-  btvCSVCalibReaders_[BTagEntry::FLAV_B]->load(btvcalib,BTagEntry::FLAV_B,"iterativefit");
-  btvCSVCalibReaders_[BTagEntry::FLAV_UDSG]=new BTagCalibrationReader(BTagEntry::OP_RESHAPING, 
-                                                                   "central",
-                                                                   {"up_jes","down_jes","up_lf","down_lf","up_hf","down_hf", "up_hfstats1", "down_hfstats1","up_hfstats2","down_hfstats2","up_lfstats1","down_lfstats1","up_lfstats2","down_lfstats2"});
-  btvCSVCalibReaders_[BTagEntry::FLAV_UDSG]->load(btvcalib,BTagEntry::FLAV_C,"iterativefit");
-  btvCSVCalibReaders_[BTagEntry::FLAV_C]=new BTagCalibrationReader(BTagEntry::OP_RESHAPING, "central",{"up_cferr1","down_cferr1","up_cferr2","down_cferr2"});
-  btvCSVCalibReaders_[BTagEntry::FLAV_C]->load(btvcalib,BTagEntry::FLAV_UDSG,"iterativefit");
+  //btvCSVCalibReaders_[BTagEntry::FLAV_B]=new BTagCalibrationReader(BTagEntry::OP_RESHAPING, 
+  //                                                                 "central", 
+  //                                                                 {"up_jes","down_jes","up_lf","down_lf","up_hf","down_hf", "up_hfstats1", "down_hfstats1","up_hfstats2","down_hfstats2","up_lfstats1","down_lfstats1","up_lfstats2","down_lfstats2"});
+  //btvCSVCalibReaders_[BTagEntry::FLAV_B]->load(btvcalib,BTagEntry::FLAV_B,"iterativefit");
+  //btvCSVCalibReaders_[BTagEntry::FLAV_UDSG]=new BTagCalibrationReader(BTagEntry::OP_RESHAPING, 
+  //                                                                 "central",
+  //                                                                 {"up_jes","down_jes","up_lf","down_lf","up_hf","down_hf", "up_hfstats1", "down_hfstats1","up_hfstats2","down_hfstats2","up_lfstats1","down_lfstats1","up_lfstats2","down_lfstats2"});
+  //btvCSVCalibReaders_[BTagEntry::FLAV_UDSG]->load(btvcalib,BTagEntry::FLAV_C,"iterativefit");
+  //btvCSVCalibReaders_[BTagEntry::FLAV_C]=new BTagCalibrationReader(BTagEntry::OP_RESHAPING, "central",{"up_cferr1","down_cferr1","up_cferr2","down_cferr2"});
+  //btvCSVCalibReaders_[BTagEntry::FLAV_C]->load(btvcalib,BTagEntry::FLAV_UDSG,"iterativefit");
 }
 
 //

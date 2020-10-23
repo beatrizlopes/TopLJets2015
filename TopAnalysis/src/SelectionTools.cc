@@ -24,6 +24,10 @@ SelectionTool::SelectionTool(TString dataset_,bool debug,TH1 *triggerList, Analy
       triggerBits_[ triggerList->GetXaxis()->GetBinLabel(xbin+1) ] = xbin;  
 
   setPhotonSelection();
+  if(anType_==VBF) maxJetEta=4.7;
+  if(anType_==TOP) minJetPt=25;
+  std::cout << "INFO: Initialize SelectionTool with minJetPt = " << minJetPt;
+  std::cout << ", maxJetEta = " << maxJetEta<< std::endl;
 }
 
 //
@@ -112,9 +116,6 @@ TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> pre
 	
 
   //select jets based on the leptons and photon candidates
-  float maxJetEta(2.4);
-  float minJetPt(15.); // the nominal is 15GeV
-  if(anType_==VBF) maxJetEta=4.7;
   jets_=getGoodJets(ev,minJetPt,maxJetEta,leptons_,photons_, sys_);
 
   //build the met
@@ -468,38 +469,24 @@ std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, doubl
   std::vector<Jet> jets;
   
   for (int k=0; k<ev.nj; k++) {
-    TLorentzVector jp4;
-    jp4.SetPtEtaPhiM(ev.j_pt[k],ev.j_eta[k],ev.j_phi[k],ev.j_mass[k]);
+	
+	// jet preselection
+    if(ev.j_pt[k] < 10 || abs(ev.j_eta[k]) > maxEta) continue;
 
-    //cross clean with leptons/photons
-    bool overlapsWithPhysicsObject(false);
-    for (auto& lepton : leptons) {
-      if(jp4.DeltaR(lepton.p4())<0.4) overlapsWithPhysicsObject=true;
-    }
-    for (auto& photon : photons) {
-      if(jp4.DeltaR(photon.p4())<0.4) overlapsWithPhysicsObject=true;
-    }
-    if(overlapsWithPhysicsObject) continue;
-    
-    //jet kinematic selection 1
-    if(jp4.Pt() < 10 || abs(jp4.Eta()) > maxEta) continue;
+	// Calculate scale variations and apply in case if needed:
 
-    //flavor based on b tagging
-    int flavor = 0;
-    if (ev.j_btag[k]) flavor = 5;
-    
-    Jet jet(jp4, flavor, k);
-    jet.setCSV(ev.j_csv[k]);
-    jet.setDeepCSV(ev.j_deepcsv[k]);
-    jet.setPUMVA(ev.j_pumva[k]);
-
-    //jes/jer uncertainty
-    int jflav(abs(ev.j_flav[k]));
-    float jecUp(0),jecDn(0);   
-    jecUp=pow(1-ev.j_jerUp[k],2);
-    jecDn=pow(1-ev.j_jerDn[k],2);
+    //jer uncertainty
+    float jerUp(0),jerDn(0);  
+    if(ev.j_jerUp[k]>ev.j_jerDn[k]){jerUp=ev.j_jerUp[k]; jerDn=ev.j_jerDn[k];}
+	else {jerUp=ev.j_jerDn[k]; jerDn=ev.j_jerUp[k];}
+	
+	// scale to average (doesn't make sense to have up/dn biased somehow):
+	float average = 0.5*(jerUp+jerDn); jerUp-=average; jerDn-=average;
    
-    for(int iunc=0; iunc<0; iunc++){ // FEXMI 29
+    //jec uncertainty
+    float jecUp(0),jecDn(0);   
+    int jflav(abs(ev.j_flav[k]));
+    for(int iunc=0; iunc<29; iunc++){
            
       //see python/miniAnalyzer_cfi.py for these
       if(iunc==6 && jflav!=21) continue; //FlavorPureGluon
@@ -511,15 +498,41 @@ std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, doubl
       if(ev.j_jecDn[iunc][k]!=0) jecDn += pow(1-ev.j_jecDn[iunc][k],2);
 
     }
-    
     jecUp=TMath::Sqrt(jecUp);
     jecDn=TMath::Sqrt(jecDn);
-    jet.setScaleUnc(0.5*(jecUp+jecDn));
 	
-    //jet kinematic selection 2
-	if(sys==1 && (jp4.Pt()*(1+jecUp) < minPt)) continue;
-	else if(sys==-1 && (jp4.Pt()*(1-jecDn) < minPt)) continue;
-	else if(sys==0 && (jp4.Pt() < minPt)) continue;
+	// apply SF correpsonding to the uncertainty:
+	float jet_corr = 1;   // sys = {1:JER, 2:JEC}
+	if(sys==1) jet_corr = 1+jerUp;
+	else if(sys==-1) jet_corr = 1+jerDn; // jerDn is negative by construction
+	else if(sys== 2) jet_corr = 1+jecUp;
+	else if(sys==-2) jet_corr = 1-jecDn; // jecDn is positive by construction
+	
+    TLorentzVector jp4;
+    jp4.SetPtEtaPhiM(ev.j_pt[k]*jet_corr,ev.j_eta[k],ev.j_phi[k],ev.j_mass[k]);
+
+    //flavor based on b tagging
+    int flavor = 0;
+    if (ev.j_btag[k]) flavor = 5;
+    
+    //jet.setScaleUnc(0.5*(jecUp+jecDn));
+    Jet jet(jp4, flavor, k);
+    jet.setCSV(ev.j_csv[k]);
+    jet.setDeepCSV(ev.j_deepcsv[k]);
+    jet.setPUMVA(ev.j_pumva[k]);
+	
+    //cross clean with leptons/photons
+    bool overlapsWithPhysicsObject(false);
+    for (auto& lepton : leptons) {
+      if(jp4.DeltaR(lepton.p4())<0.4) overlapsWithPhysicsObject=true;
+    }
+    for (auto& photon : photons) {
+      if(jp4.DeltaR(photon.p4())<0.4) overlapsWithPhysicsObject=true;
+    }
+    if(overlapsWithPhysicsObject) continue;
+    
+	// pT cut on good jets
+	if(jp4.Pt() < minPt) continue;
 
     if(debug_)
       cout << "Jet #" << jets.size() 

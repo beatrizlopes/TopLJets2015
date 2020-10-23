@@ -23,7 +23,8 @@ class SelectionTool {
 
   enum FlavourSplitting {NOFLAVOURSPLITTING=0, UDSGSPLITTING=1, CSPLITTING=4, BSPLITTING=5 };
   enum QualityFlags     {VETO, LOOSE, MEDIUM, TIGHT, CONTROL, QCDTEMP, RELAXEDTIGHT, MVA80, MVA90,LOOSEIDONLY,MEDIUMIDONLY,TIGHTIDONLY,MVANONISOWPLOOSE,HIGHPT,HIGHPTIDONLY};
-
+  float minJetPt = 15;   // jet pt cut [GeV]
+  float maxJetEta = 2.4; // jet eta cut
   //
   //RECO LEVEL SELECTORS
   // 

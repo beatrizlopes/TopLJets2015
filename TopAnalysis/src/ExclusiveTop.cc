@@ -27,16 +27,6 @@
 //#include "TopLJets2015/CTPPSAnalysisTools/interface/XiReconstructor.h"
 #include "TopQuarkAnalysis/TopTools/interface/MEzCalculator.h"
 
-/*
-Modifications form the original code:
-0. copy neutrino calculator from https://github.com/betchart/analytic-nu 
-1. comment CTPPSAnalysisTools dependences, and comment strip reconstruction
-2. change met_XX to float (not vector)
-3. BTagSFUtil btvSF() different from the branch
-4. attachToMiniEventTree() remove systematics
-5. ADDVAR(&(outVars[fvars[i]]),fvars[i],"/F",outT); // with /F instead of F
-6. rename input tree to "analysis/tree"
-*/
 
 using namespace std;
 #define ADDVAR(x,name,t,tree) tree->Branch(name,x,TString(name)+TString(t))
@@ -356,6 +346,7 @@ void RunExclusiveTop(TString filename,
     //  bool isTTbar( filename.Contains("_TTJets") or (normH and TString(normH->GetTitle()).Contains("_TTJets")));
     bool isTTbar = 1;
 	bool isData = filename.Contains("Data13TeV");
+	bool isPythia8 = filename.Contains("pythia8");
     
     //PREPARE OUTPUT
     TString baseName=gSystem->BaseName(outname);
@@ -471,6 +462,8 @@ void RunExclusiveTop(TString filename,
         "p1_xi", "p2_xi",
 		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt",
 		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err",
+		"ren_up","ren_dn","fac_up","fac_dn","scale_up","scale_dn",
+		"isr_up","isr_dn","fsr_up","fsr_dn",
 
         "bJet0_pt","bJet0_eta", "bJet0_phi", "bJet0_m", "bJet0_E",
         "bJet1_pt","bJet1_eta", "bJet1_phi", "bJet1_m", "bJet1_E",
@@ -554,14 +547,28 @@ void RunExclusiveTop(TString filename,
     
     //EVENT SELECTION WRAPPER
     SelectionTool selector(filename, false, triggerList, SelectionTool::AnalysisType::TOP);
+	// selector.minJetPt = 25;
     
 	// JEC/JER settings
 	int sys = 0;
-	if(systVar.find("jetUp")!=string::npos) sys = 1;
-	if(systVar.find("jetDn")!=string::npos) sys = -1;
-	if(sys==1){cout << "Running JEC/JER up variation"<<endl;}
-	else if(sys==-1){cout << "Running JEC/JER down variation"<<endl;}
-	else{cout << "Running nominal jet callibration"<<endl;}
+	if(systVar.find("jerUp")!=string::npos) sys = 1;
+	if(systVar.find("jerDn")!=string::npos) sys = -1;
+	if(systVar.find("jecUp")!=string::npos) sys = 2;
+	if(systVar.find("jecDn")!=string::npos) sys = -2;
+	if(sys>0){cout << "INFO: Running JEC/JER up variation"<<endl;}
+	else if(sys<0){cout << "INFO: Running JEC/JER down variation"<<endl;}
+	else{cout << "INFO: Running nominal jet callibration"<<endl;}
+
+	// btagSF settings
+	string option = "central";
+	if(systVar.find("btagUp")!=string::npos) {
+		cout << "INFO: Running btagSF up variation"<<endl;
+		option = "up";}
+	else if(systVar.find("btagDn")!=string::npos) {
+		cout << "INFO: Running btagSF down variation"<<endl;
+		option = "down";}
+	else{cout << "INFO: Running nominal btag SF"<<endl;}
+
 		
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////  LOOP OVER EVENTS  /////////////////////////////////////////////////////////////////
@@ -587,8 +594,8 @@ void RunExclusiveTop(TString filename,
         // CORRECTIONS //
         /////////////////
         btvSF.addBTagDecisions(ev);
-        //if(!isData) btvSF.updateBTagDecisions(ev); // check it !!!
-        btvSF.updateBTagDecisions(ev);
+        if(!isData) btvSF.updateBTagDecisions(ev, option, option); 
+        //btvSF.updateBTagDecisions(ev); // check it !!!
         jec.smearJetEnergies(ev);
         
         //////////////////////////
@@ -679,6 +686,11 @@ void RunExclusiveTop(TString filename,
 #endif  
         outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = outVars["selSF_wgt"] = outVars["trigSF_wgt"] = 1;
         outVars["pu_wgt"] = outVars["ptag_wgt"] = outVars["ptag_wgt_err"] = 1;
+		
+        outVars["ren_up"] = outVars["ren_dn"] = outVars["fac_up"] = outVars["fac_dn"] = 1;
+		outVars["scale_up"] = outVars["scale_dn"] = 1;
+		
+		
         if (!ev.isData) {
             wgt  = (normH? normH->GetBinContent(1) : 1.0);          // norm weight
             double puWgt(lumi.pileupWeight(ev.g_pu,period)[0]);     // pu weight
@@ -718,7 +730,31 @@ void RunExclusiveTop(TString filename,
 			outVars["weight"] = wgt;
 			
 			// Systematic uncertainties:
-        }
+			if(ev.g_nw>5){ // scale variations
+				outVars["ren_up"] = ev.g_w[1]/ev.g_w[0];
+				outVars["ren_dn"] = ev.g_w[2]/ev.g_w[0];
+				outVars["fac_up"] = ev.g_w[3]/ev.g_w[0];
+				outVars["fac_dn"] = ev.g_w[4]/ev.g_w[0];
+				outVars["scale_up"] = ev.g_w[5]/ev.g_w[0];
+				outVars["scale_dn"] = ev.g_w[6]/ev.g_w[0];
+			}
+			outVars["isr_up"] = outVars["isr_dn"] = outVars["fsr_up"] = outVars["fsr_dn"] = 1;
+			if(isPythia8){ // Py8 PS variations
+				int nW = ev.g_npsw;
+				if(nW==46){ // 46 weights of ISR and FSR, take only the first ones
+					outVars["isr_up"] = ev.g_psw[7]/ev.g_psw[0];
+					outVars["fsr_up"] = ev.g_psw[8]/ev.g_psw[0];
+					outVars["isr_dn"] = ev.g_psw[9]/ev.g_psw[0];
+					outVars["fsr_dn"] = ev.g_psw[10]/ev.g_psw[0];
+				}
+				if(nW==24){ // in signal no ISR weights
+					outVars["fsr_up"] = ev.g_psw[5]/ev.g_psw[0];
+					outVars["fsr_dn"] = ev.g_psw[6]/ev.g_psw[0];
+				}
+			}
+
+		
+        } // end is MC
         
         //if (ev.isData) {
         //    const edm::EventID ev_id( ev.run, ev.lumi, ev.event );

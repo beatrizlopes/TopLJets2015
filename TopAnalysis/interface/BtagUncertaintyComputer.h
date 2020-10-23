@@ -23,7 +23,7 @@ class BTagSFUtil{
   void setMC2MCCorrection(BTagEntry::JetFlavor flav,TGraphErrors *gr) { mc2mcCorr_[flav]=gr; }
   ~BTagSFUtil();
 
-  void addBTagDecisions(MiniEvent_t &ev,float wp=0.4941,float wpl=0.4941);
+  void addBTagDecisions(MiniEvent_t &ev,float wp=0.4506,float wpl=0.4506);
   void updateBTagDecisions(MiniEvent_t &ev, std::string optionbc = "central", std::string optionlight = "central");
   double getBtagWeightMethod1a(std::vector<Jet> &jetColl, MiniEvent_t &ev,TString sys);
   void modifyBTagsWithSF( bool& isBTagged, float Btag_SF = 0.98, float Btag_eff = 1.0);  
