@@ -32,10 +32,10 @@ options.register('redoProtonRecoFromRAW', False,
                  VarParsing.varType.bool,
                  "run proton reco from scratch"
                  )
-options.register('noParticleLevel', False,
+options.register('doParticleLevel', False,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.bool,
-                 "Do not run the particleLevel sequence"
+                 "Run the particleLevel sequence"
                  )
 options.register('era', 'era2017',
                  VarParsing.multiplicity.singleton,
@@ -129,6 +129,7 @@ process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, globalTag)
 print 'Global tag is',globalTag
+
 
 process.load("GeneratorInterface.RivetInterface.mergedGenParticles_cfi")
 process.load("GeneratorInterface.RivetInterface.genParticles2HepMC_cfi")
@@ -289,7 +290,7 @@ if process.updatedPatJetsUpdatedJECBTag:
 if process.fullPatMetSequenceModifiedMET:
       process.custom_met=cms.Path(process.fullPatMetSequenceModifiedMET)
       toSchedule.append(process.custom_met)
-if not (options.runOnData or options.noParticleLevel or options.runProtonFastSim):
+if options.doParticleLevel and not options.runOnData:
       process.mctruth=cms.Path(process.mergedGenParticles*process.genParticles2HepMC*process.particleLevel)
       toSchedule.append( process.mctruth )
 

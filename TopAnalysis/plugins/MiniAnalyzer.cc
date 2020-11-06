@@ -1256,7 +1256,8 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       ev_.j_id[ev_.nj]      = j->userInt("pileupJetId:fullId");
       ev_.j_csv[ev_.nj]     = j->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags");
       ev_.j_deepcsv[ev_.nj] = j->bDiscriminator("pfDeepCSVJetTags:probb") + j->bDiscriminator("pfDeepCSVJetTags:probbb");
-      ev_.j_btag[ev_.nj]    = (ev_.j_deepcsv[ev_.nj]>0.4506);
+      //https://twiki.cern.ch/twiki/bin/view/CMS/BtagRecommendation106XUL17
+	  ev_.j_btag[ev_.nj]    = (ev_.j_deepcsv[ev_.nj]>0.4506);
       ev_.j_emf[ev_.nj]     = CEMF+NEMF;
 	  
 	  // jet momentum uncertainties (for exclusive ttbar analysis):
@@ -1301,7 +1302,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	}
 	  
 	  // count reconstructed objects (used in the analysis)
-	  if(ev_.j_pt[ev_.nj]>15 && abs(ev_.j_eta[ev_.nj])<2.5){
+	  if(ev_.j_pt[ev_.nj]>25 && abs(ev_.j_eta[ev_.nj])<2.5){
 		  nrecjets_++;
 		  if(ev_.j_btag[ev_.nj]) nrecbjets_++;
 	  }
@@ -1554,7 +1555,8 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   if(applyFilt_){
 	//if (FilterType_.find("ttbar")!=std::string::npos) if(nrecbjets_<2 || nrecjets_<4 || nrecleptons_==0) return;
       if (FilterType_.find("ttbar")!=std::string::npos) {
-		  if(nrecjets_<4 || nrecleptons_==0) return;
+		  // skim (nJ>=4 and nL>0) OR (nL>1)
+		  if((nrecjets_<4 || nrecleptons_==0) && (nrecleptons_<2)) return;
 		  if(!ev_.isData && nrecbjets_<2) return;
 	  }
 	  if (FilterType_.find("dilep")!=std::string::npos) if(nrecleptons_<2) return;

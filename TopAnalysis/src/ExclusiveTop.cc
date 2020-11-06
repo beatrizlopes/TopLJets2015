@@ -359,6 +359,8 @@ void RunExclusiveTop(TString filename,
     TFile *f = TFile::Open(filename);
 	TH1 *counter=(TH1 *)f->Get("analysis/counter");
     if(!counter) {cout << "Corrupted or missing counter: \"analysis/counter\" " << endl;return;}
+	TH2F *RPcount=(TH2F *)f->Get("analysis/RPcount");
+    if(!RPcount) {cout << "Corrupted or missing RPcount: \"analysis/RPcount\" " << endl;return;}
     TH1 *triggerList=(TH1 *)f->Get("analysis/triggerList");
     TTree *t = (TTree*)f->Get("analysis/tree");
     attachToMiniEventTree(t,ev);
@@ -462,8 +464,8 @@ void RunExclusiveTop(TString filename,
         "p1_xi", "p2_xi",
 		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt",
 		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err",
-		"ren_up","ren_dn","fac_up","fac_dn","scale_up","scale_dn",
-		"isr_up","isr_dn","fsr_up","fsr_dn",
+		"ren_err","fac_err","scale_err",
+		"isr_err","fsr_err",
 
         "bJet0_pt","bJet0_eta", "bJet0_phi", "bJet0_m", "bJet0_E",
         "bJet1_pt","bJet1_eta", "bJet1_phi", "bJet1_m", "bJet1_E",
@@ -531,16 +533,29 @@ void RunExclusiveTop(TString filename,
     ht.addHist("evt_count",    new TH1F("evt_count",   ";Selection Stage;Events",10,0,10));
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(1,"Total");
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(2,"Sumweighted");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(3,"accepted");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(4,"#geq1 p (data)");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(5,"=2 p (data)");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(6,"trigger");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(7,"=1 lep");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(8,"#geq4 jets");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(9,"#geq2 bjets");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(3,"preselection");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(4,"=2 p (data)");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(5,"trigger");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(6,"=1 lep");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(7,"#geq4 jets");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(8,"#geq2 bjets");
     ht.getPlots()["evt_count"]->SetBinContent(1,counter->GetBinContent(1));
     ht.getPlots()["evt_count"]->SetBinContent(2,counter->GetBinContent(2));
     ht.getPlots()["evt_count"]->SetBinContent(3,counter->GetBinContent(3));	
+
+    // proton count
+    ht.addHist("pn_count",    new TH1F("pn_count",   ";;Events",5,0,5));
+	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(1,"0 hits");
+	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(2,"RP0 hit");
+	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(3,"RP1 hit");
+	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(4,"both RP");
+	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(5,"both RP nB#geq1");
+	int nbin = 0;
+	nbin=RPcount->FindBin(0.5,0.5); ht.getPlots()["pn_count"]->SetBinContent(1,RPcount->GetBinContent(nbin));
+	nbin=RPcount->FindBin(1.5,0.5); ht.getPlots()["pn_count"]->SetBinContent(2,RPcount->GetBinContent(nbin));
+	nbin=RPcount->FindBin(0.5,1.5); ht.getPlots()["pn_count"]->SetBinContent(3,RPcount->GetBinContent(nbin));
+	nbin=RPcount->FindBin(1.5,1.5); ht.getPlots()["pn_count"]->SetBinContent(4,RPcount->GetBinContent(nbin));
+	ht.getPlots()["pn_count"]->SetBinContent(5,counter->GetBinContent(4));
 #endif
     
     std::cout << "--- init done" << std::endl;
@@ -651,34 +666,30 @@ void RunExclusiveTop(TString filename,
         outVars["nJets"]=jets.size();
         outVars["nBjets"]=bJets.size();
  
-        // ---- EVENT SELECTION --------------------------------------------------------------
-        if ( ev.isData && ((p1_xi ==0 ) || (p2_xi == 0)) )        continue; // ONLY events with 2 protons
-#ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 4, plotwgts); // count events after selection of two protons
-#endif
+		// Store proton pool at preselection
+		if(ev.isData){
+			m_protonVars_p1_xi = p1_xi;
+			m_protonVars_p2_xi = p2_xi;
+			outPT->Fill();
+		}
+
+    // ---- EVENT SELECTION --------------------------------------------------------------
+
 	if(chTag!="E" && chTag!="M" )   continue; // events with electrons (id=11) or muons (id=13)
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 5, plotwgts); // count events after channel selection
+        ht.fill("evt_count", 4, plotwgts); // count events after channel selection
 #endif
 	if (selectedLeptons.size()!=1) continue; // ONLY events with 1 selected lepton
-	
-// Store proton pool for nbj<2 events:
-	if(ev.isData && bJets.size() < 2){
-		m_protonVars_p1_xi = p1_xi;
-		m_protonVars_p2_xi = p2_xi;
-		outPT->Fill();
-	}
-	
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 6, plotwgts); // count events after selection on number of leptons (SHOULD BE SAME)
+        ht.fill("evt_count", 5, plotwgts); // count events after selection on number of leptons (SHOULD BE SAME)
 #endif
         if ( jets.size()  < 4 )        continue; // ONLY events with at least 4 jets
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 7, plotwgts); // count events after selection on number of jets
+        ht.fill("evt_count", 6, plotwgts); // count events after selection on number of jets
 #endif
         if ( bJets.size() < 2 )        continue; // ONLY events with at least 2 BJets
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 8, plotwgts); // count events after selection on number of Bjets
+        ht.fill("evt_count", 7, plotwgts); // count events after selection on number of Bjets
 #endif
 
 #ifdef HISTOGRAMS_ON
@@ -687,8 +698,7 @@ void RunExclusiveTop(TString filename,
         outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = outVars["selSF_wgt"] = outVars["trigSF_wgt"] = 1;
         outVars["pu_wgt"] = outVars["ptag_wgt"] = outVars["ptag_wgt_err"] = 1;
 		
-        outVars["ren_up"] = outVars["ren_dn"] = outVars["fac_up"] = outVars["fac_dn"] = 1;
-		outVars["scale_up"] = outVars["scale_dn"] = 1;
+        outVars["ren_err"] = outVars["scale_err"] = outVars["fac_err"] = 0;
 		
 		
         if (!ev.isData) {
@@ -731,25 +741,20 @@ void RunExclusiveTop(TString filename,
 			
 			// Systematic uncertainties:
 			if(ev.g_nw>5){ // scale variations
-				outVars["ren_up"] = ev.g_w[1]/ev.g_w[0];
-				outVars["ren_dn"] = ev.g_w[2]/ev.g_w[0];
-				outVars["fac_up"] = ev.g_w[3]/ev.g_w[0];
-				outVars["fac_dn"] = ev.g_w[4]/ev.g_w[0];
-				outVars["scale_up"] = ev.g_w[5]/ev.g_w[0];
-				outVars["scale_dn"] = ev.g_w[6]/ev.g_w[0];
+				outVars["ren_err"] = (ev.g_w[1]-ev.g_w[2])/ev.g_w[0];
+				outVars["fac_err"] = (ev.g_w[3]-ev.g_w[4])/ev.g_w[0];
+				outVars["scale_err"] = (ev.g_w[5]-ev.g_w[6])/ev.g_w[0];
 			}
-			outVars["isr_up"] = outVars["isr_dn"] = outVars["fsr_up"] = outVars["fsr_dn"] = 1;
-			if(isPythia8){ // Py8 PS variations
+			outVars["isr_err"] = outVars["fsr_err"] = 0;
+			if(isPythia8){ // Py8 PS variations 
+//https://github.com/cms-sw/cmssw/blob/master/Configuration/Generator/python/PSweightsPythia/PythiaPSweightsSettings_cfi.py
 				int nW = ev.g_npsw;
 				if(nW==46){ // 46 weights of ISR and FSR, take only the first ones
-					outVars["isr_up"] = ev.g_psw[7]/ev.g_psw[0];
-					outVars["fsr_up"] = ev.g_psw[8]/ev.g_psw[0];
-					outVars["isr_dn"] = ev.g_psw[9]/ev.g_psw[0];
-					outVars["fsr_dn"] = ev.g_psw[10]/ev.g_psw[0];
+					outVars["isr_err"] = (ev.g_psw[8]-ev.g_psw[6])/ev.g_psw[0];
+					outVars["fsr_err"] = (ev.g_psw[9]-ev.g_psw[7])/ev.g_psw[0];
 				}
 				if(nW==24){ // in signal no ISR weights
-					outVars["fsr_up"] = ev.g_psw[5]/ev.g_psw[0];
-					outVars["fsr_dn"] = ev.g_psw[6]/ev.g_psw[0];
+					outVars["fsr_err"] = (ev.g_psw[5]-ev.g_psw[6])/ev.g_psw[0];
 				}
 			}
 
