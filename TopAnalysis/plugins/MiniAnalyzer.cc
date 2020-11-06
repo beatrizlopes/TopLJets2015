@@ -1553,7 +1553,9 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
       if (FilterType_.find("ttbar")!=std::string::npos) {
 		  // skim (nJ>=4 and nL>0) OR (nL>1)
 		  if((nrecjets_<4 || nrecleptons_==0) && (nrecleptons_<2)) return;
-		  if(!ev_.isData && nrecbjets_<2) return;
+		  //if(!ev_.isData && nrecbjets_<2) return;
+		  if(!ev_.isData && nrecbjets_<1) return;
+		  if(!ev_.isData && nrecjets_>=4 && nrecbjets_<2) return;
 	  }
 	  if (FilterType_.find("dilep")!=std::string::npos) if(nrecleptons_<2) return;
 	// data - skim on event w/o forward protons but save the event count
