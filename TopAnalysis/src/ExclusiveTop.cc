@@ -741,9 +741,9 @@ void RunExclusiveTop(TString filename,
 			
 			// Systematic uncertainties:
 			if(ev.g_nw>5){ // scale variations
-				outVars["ren_err"] = (ev.g_w[1]-ev.g_w[2])/ev.g_w[0];
-				outVars["fac_err"] = (ev.g_w[3]-ev.g_w[4])/ev.g_w[0];
-				outVars["scale_err"] = (ev.g_w[5]-ev.g_w[6])/ev.g_w[0];
+				outVars["ren_err"] = (ev.g_w[2]-ev.g_w[3])/ev.g_w[1];
+				outVars["fac_err"] = (ev.g_w[4]-ev.g_w[5])/ev.g_w[1];
+				outVars["scale_err"] = (ev.g_w[6]-ev.g_w[7])/ev.g_w[1];
 			}
 			outVars["isr_err"] = outVars["fsr_err"] = 0;
 			if(isPythia8){ // Py8 PS variations 

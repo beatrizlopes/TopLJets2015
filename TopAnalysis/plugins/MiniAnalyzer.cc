@@ -356,20 +356,16 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	   unsigned int com_dn = 1009;
 	   unsigned int nom_wt = 1001;
 	   
-	   unsigned int nweights = 1;
-
-       //double asdd=evet->originalXWGTUP(); // original event weight 
-       double asdd=evet->weights()[nom_wt].wgt; // original event weight 
-       //for(unsigned int i=0  ; i<nweights;i++){
-	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[ren_up].wgt/asdd; ev_.g_nw++;
-	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[ren_dn].wgt/asdd; ev_.g_nw++;
-	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[fac_up].wgt/asdd; ev_.g_nw++;
-	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[fac_dn].wgt/asdd; ev_.g_nw++;
-	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[com_up].wgt/asdd; ev_.g_nw++;
-	    ev_.g_w[ev_.g_nw]=ev_.g_w[0]*evet->weights()[com_dn].wgt/asdd; ev_.g_nw++;
-       //}
+	   ev_.g_w[ev_.g_nw]=evet->weights()[nom_wt].wgt; ev_.g_nw++;
+	   ev_.g_w[ev_.g_nw]=evet->weights()[ren_up].wgt; ev_.g_nw++;
+	   ev_.g_w[ev_.g_nw]=evet->weights()[ren_dn].wgt; ev_.g_nw++;
+	   ev_.g_w[ev_.g_nw]=evet->weights()[fac_up].wgt; ev_.g_nw++;
+	   ev_.g_w[ev_.g_nw]=evet->weights()[fac_dn].wgt; ev_.g_nw++;
+	   ev_.g_w[ev_.g_nw]=evet->weights()[com_up].wgt; ev_.g_nw++;
+	   ev_.g_w[ev_.g_nw]=evet->weights()[com_dn].wgt; ev_.g_nw++;
+		
 	   if(ev_.MAXWEIGHTS<ev_.g_nw){
-		 cout << "WARNING: expected MAXN weights ("<<ev_.MAXWEIGHTS<<") is smaller than the N weights in MC ("<<nweights<<")."<<endl;
+		 cout << "WARNING: expected MAXN weights ("<<ev_.MAXWEIGHTS<<") is smaller than the N weights in MC ("<<ev_.g_nw<<")."<<endl;
 		 cout <<"\t\t... will store only the first " << ev_.MAXWEIGHTS << "weights."<<endl;
 		 ev_.g_nw = ev_.MAXWEIGHTS-1;
 	   }	  
