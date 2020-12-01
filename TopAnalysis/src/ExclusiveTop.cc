@@ -345,7 +345,7 @@ void RunExclusiveTop(TString filename,
     
     //  bool isTTbar( filename.Contains("_TTJets") or (normH and TString(normH->GetTitle()).Contains("_TTJets")));
     bool isTTbar = 1;
-	bool isData = filename.Contains("Data13TeV");
+	bool isData = filename.Contains("Data13TeV") || filename.Contains("SingleMuon") || filename.Contains("SingleElectron");
 	bool isPythia8 = filename.Contains("pythia8");
     
     //PREPARE OUTPUT
@@ -464,8 +464,10 @@ void RunExclusiveTop(TString filename,
         "p1_xi", "p2_xi",
 		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt",
 		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err",
-		"ren_err","fac_err","scale_err",
-		"isr_err","fsr_err",
+		"ren_Up","fac_Up","scale_Up",
+		"ren_Down","fac_Down","scale_Down",
+		"isr_Up","fsr_Up",
+		"isr_Down","fsr_Down",
 
         "bJet0_pt","bJet0_eta", "bJet0_phi", "bJet0_m", "bJet0_E",
         "bJet1_pt","bJet1_eta", "bJet1_phi", "bJet1_m", "bJet1_E",
@@ -549,7 +551,7 @@ void RunExclusiveTop(TString filename,
 	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(2,"RP0 hit");
 	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(3,"RP1 hit");
 	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(4,"both RP");
-	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(5,"both RP nB#geq1");
+	ht.getPlots()["pn_count"]->GetXaxis()->SetBinLabel(5,"pres + nB#geq1");
 	int nbin = 0;
 	nbin=RPcount->FindBin(0.5,0.5); ht.getPlots()["pn_count"]->SetBinContent(1,RPcount->GetBinContent(nbin));
 	nbin=RPcount->FindBin(1.5,0.5); ht.getPlots()["pn_count"]->SetBinContent(2,RPcount->GetBinContent(nbin));
@@ -698,7 +700,8 @@ void RunExclusiveTop(TString filename,
         outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = outVars["selSF_wgt"] = outVars["trigSF_wgt"] = 1;
         outVars["pu_wgt"] = outVars["ptag_wgt"] = outVars["ptag_wgt_err"] = 1;
 		
-        outVars["ren_err"] = outVars["scale_err"] = outVars["fac_err"] = 0;
+        outVars["ren_Down"] = outVars["scale_Down"] = outVars["fac_Down"] = 0;
+        outVars["ren_Up"] = outVars["scale_Up"] = outVars["fac_Up"] = 0;
 		
 		
         if (!ev.isData) {
@@ -739,22 +742,29 @@ void RunExclusiveTop(TString filename,
             plotwgts[0]=wgt;                                        //update weight for plotter
 			outVars["weight"] = wgt;
 			
-			// Systematic uncertainties:
-			if(ev.g_nw>5){ // scale variations
-				outVars["ren_err"] = (ev.g_w[2]-ev.g_w[3])/ev.g_w[1];
-				outVars["fac_err"] = (ev.g_w[4]-ev.g_w[5])/ev.g_w[1];
-				outVars["scale_err"] = (ev.g_w[6]-ev.g_w[7])/ev.g_w[1];
+			// Systematic uncertainties (convert to 1 +/- form):
+			if(ev.g_nw>5 && ev.g_w[1]){ // scale variations
+				outVars["ren_Up"] = (ev.g_w[2])/ev.g_w[1]-1;
+				outVars["fac_Up"] = (ev.g_w[4])/ev.g_w[1]-1;
+				outVars["scale_Up"] = (ev.g_w[6])/ev.g_w[1]-1;
+				outVars["ren_Down"] = 1-(ev.g_w[3])/ev.g_w[1];
+				outVars["fac_Down"] = 1-(ev.g_w[5])/ev.g_w[1];
+				outVars["scale_Down"] = 1-(ev.g_w[7])/ev.g_w[1];
 			}
-			outVars["isr_err"] = outVars["fsr_err"] = 0;
+			outVars["isr_Up"] = outVars["fsr_Up"] = 0;
+			outVars["isr_Down"] = outVars["fsr_Down"] = 0;
 			if(isPythia8){ // Py8 PS variations 
 //https://github.com/cms-sw/cmssw/blob/master/Configuration/Generator/python/PSweightsPythia/PythiaPSweightsSettings_cfi.py
 				int nW = ev.g_npsw;
-				if(nW==46){ // 46 weights of ISR and FSR, take only the first ones
-					outVars["isr_err"] = (ev.g_psw[8]-ev.g_psw[6])/ev.g_psw[0];
-					outVars["fsr_err"] = (ev.g_psw[9]-ev.g_psw[7])/ev.g_psw[0];
+				if(nW==46 && ev.g_psw[0]){ // 46 weights of ISR and FSR, take only the first ones
+					outVars["isr_Up"] = (ev.g_psw[8])/ev.g_psw[0]-1;
+					outVars["fsr_Up"] = (ev.g_psw[9])/ev.g_psw[0]-1;
+					outVars["isr_Down"] = 1-(ev.g_psw[6])/ev.g_psw[0];
+					outVars["fsr_Down"] = 1-(ev.g_psw[7])/ev.g_psw[0];
 				}
-				if(nW==24){ // in signal no ISR weights
-					outVars["fsr_err"] = (ev.g_psw[5]-ev.g_psw[6])/ev.g_psw[0];
+				if(nW==24 && ev.g_psw[0]){ // in signal no ISR weights
+					outVars["fsr_Up"] = (ev.g_psw[5])/ev.g_psw[0]-1;
+					outVars["fsr_Down"] = 1-(ev.g_psw[6])/ev.g_psw[0];
 				}
 			}
 

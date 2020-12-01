@@ -9,6 +9,9 @@
 // cpp include
 #include <iostream>
 
+// PPS helper from https://twiki.cern.ch/twiki/bin/view/CMS/TaggedProtonsFiducialCuts
+//#include "aperture_param_v2.h"
+
 enum class Periods {
 	era2017B  = 0,
 	era2017C1 = 1,
@@ -75,6 +78,21 @@ class PPSEff
 			return 0;
 		}
 	}
+	
+	float getThXStarHigh(int arm, unsigned int runNumber, float xi, float xangle){
+		// from https://twiki.cern.ch/twiki/bin/view/CMS/TaggedProtonsFiducialCuts
+		if(xangle<120 || xangle>150) return 999; // sanity check
+		if(arm<100){ // arm = 0
+			if(runNumber<303825) return -(8.71198E-07*xangle-0.000134726)+((xi<(0.000264704*xangle+0.081951))*-(4.32065E-05*xangle-0.0130746)+(xi>=(0.000264704*xangle+0.081951))*-(0.000183472*xangle-0.0395241))*(xi-(0.000264704*xangle+0.081951));
+			if(runNumber>=303825) return -(8.92079E-07*xangle-0.000150214)+((xi<(0.000278622*xangle+0.0964383))*-(3.9541e-05*xangle-0.0115104)+(xi>=(0.000278622*xangle+0.0964383))*-(0.000108249*xangle-0.0249303))*(xi-(0.000278622*xangle+0.0964383));
+			return 999;
+		}
+		else {
+			if(runNumber<303825) return 3.43116E-05+((xi<(0.000626936*xangle+0.061324))*0.00654394+(xi>=(0.000626936*xangle+0.061324))*-(0.000145164*xangle-0.0272919))*(xi-(0.000626936*xangle+0.061324));
+			if(runNumber>=303825) return 4.56961E-05+((xi<(0.00075625*xangle+0.0643361))*-(3.01107e-05*xangle-0.00985126)+(xi>=(0.00075625*xangle+0.0643361))*-(8.95437e-05*xangle-0.0169474))*(xi-(0.00075625*xangle+0.0643361));
+			return 999;
+		}
+	}	
 	
 	
 	private: 
