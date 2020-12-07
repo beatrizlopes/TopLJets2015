@@ -10,6 +10,7 @@
 #include "TopLJets2015/TopAnalysis/interface/ExclusiveTop2020.h"
 #include "TopLJets2015/TopAnalysis/interface/ExclusiveTop.h"
 #include "TopLJets2015/TopAnalysis/interface/FwdProtons.h"
+#include "TopLJets2015/TopAnalysis/interface/LowMu2020.h"
 
 #include "TH1F.h"
 #include "TFile.h"
@@ -108,6 +109,9 @@ int main(int argc, char* argv[])
   else if(method=="RunExclusiveTop") {
     RunExclusiveTop(in,out,0,0,normH,puH,era,debug,systVar);
   }
+  else if(method=="RunLowMu") {
+    RunLowMu2020(in,out,0,era,debug);
+  }  
   else if(method=="RunExclusiveDiTau") {
     RunExclusiveDiTau(in,out,puH,era,debug,systVar);
   }  

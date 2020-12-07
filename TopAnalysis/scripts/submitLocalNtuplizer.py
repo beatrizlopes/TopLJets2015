@@ -37,7 +37,9 @@ def getDatasetComponents(opt):
             out, err = p.communicate()
             fList.append( (x,out.split()) )
         elif opt.addAODParent:
-            fList = getListAOD(x,opt.dataset)
+            secFiles = getListAOD(x,opt.dataset)
+            print(secFiles)
+            fList.append( (x,secFiles) )
         else:
             fList.append( (x,[]) )
     
@@ -55,13 +57,13 @@ def buildCondorFile(opt,fList,FarmDirectory):
     secFileType=None
 
     #condor submission file
-    condorFile='%s/condor_%s.sub'%(FarmDirectory,opt.jobTag)
+    condorFile='%s/condor_%s.sub'%(FarmDirectory,jobTag)
     print '\nWrites: ',condorFile
     with open (condorFile,'w') as condor:
-        condor.write('executable = {0}/worker_{1}.sh\n'.format(FarmDirectory,opt.jobTag))
-        condor.write('output     = {0}/output_{1}.out\n'.format(FarmDirectory,opt.jobTag))
-        condor.write('error      = {0}/output_{1}.err\n'.format(FarmDirectory,opt.jobTag))
-        condor.write('log        = {0}/output_{1}.log\n'.format(FarmDirectory,opt.jobTag))
+        condor.write('executable = {0}/worker_{1}.sh\n'.format(FarmDirectory,jobTag))
+        condor.write('output     = {0}/output_{1}.out\n'.format(FarmDirectory,jobTag))
+        condor.write('error      = {0}/output_{1}.err\n'.format(FarmDirectory,jobTag))
+        condor.write('log        = {0}/output_{1}.log\n'.format(FarmDirectory,jobTag))
         condor.write('+JobFlavour = "nextweek"\n')
         OpSysAndVer = str(os.system('cat /etc/redhat-release'))
         if 'SLC' in OpSysAndVer:
@@ -74,8 +76,10 @@ def buildCondorFile(opt,fList,FarmDirectory):
             secFileList=','.join(fList[i][1])
             if '/RAW' in secFileList: secFileType='RAW'
             if '/AOD' in secFileList: secFileType='AOD'
-            condor.write('arguments=%d %s %s\n'%(i,fList[i][0],secFileList))
-            condor.write('queue 1\n')
+            if not os.path.isfile('/eos/cms//%s/%s/%s'%(opt.output,opt.jobTag,fList[i][0].split('/')[-1])): 
+              condor.write('arguments=%s %s\n'%(fList[i][0],secFileList))
+              condor.write('queue 1\n')
+            else: print('/eos/cms/%s/%s/%s exist'%(opt.output,opt.jobTag,fList[i][0].split('/')[-1]))
                                 
     #local worker script
     print 'Secondary file type',secFileType
@@ -88,24 +92,28 @@ def buildCondorFile(opt,fList,FarmDirectory):
     workerFile='%s/worker_%s.sh'%(FarmDirectory,opt.jobTag)
     with open(workerFile,'w') as worker:
         worker.write('#!/bin/bash\n')
+        worker.write('export HOME=%s\n'%os.environ['HOME']) #otherwise, 'dasgoclient' won't work on condor
         worker.write('WORKDIR=`pwd`\n')
         worker.write('echo "Working directory is ${WORKDIR}"\n')
         worker.write('cd %s\n'%cmssw)
         worker.write('eval `scram r -sh`\n')
         worker.write('cd ${WORKDIR}\n')
-        worker.write('opts="lumiJson=%s inputFile=${2}"\n'%opt.lumiMask)
-        worker.write('if [ ! -z "${3}" ]; then\n')
-        worker.write('  opts="${opts} secInputFile=${3}"\n')
+        worker.write('opts="lumiJson=%s inputFile=${1}"\n'%opt.lumiMask)
+        worker.write('if [ ! -z "${2}" ]; then\n')
+        worker.write('  opts="${opts} secInputFile=${2}"\n')
         worker.write('fi\n')
         if opt.proxy:
             worker.write('export X509_USER_PROXY=%s/myproxy509\n'%FarmDirectory)
         else:
             worker.write('echo "No proxy has been configured"\n')
+        worker.write('outfile=`echo ${1} | rev | cut -d"/" -f1 | rev`\n')
         worker.write('opts="${opts} %s"\n'%opt.extraOpts)
         worker.write('echo "Running cmsRun with the following options: ${opts}"\n')
         worker.write('cmsRun %s/src/TopLJets2015/TopAnalysis/test/runMiniAnalyzer_cfg.py ${opts}\n'%cmssw)
-        worker.write('xrdcp --force MiniEvents.root root://eoscms//%s/%s/MiniEvents_${1}.root\n'%(opt.output,opt.jobTag))
+        worker.write('echo writes: /eos/cms/%s/%s/${outfile}\n'%(opt.output,opt.jobTag))
+        worker.write('xrdcp --force MiniEvents.root root://eoscms//%s/%s/${outfile}\n'%(opt.output,opt.jobTag))
         worker.write('rm MiniEvents.root\n')
+
 
     return condorFile
 
@@ -221,13 +229,14 @@ def main():
     opt.extraOpts=' '.join(opt.extraOpts.split(','))
 
     #prepare directory with scripts
-    cmssw=os.environ['CMSSW_BASE']
+    cmssw=os.environ['PWD'] #CMSSW_BASE
     FarmDirectory='%s/FarmLocalNtuple'%cmssw
-    os.system('mkdir -p '+FarmDirectory)
+    os.system('mkdir -vp '+FarmDirectory)
 
     #start proxy
     if opt.proxy:
-        os.system('voms-proxy-init --voms cms --out %s/myproxy509'%FarmDirectory)
+        print('IMPORTANT MESSAGE: RUN THE FOLLOWING SEQUENCE:')
+        print('voms-proxy-init --voms cms --out %s/myproxy509'%FarmDirectory)
         os.environ['X509_USER_PROXY']='%s/myproxy509'%FarmDirectory
 
     #get file list
@@ -237,6 +246,7 @@ def main():
     condor=buildCondorFile(opt,fList,FarmDirectory)
     if not opt.dryRun:
         os.system('condor_submit %s'%condor)
+    print('condor_submit %s'%condor)
 
 if __name__ == "__main__":
     sys.exit(main())

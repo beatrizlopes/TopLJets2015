@@ -27,6 +27,7 @@ def customizeJetTools(process,jecDB,jecTag,jerDB,jerTag,baseJetCollection,runOnD
 	process.es_prefer_jec = cms.ESPrefer('PoolDBESSource','jec')
 
         from CondCore.DBCommon.CondDBSetup_cfi import CondDBSetup
+        
         process.jerDB = cms.ESSource('PoolDBESSource', CondDBSetup,
                                      connect = cms.string('sqlite_file:%s'%jerDB),
                                      toGet = cms.VPSet(cms.PSet(record = cms.string('JetResolutionRcd'),

@@ -1,4 +1,61 @@
 import FWCore.ParameterSet.Config as cms
+import subprocess
+import json
+
+def getListAOD(filename):
+  print 'collect AODs for ',filename
+  recotag=filename.split('/')[6]
+  #Get list of runs / lumis for the input file
+  p = subprocess.Popen(['dasgoclient --query="lumi file=%s" -json'%filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+  out, err = p.communicate()
+  data = json.loads(out)
+  miniaodruns=[]
+  miniaodlumis=[]
+  for i in range(len(data)):
+    miniaodruns.append(data[i]['lumi'][0]['run_number'])
+    miniaodlumis.append(data[i]['lumi'][0]['lumi_section_num'])
+	
+  #Get list of RAW files
+  dascmd='dasgoclient --query="parent file=%s"'%filename
+  p = subprocess.Popen([dascmd],stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+  out, err = p.communicate()
+  rawfiles = out.split()
+  
+  #Loop over all RAW files to locate AODs that match miniAOD lumiblocks  
+  AODfiles=[]
+  for rawfile in rawfiles:
+    dascmd='dasgoclient --query="child file=%s" | grep /AOD/%s'%(rawfile,recotag)
+    p = subprocess.Popen([dascmd],stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    out, err = p.communicate()
+    
+    #Check AOD files to match with at least one lumiblock
+    if len(out.split()) == 1: #if only one AOD child, skip the lumi-check
+      if out.split()[0] not in AODfiles: AODfiles.append(out.split()[0])	
+    else:  
+      for aodfile in out.split():
+        if aodfile in AODfiles: continue
+        if(MatchedAOD(aodfile,miniaodruns,miniaodlumis)): AODfiles.append(aodfile);
+
+  return AODfiles
+
+def MatchedAOD(aodfile,miniaodruns,miniaodlumis):
+  
+  aodruns=json.loads(subprocess.check_output(['dasgoclient --query="run file=%s"'%aodfile], shell=True).strip())
+  if len(aodruns)==1 and aodruns[0] not in miniaodruns: return False
+  aodlumis=[json.loads(x) for x in subprocess.check_output(['dasgoclient --query="lumi file=%s"'%aodfile], shell=True).split()]
+  for idx, aodrun in enumerate(aodruns): 
+    # check location of the run in the miniaodruns list
+    i_run=-1
+    for ii, miniaodrun in enumerate(miniaodruns):
+      if aodrun == miniaodrun: i_run=ii; break
+    if(i_run<0): continue # run not in the list of miniaodruns
+	
+	#check if have at least a single lumiblock in list of miniaodlumis
+    for lumi in aodlumis[idx]:
+      if lumi in miniaodlumis[i_run]: return True
+	  
+  # if faled to return true -> AOD is not matched to the miniAODds
+  return False
 
 def customTestInputFiles(process,era,runOnData,runWithAOD):
     if '2016' in era:

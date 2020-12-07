@@ -11,13 +11,13 @@ SelectionTool::SelectionTool(TString dataset_,bool debug,TH1 *triggerList, Analy
   debug_(debug),
   anType_(anType),
   isZeroBiasPD_(dataset.Contains("ZeroBias")), 
-  isSingleElectronPD_(dataset.Contains("SingleElectron")), 
+  isSingleElectronPD_(dataset.Contains("SingleElectron") || dataset.Contains("HighEGJet")), 
   isSingleMuonPD_(dataset.Contains("SingleMuon")), 
   isDoubleEGPD_(dataset.Contains("DoubleEG")), 
   isDoubleMuonPD_(dataset.Contains("DoubleMuon")), 
   isMuonEGPD_(dataset.Contains("MuonEG")),
   isPhotonPD_(dataset.Contains("Photon") || dataset.Contains("EGamma")),
-  isJetHTPD_(dataset.Contains("JetHT"))
+  isJetHTPD_(dataset.Contains("JetHT") || dataset.Contains("HighEGJet"))
 {
   if(triggerList!=0)
     for(int xbin=0; xbin<triggerList->GetNbinsX(); xbin++)
@@ -26,6 +26,7 @@ SelectionTool::SelectionTool(TString dataset_,bool debug,TH1 *triggerList, Analy
   setPhotonSelection();
   if(anType_==VBF) maxJetEta=4.7;
   if(anType_==TOP) minJetPt=25;
+  if(anType_==LOWMU) {minJetPt=25; maxJetEta=4.7;}
   std::cout << "INFO: Initialize SelectionTool with minJetPt = " << minJetPt;
   std::cout << ", maxJetEta = " << maxJetEta<< std::endl;
 }
@@ -36,18 +37,40 @@ SelectionTool::SelectionTool(TString dataset_,bool debug,TH1 *triggerList, Analy
 
 //
 bool SelectionTool::passSingleLeptonTrigger(MiniEvent_t &ev) {
-  //check if triggers have fired and are consistent with the offline selection
+  //check if triggers have fired and are consistent with the offline selection	  
   bool hasETrigger(  hasTriggerBit("HLT_Ele35_WPTight_Gsf_v",           ev.triggerBits) ||
                      hasTriggerBit("HLT_Ele28_eta2p1_WPTight_Gsf_HT150_v",     ev.triggerBits) ||
                      hasTriggerBit("HLT_Ele30_eta2p1_WPTight_Gsf_CentralPFJet35_EleCleaned_v",     ev.triggerBits) );
   bool hasMTrigger(  //hasTriggerBit("HLT_IsoMu24_2p1_v",                                        ev.triggerBits) || 
 		     hasTriggerBit("HLT_IsoMu27_v",                                            ev.triggerBits) );
-
+  
+  if(anType_==LOWMU){
+	hasETrigger= hasTriggerBit("HLT_HIEle15_WPLoose_Gsf_v", ev.triggerBits) ;
+	hasMTrigger=  hasTriggerBit("HLT_HIMu15_v",           ev.triggerBits) ;
+  }
+  
+  
   if(!hasETrigger && !hasMTrigger) return false;
   if(ev.isData) {
 	if(hasETrigger && !hasMTrigger) { if(!isSingleElectronPD_) return false; }
  	if(!hasETrigger && hasMTrigger) { if(!isSingleMuonPD_)     return false; }
   	if(hasETrigger && hasMTrigger)  { if(!isSingleMuonPD_)     return false; }
+  }
+  return true;
+}
+
+bool SelectionTool::passJetTrigger(MiniEvent_t &ev) {
+  //check if triggers have fired and are consistent with the offline selection	  
+  bool hasTrigger(  hasTriggerBit("HLT_HIPFJet140_v",           ev.triggerBits) ||
+                     hasTriggerBit("HLT_HIPFJetFwd140_v",     ev.triggerBits) );
+  
+  if(anType_!=LOWMU){
+	std::cout << "WARNING: Jet triggers are for low-pile setup only!!!" << std::endl;
+	return false;
+  }
+  
+  if(ev.isData) {
+	return (hasTrigger && isJetHTPD_);
   }
   return true;
 }
@@ -237,7 +260,7 @@ bool SelectionTool::passMETFilters(MiniEvent_t &ev){
 }
 
 //
-std::vector<Particle> SelectionTool::flaggedLeptons(MiniEvent_t &ev)
+std::vector<Particle> SelectionTool::flaggedLeptons(MiniEvent_t &ev, float minPt, float maxEta)
 {
   //leptons
   std::vector<Particle> leptons;
@@ -253,7 +276,7 @@ std::vector<Particle> SelectionTool::flaggedLeptons(MiniEvent_t &ev)
     Float_t unc(0.);
     if(abs(ev.l_id[il])==11)
       {
-	if( pt>20 && eta<2.5 ) {
+	if( pt>minPt && eta<maxEta ) {
           if((pid>>1)&0x1)  qualityFlagsWord |= (0x1 << VETO);
           if((pid>>2)&0x1)  qualityFlagsWord |= (0x1 << LOOSEIDONLY);
           if((pid>>3)&0x1)  qualityFlagsWord |= (0x1 << LOOSE);
@@ -277,7 +300,7 @@ std::vector<Particle> SelectionTool::flaggedLeptons(MiniEvent_t &ev)
       }
     else
       {
-        if(pt>20 && eta<2.5) {
+        if(pt>minPt && eta<maxEta) {
           if( (pid&reco::Muon::Selector::CutBasedIdLoose)==reco::Muon::Selector::CutBasedIdLoose ) {
             qualityFlagsWord |= (0x1 << LOOSEIDONLY);
             if( (pid&reco::Muon::Selector::PFIsoLoose)==reco::Muon::Selector::PFIsoLoose ) 

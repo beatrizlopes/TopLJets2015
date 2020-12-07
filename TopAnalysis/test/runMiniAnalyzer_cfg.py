@@ -200,6 +200,11 @@ if options.inputFile:
                   secFileList = ['file:'+os.path.join(inDir,f) for f in os.listdir(inDir)]
             print 'Will run also on',secFileList
             process.source.secondaryFileNames = cms.untracked.vstring(secFileList)
+      if options.runWithAOD and not options.secInputFile:
+        from TopLJets2015.TopAnalysis.customizeInputFiles import getListAOD
+        print('runWithAOD=True: obtain list of corresponding AOD files...')
+        secFileList = getListAOD(options.inputFile)
+        process.source.secondaryFileNames = cms.untracked.vstring(secFileList)
 else:
       #use standard test files
       from TopLJets2015.TopAnalysis.customizeInputFiles import *
@@ -239,6 +244,8 @@ if options.runProtonFastSim:
 process.analysis.ListVars = ANALYSISVARS[options.ListVars]
 process.analysis.FilterType = options.ListVars
 
+if 'lowmu' in options.ListVars and 'data' not in options.ListVars: process.analysis.EGIDVersion = cms.string("1")
+
 if not options.runOnData:
       process.analysis.runNumber = cms.untracked.int32(ANALYSISRUNS[options.era])
       print '\t MC, set runNumber = ',process.analysis.runNumber
@@ -249,7 +256,10 @@ if 'era2017' in options.era:
         print '\t Using 2017 ttbar triggers/jet ids'
       elif 'dilep' in options.ListVars:
         process.analysis.triggersToUse=ANALYSISTRIGGERLISTS['dilep2017']
-        print '\t Using 2017 single lepton and dilepton triggers/jet ids'  
+        print '\t Using 2017 single lepton and dilepton triggers/jet ids' 
+      elif 'lowmu' in options.ListVars:
+        process.analysis.triggersToUse=ANALYSISTRIGGERLISTS['lowmu2017']
+        print '\t Using 2017 lowmu triggers'   
       else:
         process.analysis.triggersToUse=ANALYSISTRIGGERLISTS[2017]
         print '\t Using 2017 triggers/jet ids'

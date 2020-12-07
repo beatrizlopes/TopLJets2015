@@ -171,7 +171,7 @@ private:
 
   std::unordered_map<std::string,TH1*> histContainer_;
 
-  std::string jetIdToUse_, FilterType_;
+  std::string jetIdToUse_, FilterType_, EGIDVersion_;
   std::vector<JetCorrectionUncertainty *> jecCorrectionUncs_;
 
   std::vector<std::string> triggersToUse_,metFiltersToUse_,ListVars_;
@@ -252,6 +252,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   triggersToUse_      = iConfig.getParameter<std::vector<std::string> >("triggersToUse");
   metFiltersToUse_    = iConfig.getParameter<std::vector<std::string> >("metFiltersToUse");
   jetIdToUse_         = iConfig.getParameter<std::string>("jetIdToUse");
+  EGIDVersion_        = iConfig.getParameter<std::string>("EGIDVersion");
   std::string jecUncFile(iConfig.getParameter<std::string>("jecUncFile"));
   //std::string jecUncFile(edm::FileInPath(iConfig.getParameter<std::string>("jecUncFile")).fullPath());
   for(auto name : iConfig.getParameter<std::vector<std::string> >("jecUncSources") ) {
@@ -604,12 +605,11 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   //VERTICES
   edm::Handle<reco::VertexCollection> vertices;
   iEvent.getByToken(vtxToken_, vertices);
-  if (vertices->size()<2) return; // skip the event only 1 PV found
+  if (vertices->size()<1) return; // skip the events no PV
   const reco::Vertex &primVtx = vertices->front();
   reco::VertexRef primVtxRef(vertices,0);
-   ev_.nvtx=vertices->size();
-  if(ev_.nvtx==0) return;
-  ev_.zPV2 = fabs(primVtx.z() - vertices->at(1).z());
+  ev_.nvtx=vertices->size();
+  ev_.zPV2 = (ev_.nvtx>1) ? fabs(primVtx.z() - vertices->at(1).z()): -1;
   unsigned int _second_vertex_index = 1;
   for (size_t ipv = 2; ipv < vertices->size(); ++ipv) {
 	  float dz = fabs(primVtx.z() - vertices->at(ipv).z());
@@ -657,8 +657,8 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	}
     }
   bool passTrigger((ev_.triggerBits + ev_.addTriggerBits)!=0);
-  if(!passTrigger) return;
-  //if(ev_.isData && !passTrigger) return;
+  //if(!passTrigger) return; not obvious that triggers are simulated properly
+  if(ev_.isData && !passTrigger) return;
 
   	    
   //
@@ -951,25 +951,25 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       if(!passPt || !passEta) continue;
 
       //full id+iso decisions
-      bool isVeto( e.electronID("cutBasedElectronID-Fall17-94X-V2-veto") );
-      int vetoBits( e.userInt("cutBasedElectronID-Fall17-94X-V2-veto")  );
+      bool isVeto( e.electronID("cutBasedElectronID-Fall17-94X-V"+EGIDVersion_+"-veto") );
+      int vetoBits( e.userInt("cutBasedElectronID-Fall17-94X-V"+EGIDVersion_+"-veto")  );
       bool passVetoId( (vetoBits | 0xc0)== 0x3ff);  //mask isolation cuts and require all bits active
-      bool isLoose( e.electronID("cutBasedElectronID-Fall17-94X-V2-loose") );
-      int looseBits( e.userInt("cutBasedElectronID-Fall17-94X-V2-loose")  );
+      bool isLoose( e.electronID("cutBasedElectronID-Fall17-94X-V"+EGIDVersion_+"-loose") );
+      int looseBits( e.userInt("cutBasedElectronID-Fall17-94X-V"+EGIDVersion_+"-loose")  );
       bool passLooseId( (looseBits | 0xc0)== 0x3ff);  //mask isolation cuts and require all bits active
-      bool isMedium( e.electronID("cutBasedElectronID-Fall17-94X-V2-medium") );
-      int mediumBits( e.userInt("cutBasedElectronID-Fall17-94X-V2-medium")  );
+      bool isMedium( e.electronID("cutBasedElectronID-Fall17-94X-V"+EGIDVersion_+"-medium") );
+      int mediumBits( e.userInt("cutBasedElectronID-Fall17-94X-V"+EGIDVersion_+"-medium")  );
       bool passMediumId( (mediumBits | 0xc0)== 0x3ff);  //mask isolation cuts and require all bits active
-      bool isTight( e.electronID("cutBasedElectronID-Fall17-94X-V2-tight") );
-      int tightBits( e.userInt("cutBasedElectronID-Fall17-94X-V2-tight") );
+      bool isTight( e.electronID("cutBasedElectronID-Fall17-94X-V"+EGIDVersion_+"-tight") );
+      int tightBits( e.userInt("cutBasedElectronID-Fall17-94X-V"+EGIDVersion_+"-tight") );
       bool passTightId( (tightBits | 0xc0)== 0x3ff);  //mask isolation cuts and require all bits active
 
-      bool mvawp80(e.electronID("mvaEleID-Fall17-iso-V2-wp80"));
-      bool mvawp90(e.electronID("mvaEleID-Fall17-iso-V2-wp90"));
-      bool mvawploose(e.electronID("mvaEleID-Fall17-iso-V2-wpLoose"));
-      bool mvanonisowp80(e.electronID("mvaEleID-Fall17-noIso-V2-wp80"));
-      bool mvanonisowp90(e.electronID("mvaEleID-Fall17-noIso-V2-wp90"));
-      bool mvanonisowploose(e.electronID("mvaEleID-Fall17-noIso-V2-wpLoose"));
+      bool mvawp80(e.electronID("mvaEleID-Fall17-iso-V"+EGIDVersion_+"-wp80"));
+      bool mvawp90(e.electronID("mvaEleID-Fall17-iso-V"+EGIDVersion_+"-wp90"));
+      bool mvawploose(e.electronID("mvaEleID-Fall17-iso-V"+EGIDVersion_+"-wpLoose"));
+      bool mvanonisowp80(e.electronID("mvaEleID-Fall17-noIso-V"+EGIDVersion_+"-wp80"));
+      bool mvanonisowp90(e.electronID("mvaEleID-Fall17-noIso-V"+EGIDVersion_+"-wp90"));
+      bool mvanonisowploose(e.electronID("mvaEleID-Fall17-noIso-V"+EGIDVersion_+"-wpLoose"));
       bool passHEEP(e.electronID("heepElectronID-HEEPV70"));
 
       //impact parameter cuts
@@ -1006,8 +1006,8 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	  ev_.l_g[ev_.nl]=ig;
 	  break;
 	}
-      ev_.l_mva[ev_.nl]=e.userFloat("ElectronMVAEstimatorRun2Fall17IsoV2Values");
-      ev_.l_mvaCats[ev_.nl]=e.userInt("ElectronMVAEstimatorRun2Fall17IsoV2Categories");
+      ev_.l_mva[ev_.nl]=e.userFloat("ElectronMVAEstimatorRun2Fall17IsoV"+EGIDVersion_+"Values");
+      ev_.l_mvaCats[ev_.nl]=e.userInt("ElectronMVAEstimatorRun2Fall17IsoV"+EGIDVersion_+"Categories");
 
       ev_.l_pid[ev_.nl]=0;
       ev_.l_pid[ev_.nl]= (passVetoId | (isVeto<<1)
@@ -1076,16 +1076,16 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 
       //full id+iso decisions
       //bool isLoose( g.electronID("cutBasedPhotonID-Fall17-94X-V1-loose") );
-      int looseBits( g.userInt("cutBasedPhotonID-Fall17-94X-V2-loose") );
+      int looseBits( g.userInt("cutBasedPhotonID-Fall17-94X-V"+EGIDVersion_+"-loose") );
       //bool passLooseId( (looseBits & 0x3) == 0x3 ); //require first two bits (h/e + sihih)
       //bool isMedium( g.electronID("cutBasedPhotonID-Fall17-94X-V1-medium") );
-      int mediumBits( g.userInt("cutBasedPhotonID-Fall17-94X-V2-medium") );
+      int mediumBits( g.userInt("cutBasedPhotonID-Fall17-94X-V"+EGIDVersion_+"-medium") );
       //bool passMediumId( (mediumBits & 0x3)== 0x3); //require first two bits (h/e + sihih)
       //bool isTight( g.photonID("acutBasedPhotonID-Fall17-94X-V1-tight") );
-      int tightBits( g.userInt("cutBasedPhotonID-Fall17-94X-V2-tight") );
+      int tightBits( g.userInt("cutBasedPhotonID-Fall17-94X-V"+EGIDVersion_+"-tight") );
       //bool passTightId( (tightBits & 0x3)== 0x3);  //require first two bits (h/e + sihih)
-      bool ismvawp80( g.photonID("mvaPhoID-RunIIFall17-v2-wp80"));
-      bool ismvawp90( g.photonID("mvaPhoID-RunIIFall17-v2-wp90"));
+      bool ismvawp80( g.photonID("mvaPhoID-RunIIFall17-v"+EGIDVersion_+"-wp80"));
+      bool ismvawp90( g.photonID("mvaPhoID-RunIIFall17-v"+EGIDVersion_+"-wp90"));
 
       //save the photon
       const reco::GenParticle * gen=(const reco::GenParticle *)g.genPhoton();
@@ -1099,8 +1099,8 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	  break;
 	}
 
-      ev_.gamma_mva[ev_.ngamma]=g.userFloat("PhotonMVAEstimatorRunIIFall17v2Values");
-      ev_.gamma_mvaCats[ev_.ngamma]=g.userInt("PhotonMVAEstimatorRunIIFall17v2Categories");
+      ev_.gamma_mva[ev_.ngamma]=g.userFloat("PhotonMVAEstimatorRunIIFall17v"+EGIDVersion_+"Values");
+      ev_.gamma_mvaCats[ev_.ngamma]=g.userInt("PhotonMVAEstimatorRunIIFall17v"+EGIDVersion_+"Categories");
       ev_.gamma_idFlags[ev_.ngamma]= g.passElectronVeto() | (g.hasPixelSeed()<<1) | (ismvawp80<<2) | (ismvawp90<<3);
       ev_.gamma_pid[ev_.ngamma]= ( (looseBits & 0x3ff)
                                    | ((mediumBits & 0x3ff)<<10)
@@ -1548,7 +1548,8 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   //save event if at least one object at gen or reco level
   if(!saveTree_) return;
-  if(applyFilt_){
+  // Define some filters, otherwise, you might store a lot of empty events (check returns in recAnalysis)
+  if(applyFilt_){ 
 	//if (FilterType_.find("ttbar")!=std::string::npos) if(nrecbjets_<2 || nrecjets_<4 || nrecleptons_==0) return;
       if (FilterType_.find("ttbar")!=std::string::npos) {
 		  // skim (nJ>=4 and nL>0) OR (nL>1)
@@ -1558,6 +1559,10 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 		  if(!ev_.isData && nrecjets_>=4 && nrecbjets_<2) return;
 	  }
 	  if (FilterType_.find("dilep")!=std::string::npos) if(nrecleptons_<2) return;
+	  if (FilterType_.find("lowmu")!=std::string::npos) {
+		  if(ev_.nl==0 && (ev_.nj==0)) return;
+		  if(ev_.nj>0 && ev_.j_pt[0]<100) return;
+	  }
 	// data - skim on event w/o forward protons but save the event count
 	histContainer_["counter"]->Fill(2);
 	if(ev_.isData) histContainer_["RPcount"]->Fill(nmultiprotons_[0],nmultiprotons_[1]);

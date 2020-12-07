@@ -14,6 +14,9 @@ ANALYSISVARS={
    'dilep_data': ['leptons','pps','pflow'],
    'ttbar_data': ['leptons','jets','met','pps','pflow'],
    'ttbar_sys': ['leptons','jets','met','pps','generator','systematics','pflow'],
+   'lowmu': ['leptons','jets','met','pps','generator','pflow'],
+   'lowmu_data': ['leptons','jets','met','pps','pflow'],
+   'lowmu_sys': ['leptons','jets','met','pps','generator','systematics','pflow'],
    'test':  ['generator','pps']
 }
 ANALYSISTRIGGERLISTS={
@@ -141,23 +144,9 @@ ANALYSISTRIGGERLISTS={
           'HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v'
       ],  
       'lowmu2017':['HLT_HIPFJet140_v',
+          'HLT_HIPFJetFwd140_v',
           'HLT_HIEle15_WPLoose_Gsf_v',
-          'HLT_Ele30_eta2p1_WPTight_Gsf_CentralPFJet35_EleCleaned_v',
-          'HLT_HIMu15_v',
-          'HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ',
-          'HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass8_v',
-          'HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_Mass3p8_v',
-          'HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_v',
-          'HLT_Ele23_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v',
-          'HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v',
-          'HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v',
-          'HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v',
-          'HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ_v',
-          'HLT_PFHT380_SixJet32_DoubleBTagCSV_p075_v',
-          'HLT_PFHT430_SixJet40_BTagCSV_p080_v ',
-          'HLT_PFHT380_SixPFJet32_DoublePFBTagCSV_2p2_v',
-          'HLT_PFHT430_SixPFJet40_PFBTagCSV_1p5_v',
-          'HLT_PFHT380_SixPFJet32_DoublePFBTagDeepCSV_2p2_v'
+          'HLT_HIMu15_v'
       ],          
     2016:['HLT_Ele32_eta2p1_WPTight_Gsf_v',
           'HLT_IsoMu24_v',
@@ -232,7 +221,8 @@ ANALYSISRUNS={
     'era2017_F' :305044,
     'era2017_F1':305044,
     'era2017_F2':305178,
-    'era2017_F3':305967
+    'era2017_F3':305967,
+    'era2017_H' :306926
 }
 
 
@@ -255,6 +245,7 @@ analysis = cms.EDAnalyzer("MiniAnalyzer",
                           photons                = cms.InputTag("slimmedPhotons"),
                           jets                   = cms.InputTag('updatedPatJetsUpdatedJECBTag'),
                           jetIdToUse             = cms.string(ANALYSISJETIDS[2017]),
+                          EGIDVersion            = cms.string("2"),
                           jecUncSources          = cms.vstring("AbsoluteStat","AbsoluteScale","AbsoluteMPFBias","Fragmentation","SinglePionECAL","SinglePionHCAL","FlavorPureGluon","FlavorPureQuark","FlavorPureCharm","FlavorPureBottom","TimePtEta","RelativeJEREC1","RelativeJEREC2","RelativeJERHF","RelativePtBB","RelativePtEC1","RelativePtEC2","RelativePtHF","RelativeBal","RelativeFSR","RelativeStatFSR","RelativeStatEC","RelativeStatHF","PileUpDataMC","PileUpPtRef","PileUpPtBB","PileUpPtEC1","PileUpPtEC2","PileUpPtHF"),
                           jecUncFile             = cms.string('jecUncSources.txt'),
                           metFilterBits          = cms.InputTag("TriggerResults","","PAT"),

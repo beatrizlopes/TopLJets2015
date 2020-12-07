@@ -16,7 +16,7 @@ class SelectionTool {
 
  public:
 
-  enum AnalysisType	{TOP=0, VBF=1, DILEP=2};
+  enum AnalysisType	{TOP=0, VBF=1, DILEP=2, LOWMU=3};
 
   SelectionTool(TString dataset_="",bool debug=false,TH1 *triggerList=0, AnalysisType analysisType = TOP);
   ~SelectionTool() {}
@@ -37,13 +37,14 @@ class SelectionTool {
   /////////////////////////////////////////////////////////////////////////////////////////
 
   bool passSingleLeptonTrigger(MiniEvent_t &ev);
+  bool passJetTrigger(MiniEvent_t &ev);  
   TString flagFinalState(MiniEvent_t &ev, std::vector<Particle> leptons={}, std::vector<Particle> photons={}, int _sys = 0); 
   std::vector<Particle> leptons_,vetoLeptons_,photons_,tmpPhotons;
  
   std::vector<Jet> jets_;
   TLorentzVector met_;
   bool hasTriggerBit(TString triggerName,unsigned int word);
-  std::vector<Particle> flaggedLeptons(MiniEvent_t &ev);
+  std::vector<Particle> flaggedLeptons(MiniEvent_t &ev, float minPt=20., float maxEta=2.5);
   std::vector<Particle> selLeptons(std::vector<Particle> &flaggedLeptons,int muQualBit=LOOSE, int eleQualBit=LOOSE, double minPt=0., double maxEta=99., std::vector<Particle> veto={});
   std::vector<Particle> selLeptons(std::vector<Particle> &flaggedLeptons,int qualBit=LOOSE, double minPt=0., double maxEta=99., std::vector<Particle> veto={});
   std::vector<Particle> &getSelLeptons()  { return leptons_; }

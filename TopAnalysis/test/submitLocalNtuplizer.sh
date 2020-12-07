@@ -1,13 +1,13 @@
 #!/bin/bash
 
-outdir=/store/cmst3/group/top/RunIIReReco/2017/newproton_calib
+outdir=/store/cmst3/user/mpitt/LowMu/Data
 
 #low pileup runs
 json=/afs/cern.ch/cms/CAF/CMSCOMM/COMM_DQM/certification/Collisions17/13TeV/Final/Cert_306896-307082_13TeV_PromptReco_Collisions17_JSON_LowPU.txt
-commonOpts="--addParent --proxy --lumiMask ${json} --output ${outdir}"
+commonOpts="--dryRun --addAODParent --proxy --lumiMask ${json} --output ${outdir}"
 commonOpts="${commonOpts} --extraOpts runOnData=True,era=era2017"
 jobList=(
-    "--jobTag Data13TeV_2017H_SingleMuon_v2 --dataset /SingleMuon/Run2017H-17Nov2017-v2/MINIAOD"
+    "--jobTag Data13TeV_2017H_SingleMuon --dataset /SingleMuon/Run2017H-09Aug2019_UL2017_LowPU-v1/MINIAOD"
     #"--jobTag Data13TeV_2017H_DoubleMuon    --dataset /HighEGJet/Run2017H-17Nov2017-v1/MINIAOD"  #only in T0/T1
     #"--jobTag Data13TeV_2017H_HighEGJet     --dataset /HighEGJet/Run2017H-17Nov2017-v1/MINIAOD"  #only in T0/T1
 )
@@ -15,7 +15,7 @@ jobList=(
 for ((i = 0; i < ${#jobList[@]}; i++))
 do
     echo ${jobList[$i]}
-    python scripts/submitLocalNtuplizer.py ${commonOpts} ${jobList[$i]}; 
+    python ${CMSSW_BASE}/src/TopLJets2015/TopAnalysis/scripts/submitLocalNtuplizer.py ${commonOpts} ${jobList[$i]}; 
 done
 
 
