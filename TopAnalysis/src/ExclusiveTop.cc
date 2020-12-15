@@ -1,17 +1,18 @@
-#include <TFile.h>
-#include <TROOT.h>
-#include <TH1.h>
-#include <TH2.h>
-#include <TSystem.h>
-#include <TGraph.h>
-#include <TLorentzVector.h>
-//#include "TLorentzVector.h"  // !!!!!!!!!!!! IT SHOULD GO WITH ", NOT <
-#include <TGraphAsymmErrors.h>
+// ROOT includes
+#include "TFile.h"
+#include "TROOT.h"
+#include "TH1.h"
+#include "TH2.h"
+#include "TSystem.h"
+#include "TGraph.h"
+#include "TLorentzVector.h"
+#include "TGraphAsymmErrors.h"
 #include "TMatrixD.h"
 #include "TMath.h"
 #include "TMinuit.h"
 #include "TApplication.h"
 
+// cpp includes
 #include <vector>
 #include <set>
 #include <iostream>
@@ -19,13 +20,12 @@
 #include <string>
 #include <sstream>
 
+// package includes
 #include "TopLJets2015/TopAnalysis/interface/CommonTools.h"
 #include "TopLJets2015/TopAnalysis/interface/ExclusiveTop.h"
 #include "TopLJets2015/TopAnalysis/interface/NeutrinoEllipseCalculator.h"
-//#include "TopLJets2015/CTPPSAnalysisTools/interface/LHCConditionsFactory.h"
-//#include "TopLJets2015/CTPPSAnalysisTools/interface/AlignmentsFactory.h"
-//#include "TopLJets2015/CTPPSAnalysisTools/interface/XiReconstructor.h"
 #include "TopQuarkAnalysis/TopTools/interface/MEzCalculator.h"
+#include "TopLJets2015/TopAnalysis/interface/PPSEff.h"
 
 
 using namespace std;
@@ -343,8 +343,7 @@ void RunExclusiveTop(TString filename,
     //lhc_conds.feedConditions(Form("%s/src/TopLJets2015/CTPPSAnalysisTools/data/2017/xangle_tillTS2.csv", CMSSW_BASE));
     //lhc_conds.feedConditions(Form("%s/src/TopLJets2015/CTPPSAnalysisTools/data/2017/xangle_afterTS2.csv", CMSSW_BASE));
     
-    //  bool isTTbar( filename.Contains("_TTJets") or (normH and TString(normH->GetTitle()).Contains("_TTJets")));
-    bool isTTbar = 1;
+    bool isTTbar = filename.Contains("_TTJets");
 	bool isData = filename.Contains("Data13TeV") || filename.Contains("SingleMuon") || filename.Contains("SingleElectron");
 	bool isPythia8 = filename.Contains("pythia8");
     
@@ -394,8 +393,12 @@ void RunExclusiveTop(TString filename,
 	
     //JEC/JER
     JECTools jec(era);
-    
+	
+    // Proton correction class
+    PPSEff *PPS_reco = new PPSEff(Form("%s/src/TopLJets2015/TopAnalysis/data/era2017/reco_charactersitics_version1.root", CMSSW_BASE));
+
     // BOOK PROTON TREE (DATA ONLY)
+    fOut->cd();
 	TTree *outPT=new TTree("protons","protons");
     outPT->Branch("run",&ev.run,"run/i");
     outPT->Branch("event",&ev.event,"event/l");
@@ -461,7 +464,7 @@ void RunExclusiveTop(TString filename,
 
         "l_pt", "l_eta", "l_phi", "l_m", "l_E", "lepton_isolation",
         "nu_pt", "nu_eta", "nu_phi",
-        "p1_xi", "p2_xi",
+        "p1_xi", "p2_xi", "ppsSF_wgt", "ppsSF_wgt_err",
 		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt",
 		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err",
 		"ren_Up","fac_Up","scale_Up",
@@ -572,6 +575,18 @@ void RunExclusiveTop(TString filename,
 	if(systVar.find("jerDn")!=string::npos) sys = -1;
 	if(systVar.find("jecUp")!=string::npos) sys = 2;
 	if(systVar.find("jecDn")!=string::npos) sys = -2;
+    if(systVar.find("jecAbsUp")!=string::npos) sys = 3;
+	if(systVar.find("jecAbsDn")!=string::npos) sys = -3;	
+    if(systVar.find("jecRelUp")!=string::npos) sys = 4;
+	if(systVar.find("jecRelDn")!=string::npos) sys = -4;	
+    if(systVar.find("jecPileupUp")!=string::npos) sys = 5;
+	if(systVar.find("jecPileupDn")!=string::npos) sys = -5;	
+    if(systVar.find("jecFlavUp")!=string::npos) sys = 6;
+	if(systVar.find("jecFlavDn")!=string::npos) sys = -6;	
+    if(systVar.find("jecHighPtUp")!=string::npos) sys = 7;
+	if(systVar.find("jecHighPtDn")!=string::npos) sys = -7;	
+    if(systVar.find("jecTimeUp")!=string::npos) sys = 8;
+	if(systVar.find("jecTimeDn")!=string::npos) sys = -8;
 	if(sys>0){cout << "INFO: Running JEC/JER up variation"<<endl;}
 	else if(sys<0){cout << "INFO: Running JEC/JER down variation"<<endl;}
 	else{cout << "INFO: Running nominal jet callibration"<<endl;}
@@ -585,8 +600,17 @@ void RunExclusiveTop(TString filename,
 		cout << "INFO: Running btagSF down variation"<<endl;
 		option = "down";}
 	else{cout << "INFO: Running nominal btag SF"<<endl;}
-
-		
+    
+	// Proton reconstuction systematics
+	float pps_err = 0;
+	if(systVar.find("ppsUp")!=string::npos) {
+		cout << "INFO: Running PPS xi reco. up variation"<<endl;
+		pps_err = 1;}
+	else if(systVar.find("ppsDn")!=string::npos) {
+		cout << "INFO: Running PPS xi reco. down variation"<<endl;
+		pps_err = -1;}
+	else{cout << "INFO: Running nominal PPS reco"<<endl;}
+	
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////  LOOP OVER EVENTS  /////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -652,15 +676,17 @@ void RunExclusiveTop(TString filename,
             selectedLeptons.push_back(leptons[i_lept]);
         }
 		
-        // selection of protons
+        // selection of protons and reco unc.
+		// Note fwdtrk_xiError is deprecated, using reco from 
+		// https://twiki.cern.ch/twiki/bin/view/CMS/TaggedProtonsRecoCharacteristics
         for (int ift=0; ift<ev.nfwdtrk; ift++) {
             const unsigned short pot_raw_id = ev.fwdtrk_pot[ift];
             if(ev.fwdtrk_method[ift]==1){  // selecting only MultiRP protons
                 if (pot_raw_id<100){ // positive z  (pot_raw_id=3)
-                    p1_xi = ev.fwdtrk_xi[ift];
+                    p1_xi = ev.fwdtrk_xi[ift] + pps_err*PPS_reco->getRecoErr(ev.fwdtrk_xi[ift],0,ev.run);
                 }
             else {   // negative z   (pot_raw_id=103)
-                p2_xi = ev.fwdtrk_xi[ift];
+                p2_xi = ev.fwdtrk_xi[ift] + pps_err*PPS_reco->getRecoErr(ev.fwdtrk_xi[ift],1,ev.run);
             }
         }
     }
@@ -698,7 +724,9 @@ void RunExclusiveTop(TString filename,
         ht.fill("puwgtctr",0,plotwgts);
 #endif  
         outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = outVars["selSF_wgt"] = outVars["trigSF_wgt"] = 1;
-        outVars["pu_wgt"] = outVars["ptag_wgt"] = outVars["ptag_wgt_err"] = 1;
+        outVars["pu_wgt"] = outVars["ptag_wgt"] =  outVars["ppsSF_wgt"] = 1;
+
+		outVars["ppsSF_wgt_err"] = outVars["ptag_wgt_err"] = 0;
 		
         outVars["ren_Down"] = outVars["scale_Down"] = outVars["fac_Down"] = 0;
         outVars["ren_Up"] = outVars["scale_Up"] = outVars["fac_Up"] = 0;
@@ -738,7 +766,7 @@ void RunExclusiveTop(TString filename,
 			outVars["gen_wgt"] = (ev.g_nw>0 ? ev.g_w[0] : 1.0);
 			
             wgt *= outVars["gen_wgt"];                              // generator level weights
-			
+					
             plotwgts[0]=wgt;                                        //update weight for plotter
 			outVars["weight"] = wgt;
 			

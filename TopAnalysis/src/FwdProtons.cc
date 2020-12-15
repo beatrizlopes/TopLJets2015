@@ -303,9 +303,9 @@ void RunFwdProtons(const TString in_fname,
       }
 	  else{ //MC specific: compute event weight and get truth info
 
-        float normWgt(normH? normH->GetBinContent(1) : 1.0);        
+        //float normWgt(normH? normH->GetBinContent(1) : 1.0);        
         TString period = lumi.assignRunPeriod();
-        float puWgt(lumi.pileupWeight(ev.g_pu,period)[0]);
+        //float puWgt(lumi.pileupWeight(ev.g_pu,period)[0]);
         //EffCorrection_t selSF(1.0,0.0); // = lepEffH.getOfflineCorrection(leptons[0], period);
 		//EffCorrection_t trigSF(1.0,0.0);// = lepEffH.getTriggerCorrection(leptons,{},{},period);
         //EffCorrection_t l1prefireProb=l1PrefireWR.getCorrection(allJets,{});

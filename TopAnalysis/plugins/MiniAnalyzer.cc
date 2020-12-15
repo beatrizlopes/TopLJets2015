@@ -712,6 +712,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 			//apply aperture cuts (Depending on the run number) https://twiki.cern.ch/twiki/bin/viewauth/CMS/TaggedProtonsGettingStarted#Fiducial_cuts
 			if(proton.xi() > PPS_eff_->getXiHigh(detid.arm(),ev_.run,ev_.beamXangle)) continue;
 			
+
             ev_.fwdtrk_pot[ev_.nfwdtrk]       = 100*detid.arm()+10*detid.station()+detid.rp();
             ev_.fwdtrk_chisqnorm[ev_.nfwdtrk] = proton.normalizedChi2();
             ev_.fwdtrk_method[ev_.nfwdtrk]    = Short_t(proton.method());
@@ -727,7 +728,21 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             ev_.fwdtrk_xiSF[ev_.nfwdtrk]      = PPS_eff_->getEff(proton.xi(),detid.arm(),ev_.run);
             ev_.fwdtrk_xiError[ev_.nfwdtrk]   = proton.xiError();
             ev_.fwdtrk_t[ev_.nfwdtrk]         = proton.t();
-			if(ev_.fwdtrk_method[ev_.nfwdtrk]==1) nmultiprotons_[detid.arm()]++;
+			if(ev_.fwdtrk_method[ev_.nfwdtrk]==1) {
+				nmultiprotons_[detid.arm()]++;
+				//Loop over tracks
+				for (const auto &pr_tr : proton.contributingLocalTracks()) {
+					CTPPSDetId rpId(pr_tr->getRPId());
+					if(rpId.station()){
+					  ev_.fwdtrk_FarX[ev_.nfwdtrk] = pr_tr->getX();
+					  ev_.fwdtrk_FarY[ev_.nfwdtrk] = pr_tr->getY();
+					}
+					else{
+					  ev_.fwdtrk_NearX[ev_.nfwdtrk] = pr_tr->getX();
+					  ev_.fwdtrk_NearY[ev_.nfwdtrk] = pr_tr->getY();
+					}
+				}
+			}
             ev_.nfwdtrk++;
           }
       }
@@ -1373,7 +1388,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   //PF candidates
   LorentzVector vtxPt[8]; 
   ev_.nchPV=0; ev_.sumPVChPt=0; ev_.sumPVChPz=0; ev_.sumPVChHt=0;
-
+  ev_.ntrk=0;
   for(int i=0; i<8; i++){
 	vtxPt[i].SetXYZT(0,0,0,0);
 	ev_.nchPV_v[i]=0;
@@ -1406,42 +1421,48 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       ev_.nPFCands[ieta]++;
       ev_.sumPFHt[ieta] += pf->pt();
       ev_.sumPFEn[ieta] += pf->energy();
-      ev_.sumPFPz[ieta] += fabs(pf->pz());
+      ev_.sumPFPz[ieta] += pf->pz();
       if(pf->charge()!=0){
         ev_.nPFChCands[ieta]++;
         ev_.sumPFChHt[ieta] += pf->pt();
         ev_.sumPFChEn[ieta] += pf->energy();
-        ev_.sumPFChPz[ieta] += fabs(pf->pz());
+        ev_.sumPFChPz[ieta] += (pf->pz());
         bool passChargeSel(pf->pt()>0.9 && fabs(pf->eta())<2.5); // split 2.1 and 2.5
         const pat::PackedCandidate::PVAssoc pvassoc=pf->fromPV(); 
 		const pat::PackedCandidate::PVAssoc pvassoc2=pf->fromPV(_second_vertex_index); 
 		int _bin;
         if(passChargeSel && pvassoc>=pat::PackedCandidate::PVTight){
           ev_.nchPV++;
-          ev_.sumPVChPz+=fabs(pf->pz());
+          ev_.sumPVChPz+=(pf->pz());
           ev_.sumPVChHt+=pf->pt();
 		  
 		  // Add extra PV variables
 		  _bin = 0;
 		  ev_.nchPV_v[_bin]++;
-		  ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+		  ev_.sumPVChPz_v[_bin]+=(pf->pz());
 		  ev_.sumPVChHt_v[_bin]+=pf->pt();
 		  vtxPt[_bin]+=pf->p4();
 		  if(fabs(pf->eta())<2.1) {_bin = 1;
 			  ev_.nchPV_v[_bin]++;
-			  ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			  ev_.sumPVChPz_v[_bin]+=(pf->pz());
 			  ev_.sumPVChHt_v[_bin]+=pf->pt();
 			  vtxPt[_bin]+=pf->p4();
 		      if(pvassoc>pat::PackedCandidate::PVTight) {_bin=3;
 			    ev_.nchPV_v[_bin]++;
-			    ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			    ev_.sumPVChPz_v[_bin]+=(pf->pz());
 			    ev_.sumPVChHt_v[_bin]+=pf->pt();
 			    vtxPt[_bin]+=pf->p4();
+				if(ev_.ntrk<ev_.MAXTRACKS){
+				  ev_.track_pt[ev_.ntrk] = pf->pt();
+				  ev_.track_eta[ev_.ntrk] = pf->eta();
+				  ev_.track_phi[ev_.ntrk] = pf->phi();
+				  ev_.ntrk++;
+				}
 		      }
 		  }
 		  if(pvassoc>pat::PackedCandidate::PVTight) {_bin=2;
 			    ev_.nchPV_v[_bin]++;
-			    ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			    ev_.sumPVChPz_v[_bin]+=(pf->pz());
 			    ev_.sumPVChHt_v[_bin]+=pf->pt();
 			    vtxPt[_bin]+=pf->p4();
 		  }
@@ -1449,24 +1470,24 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 		if(passChargeSel && pvassoc2>=pat::PackedCandidate::PVTight){
 		  _bin = 4;
 		  ev_.nchPV_v[_bin]++;
-		  ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+		  ev_.sumPVChPz_v[_bin]+=(pf->pz());
 		  ev_.sumPVChHt_v[_bin]+=pf->pt();
 		  vtxPt[_bin]+=pf->p4();
 		  if(fabs(pf->eta())<2.1) {_bin = 4+1;
 			  ev_.nchPV_v[_bin]++;
-			  ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			  ev_.sumPVChPz_v[_bin]+=(pf->pz());
 			  ev_.sumPVChHt_v[_bin]+=pf->pt();
 			  vtxPt[_bin]+=pf->p4();
 		      if(pvassoc2>pat::PackedCandidate::PVTight) {_bin=4+3;
 			    ev_.nchPV_v[_bin]++;
-			    ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			    ev_.sumPVChPz_v[_bin]+=(pf->pz());
 			    ev_.sumPVChHt_v[_bin]+=pf->pt();
 			    vtxPt[_bin]+=pf->p4();
 		      }
 		  }
 		  if(pvassoc2>pat::PackedCandidate::PVTight) {_bin=4+2;
 			    ev_.nchPV_v[_bin]++;
-			    ev_.sumPVChPz_v[_bin]+=fabs(pf->pz());
+			    ev_.sumPVChPz_v[_bin]+=(pf->pz());
 			    ev_.sumPVChHt_v[_bin]+=pf->pt();
 			    vtxPt[_bin]+=pf->p4();
 		  }

@@ -204,6 +204,10 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("sumPFChEn",    ev.sumPFChEn,     "sumPFChEn[8]/F");
   t->Branch("sumPFChPz",    ev.sumPFChPz,     "sumPFChPz[8]/F");
   t->Branch("sumPFChHt",    ev.sumPFChHt,     "sumPFChHt[8]/F");  
+  t->Branch("ntrk",         &ev.ntrk,         "ntrk/I");  
+  t->Branch("track_pt",     ev.track_pt,      "track_pt[ntrk]/F");  
+  t->Branch("track_eta",    ev.track_eta,     "track_eta[ntrk]/F");  
+  t->Branch("track_phi",    ev.track_phi,     "track_phi[ntrk]/F");  
   } // end store pflow
   
   //MET
@@ -254,6 +258,10 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   t->Branch("fwdtrk_xiError",   ev.fwdtrk_xiError,   "fwdtrk_xiError[nfwdtrk]/F");
   t->Branch("fwdtrk_xiSF",      ev.fwdtrk_xiSF,      "fwdtrk_xiSF[nfwdtrk]/F");
   t->Branch("fwdtrk_t",         ev.fwdtrk_t,         "fwdtrk_t[nfwdtrk]/F");
+  t->Branch("fwdtrk_NearX",     ev.fwdtrk_NearX,     "fwdtrk_NearX[nfwdtrk]/F");
+  t->Branch("fwdtrk_NearY",     ev.fwdtrk_NearY,     "fwdtrk_NearY[nfwdtrk]/F");
+  t->Branch("fwdtrk_FarX",      ev.fwdtrk_FarX,      "fwdtrk_FarX[nfwdtrk]/F");
+  t->Branch("fwdtrk_FarY",      ev.fwdtrk_FarY,      "fwdtrk_FarY[nfwdtrk]/F");
   } // end store pps
   
   for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("rawmu")!=std::string::npos){
@@ -469,6 +477,10 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("sumPFChEn",    ev.sumPFChEn);
   t->SetBranchAddress("sumPFChPz",    ev.sumPFChPz);
   t->SetBranchAddress("sumPFChHt",    ev.sumPFChHt);
+  t->SetBranchAddress("ntrk",         &ev.ntrk);
+  t->SetBranchAddress("track_pt",     ev.track_pt);
+  t->SetBranchAddress("track_eta",    ev.track_eta);
+  t->SetBranchAddress("track_phi",    ev.track_phi);
   }
   
   //MET
@@ -517,6 +529,10 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   t->SetBranchAddress("fwdtrk_xiError",   ev.fwdtrk_xiError);
   t->SetBranchAddress("fwdtrk_xiSF",      ev.fwdtrk_xiSF);
   t->SetBranchAddress("fwdtrk_t",         ev.fwdtrk_t);
+  t->SetBranchAddress("fwdtrk_FarX",      ev.fwdtrk_FarX);
+  t->SetBranchAddress("fwdtrk_FarY",      ev.fwdtrk_FarY);
+  t->SetBranchAddress("fwdtrk_NearX",     ev.fwdtrk_NearX);
+  t->SetBranchAddress("fwdtrk_NearY",     ev.fwdtrk_NearY);
   }
   
   //

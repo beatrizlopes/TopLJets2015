@@ -92,6 +92,11 @@ options.register('applyFilt', True,
                  VarParsing.varType.bool,
                  'Apply filters'
                  )
+options.register('reMiniAOD', False,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.bool,
+                 'Apply reminiAOD reco'
+                 )                 
 options.register('ListVars','full',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.string,
@@ -101,7 +106,7 @@ options.parseArguments()
 
 #start process
 from Configuration.StandardSequences.Eras import eras
-if options.RedoProtons or options.redoProtonRecoFromRAW:
+if options.RedoProtons or options.redoProtonRecoFromRAW or options.reMiniAOD:
   from Configuration.ProcessModifiers.run2_miniAOD_UL_cff import run2_miniAOD_UL
   process = cms.Process("MiniAnalysis", eras.Run2_2017, run2_miniAOD_UL)
 else: process = cms.Process("MiniAnalysis", eras.Run2_2017)
@@ -291,7 +296,7 @@ except:
       print '\te/g post reco not found, will take e/g as it is'
       
 if options.runOnAOD:
-  print 'I don\'t know how to run on AODs!!!!!'
+  print 'I don\'t know how to run on AODs!!!!!' 
       
 if process.updatedPatJetsUpdatedJECBTag:
       process.custom_jec_seq=cms.Sequence(process.QGTagger * process.patJetCorrFactorsUpdatedJECBTag * process.updatedPatJetsUpdatedJECBTag)
@@ -304,12 +309,12 @@ if options.doParticleLevel and not options.runOnData:
       process.mctruth=cms.Path(process.mergedGenParticles*process.genParticles2HepMC*process.particleLevel)
       toSchedule.append( process.mctruth )
 
-if options.RedoProtons or options.redoProtonRecoFromRAW:
+if options.RedoProtons or options.redoProtonRecoFromRAW :
       print 'INFO:\t Redo proton recontrsuction'
       from TopLJets2015.TopAnalysis.protonReco_cfg import setupProtonReco
       #if options.redoProtonRecoFromRAW:
       #  process.load("EventFilter.CTPPSRawToDigi.ctppsRawToDigi_cff")
-      setupProtonReco(process,reMiniAOD=True)
+      setupProtonReco(process,reMiniAOD=options.reMiniAOD)
       #if options.redoProtonRecoFromRAW:
       #  process.ppsReco=cms.Path(process.ctppsRawToDigi*process.recoCTPPSTask)
       #else: process.ppsReco=cms.Path(process.recoCTPPSTask)

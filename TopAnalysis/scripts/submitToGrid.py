@@ -49,6 +49,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
         pyCfgParams += ',\'runWithAOD=True\''
         pyCfgParams += ',\'redoProtonRecoFromRAW=True\''
     if xangle: pyCfgParams += ',\'runProtonFastSim=%s\''%xangle
+    if '2017_H' in era: pyCfgParams += ',\'reMiniAOD=True\''
     pyCfgParams += ',\'ListVars=%s\''%listVars
     config_file.write('config.JobType.pyCfgParams = [%s]\n'%pyCfgParams)
     config_file.write('config.JobType.inputFiles = [\'{0}\',\'{1}\',\'muoncorr_db.txt\',\'jecUncSources.txt\',\'qg_db.db\']\n'.format(jecDB,jerDB))

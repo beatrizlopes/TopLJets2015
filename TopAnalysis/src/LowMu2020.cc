@@ -40,6 +40,7 @@ void RunLowMu2020(const TString in_fname,
 
   bool isData = in_fname.Contains("Data13TeV") || in_fname.Contains("SingleMuon") || in_fname.Contains("HighEGJet");
   //bool isPythia8 = in_fname.Contains("pythia8");
+  float sqrt_s = 13000.;
   
   //object selection cuts
   float minLeadJetPt(145);
@@ -138,17 +139,19 @@ void RunLowMu2020(const TString in_fname,
 					"j3m","j3thrust","j3pt","j3Y",
 					"mpp","Ypp","xip","xin",
 					
-					"HT","mWT",
+					"HT","mWT","cs_xp","cs_xn","xip_cms","xin_cms",
 					
 					"weight","gen_wgt","pu_wgt","ptag_wgt","ptag_wgt_err"
   };
   
   int jet_n(0);
   float jet_pt[ev.MAXJET];
+  float jet_eta[ev.MAXJET];
   float jet_deepcsv[ev.MAXJET];
   
   outT->Branch("jet_n",&jet_n,"jet_n/I");
   outT->Branch("jet_pt",jet_pt,"jet_pt[jet_n]/F");
+  outT->Branch("jet_eta",jet_eta,"jet_eta[jet_n]/F");
   outT->Branch("jet_deepcsv",jet_deepcsv,"jet_deepcsv[jet_n]/F");
 	
   int lep_n(0);
@@ -284,10 +287,13 @@ void RunLowMu2020(const TString in_fname,
       jec.smearJetEnergies(ev);	  
       std::vector<Jet> jets = selector.getGoodJets(ev,minJetPt,4.7,leptons,{});
       
-	  boutVars["passLepSel"] = selector.passSingleLeptonTrigger(ev) 
-								&& (leptons.size()>0 && leptons[0].pt()>minLeadLeptonPt);
-	  boutVars["passJetSel"] = selector.passJetTrigger(ev) 
-							    && (jets.size()>0 && jets[0].pt()>minLeadJetPt);
+	  boutVars["passLepSel"] = (leptons.size()>0 && leptons[0].pt()>minLeadLeptonPt);
+	  boutVars["passJetSel"] = (jets.size()>0 && jets[0].pt()>minLeadJetPt);
+								
+	  if(ev.isData){
+		  boutVars["passLepSel"] = boutVars["passLepSel"] && selector.passSingleLeptonTrigger(ev);
+		  boutVars["passJetSel"] = boutVars["passJetSel"] && selector.passJetTrigger(ev);
+	  }
 	  
       if(!boutVars["passJetSel"] && !boutVars["passLepSel"]) continue;
       ht.fill("evt_count", 4, plotwgts);  // count events after object selection cut
@@ -364,25 +370,36 @@ void RunLowMu2020(const TString in_fname,
 		  nupz = neutrinoPzComputer.Calculate();
 	  }
       TLorentzVector neutrino(met.Px(),met.Py(),nupz ,TMath::Sqrt(TMath::Power(met.Pt(),2)+TMath::Power(nupz,2)));
+ 
+	  // leptons
+      lep_n   = int(leptons.size());
+	  for(size_t ij=0; ij<leptons.size(); ij++) {
+        lep_pt[ij] = leptons[ij].Pt();
+        lep_id[ij] = leptons[ij].id();
+        lep_q[ij] = leptons[ij].charge();
+	  }
 
 	  // set boson kinematics
 	  TLorentzVector boson(0,0,0,0);
-	  if(leptons.size()==1) boson = (leptons[0] + neutrino);
-	  if(leptons.size()==2) boson = (leptons[0] + leptons[1]);
-      
+	  if(lep_n==1) boson = (leptons[0] + neutrino);
+	  else if(lep_n==2) boson = (leptons[0] + leptons[1]);
+     
+	 
       // compute scalar ht and jets
       float scalarht(0.);
       jet_n   = int(jets.size());
       for(size_t ij=0; ij<jets.size(); ij++) {
         jet_pt[ij] = jets[ij].Pt();
+        jet_eta[ij] = jets[ij].Eta();
         scalarht += jets[ij].pt();
       }
       if(boutVars["passLepSel"]) scalarht += leptons[0].pt();
-      scalarht += neutrino.Pt();
+      if(lep_n==1) scalarht += neutrino.Pt();
+	  
 
 	  // check HF selection
   	  TLorentzVector top1(0,0,0,0), top2(0,0,0,0);
-	  boutVars["passTopSel"] =  boutVars["passLepSel"] && bJets.size()>1 && lightJets.size()>1;
+	  boutVars["passTopSel"] =  (lep_n==1) && boutVars["passLepSel"] && (bJets.size()>1) && (lightJets.size()>1);
       if(boutVars["passTopSel"]){
 		  top1 += leptons[0] + neutrino;
 		  if(bJets[0].DeltaR(leptons[0])<bJets[1].DeltaR(leptons[0])) {
@@ -395,13 +412,14 @@ void RunLowMu2020(const TString in_fname,
 		  }
 	  }
 	  
-	  // leptons
-      lep_n   = int(leptons.size());
-	  for(size_t ij=0; ij<leptons.size(); ij++) {
-        lep_pt[ij] = leptons[ij].Pt();
-        lep_id[ij] = leptons[ij].id();
-        lep_q[ij] = leptons[ij].charge();
+	  // exclusivity cuts
+	  foutVars["xip_cms"] = 0; foutVars["xin_cms"] = 0;
+	  for(int i=0;i<ev.ntrk;i++){
+		  foutVars["xip_cms"]+=ev.track_pt[i]*TMath::Exp( ev.track_eta[i]);
+		  foutVars["xin_cms"]+=ev.track_pt[i]*TMath::Exp(-ev.track_eta[i]);
 	  }
+	  foutVars["xip_cms"]/=sqrt_s;
+	  foutVars["xin_cms"]/=sqrt_s;
 	  
       //////////////////////
       // FILL KINEMATICS  //
@@ -413,7 +431,7 @@ void RunLowMu2020(const TString in_fname,
 	  foutVars["xip"] = p1_xi;
 	  foutVars["xin"] = p2_xi;
 	  if( (p1_xi>0) && (p2_xi>0)){
-		foutVars["mpp"] = 13000.*sqrt(p1_xi*p2_xi);
+		foutVars["mpp"] = sqrt_s*sqrt(p1_xi*p2_xi);
 		foutVars["Ypp"] = 0.5*TMath::Log(p1_xi/p2_xi);
 	  }
 	  else{ foutVars["mpp"] = 0; foutVars["Ypp"] = 999;}
@@ -421,7 +439,7 @@ void RunLowMu2020(const TString in_fname,
 	  foutVars["boson_pt"] = boson.Pt();
 	  foutVars["boson_Y"] = boson.Rapidity();
 	  foutVars["mWT"] = (lep_n==1) ? sqrt(2*leptons[0].Pt()*met.Pt()*(1-cos(leptons[0].DeltaPhi(met)))) : 0;
-
+	  
 	  if(lep_n==1) foutVars["boson_dphi"] = leptons[0].DeltaPhi(neutrino);
 	  else if(lep_n==2) foutVars["boson_dphi"] = leptons[0].DeltaPhi(leptons[1]);
 	  else foutVars["boson_dphi"] = 999;
@@ -453,6 +471,27 @@ void RunLowMu2020(const TString in_fname,
 	    foutVars["j2dphi"] = foutVars["j3thrust"] = 999;
 	  }								
       foutVars["HT"] = scalarht;
+
+      foutVars["cs_xp"] = 0; foutVars["cs_xn"]=0;
+	  if(boutVars["passLepSel"]){
+		  for(size_t ij=0; ij<leptons.size(); ij++) {
+			  foutVars["cs_xp"]+=leptons[ij].E()+leptons[ij].Pz();
+			  foutVars["cs_xn"]+=leptons[ij].E()-leptons[ij].Pz();
+		  }
+	  }
+	  if(boutVars["passJetSel"] || boutVars["passTopSel"]) {
+		  for(size_t ij=0; ij<jets.size(); ij++) {
+			  foutVars["cs_xp"]+=jets[ij].E()+jets[ij].Pz();
+			  foutVars["cs_xn"]+=jets[ij].E()-jets[ij].Pz();
+		  }
+	  }
+	  if(lep_n==1) {
+		foutVars["cs_xp"]+=neutrino.E()+neutrino.Pz();
+		foutVars["cs_xn"]+=neutrino.E()-neutrino.Pz();
+	  }
+	  foutVars["cs_xp"]/=sqrt_s;
+	  foutVars["cs_xn"]/=sqrt_s;
+	      
       foutVars["weight"] = evWgt;
 
 	  // Save output tree

@@ -508,8 +508,19 @@ std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, doubl
    
     //jec uncertainty
     float jecUp(0),jecDn(0);   
-    int jflav(abs(ev.j_flav[k]));
-    for(int iunc=0; iunc<29; iunc++){
+    int jflav(abs(ev.j_flav[k]));	
+
+
+	int iunc_min=0, iunc_max=0; // see python/miniAnalyzer_cfi.py for more info
+	if(abs(sys)==2) {iunc_max=29; }    // Evaluate all systematics
+	else if(abs(sys)==3) {iunc_max=3;} // Absolute variations only
+	else if(abs(sys)==7) {iunc_min=3; iunc_max=6;} // High PT and fragmentation
+	else if(abs(sys)==6) {iunc_min=6; iunc_max=10;} // Flavor variations only
+	else if(abs(sys)==8) {iunc_min=10; iunc_max=11;} // Time variations only
+	else if(abs(sys)==4) {iunc_min=11; iunc_max=23;} // Relative variations only
+	else if(abs(sys)==5) {iunc_min=23; iunc_max=29;} // Pileup variations only
+	
+    for(int iunc=iunc_min; iunc<iunc_max; iunc++){
            
       //see python/miniAnalyzer_cfi.py for these
       if(iunc==6 && jflav!=21) continue; //FlavorPureGluon
@@ -520,7 +531,7 @@ std::vector<Jet> SelectionTool::getGoodJets(MiniEvent_t &ev, double minPt, doubl
       if(ev.j_jecUp[iunc][k]!=0) jecUp += pow(1-ev.j_jecUp[iunc][k],2);
       if(ev.j_jecDn[iunc][k]!=0) jecDn += pow(1-ev.j_jecDn[iunc][k],2);
 
-    }
+    }	
     jecUp=TMath::Sqrt(jecUp);
     jecDn=TMath::Sqrt(jecDn);
 	

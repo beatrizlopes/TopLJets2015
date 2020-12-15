@@ -8,7 +8,7 @@ def setupProtonSim(process,xangle,withPU=False):
   
   # input collections
   if withPU:
-    process.beamDivergenceVtxGenerator.srcGenParticle = cms.VInputTag(cms.InputTag("genPUProtons","genPUProtons"),
+    process.beamDivergenceVtxGenerator.srcGenParticle = cms.VInputTag(cms.InputTag("genPUProtons"),
     cms.InputTag("prunedGenParticles"))
   else:
     process.beamDivergenceVtxGenerator.srcGenParticle = cms.VInputTag(cms.InputTag("prunedGenParticles"))
@@ -29,8 +29,7 @@ def setupProtonSim(process,xangle,withPU=False):
   process.ctppsBeamParametersESSource.halfXangleX56 = xangle * 1E-6
   
   # for multiRP fit, set if you want to use x* and y* as free parameters or set them to zero
-  process.ctppsProtons.fitVtxY = False
-  #process.ctppsProtons.fitVtxX = False
+  #process.ctppsProtons.fitVtxY = False
 
   # processing path 
   process.pps_fastsim = cms.Path(process.beamDivergenceVtxGenerator

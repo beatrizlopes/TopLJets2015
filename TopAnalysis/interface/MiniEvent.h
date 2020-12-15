@@ -22,6 +22,7 @@ struct MiniEvent_t
   static const int MAXJETSYS    =  29;
   static const int MAXRAWMU     =  50;
   static const int MAXPROTONS   =  50;
+  static const int MAXTRACKS    =  100;
   
   Bool_t isData;
   UInt_t run,lumi,fill;
@@ -40,7 +41,8 @@ struct MiniEvent_t
   Float_t g_pt[MAXGENPAR],g_eta[MAXGENPAR],g_phi[MAXGENPAR],g_m[MAXGENPAR],g_xb[MAXGENPAR],g_xbp[MAXGENPAR];
   Int_t gtop_id[MAXGENTOPAR];
   Float_t gtop_pt[MAXGENTOPAR],gtop_pz[MAXGENTOPAR],gtop_eta[MAXGENTOPAR],gtop_phi[MAXGENTOPAR],gtop_m[MAXGENTOPAR];
-  Int_t g_nchPV;
+  Int_t g_nchPV, ntrk;
+  Float_t track_pt[MAXTRACKS],track_eta[MAXTRACKS],track_phi[MAXTRACKS];
   Float_t g_sumPVChPt,g_sumPVChPz,g_sumPVChHt;
 
   //reco level event
@@ -95,7 +97,8 @@ struct MiniEvent_t
   Float_t fwdtrk_thetax[MAXPROTONS],fwdtrk_thetay[MAXPROTONS],
     fwdtrk_vx[MAXPROTONS],fwdtrk_vy[MAXPROTONS],fwdtrk_vz[MAXPROTONS],
     fwdtrk_time[MAXPROTONS],fwdtrk_timeError[MAXPROTONS],
-    fwdtrk_chisqnorm[MAXPROTONS],fwdtrk_xi[MAXPROTONS],fwdtrk_xiError[MAXPROTONS],fwdtrk_xiSF[MAXPROTONS],fwdtrk_t[MAXPROTONS];
+    fwdtrk_chisqnorm[MAXPROTONS],fwdtrk_xi[MAXPROTONS],fwdtrk_xiError[MAXPROTONS],fwdtrk_xiSF[MAXPROTONS],fwdtrk_t[MAXPROTONS],
+    fwdtrk_FarX[MAXPROTONS],fwdtrk_FarY[MAXPROTONS],fwdtrk_NearX[MAXPROTONS],fwdtrk_NearY[MAXPROTONS];
   
   //PPS tracks (needed for low PU run)
   Short_t nppstrk,ppstrk_pot[MAXPROTONS],ppstrk_RecoInfo[MAXPROTONS];

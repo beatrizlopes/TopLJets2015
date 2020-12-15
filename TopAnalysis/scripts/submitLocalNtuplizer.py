@@ -72,6 +72,7 @@ def buildCondorFile(opt,fList,FarmDirectory):
             OpSysAndVer = "CentOS7"
         condor.write('requirements = (OpSysAndVer =?= "{0}")\n'.format(OpSysAndVer)) 
 
+        nexist=0; nmiss=0
         for i in range(len(fList)):
             secFileList=','.join(fList[i][1])
             if '/RAW' in secFileList: secFileType='RAW'
@@ -79,7 +80,9 @@ def buildCondorFile(opt,fList,FarmDirectory):
             if not os.path.isfile('/eos/cms//%s/%s/%s'%(opt.output,opt.jobTag,fList[i][0].split('/')[-1])): 
               condor.write('arguments=%s %s\n'%(fList[i][0],secFileList))
               condor.write('queue 1\n')
-            else: print('/eos/cms/%s/%s/%s exist'%(opt.output,opt.jobTag,fList[i][0].split('/')[-1]))
+              nmiss+=1
+            else: nexist+=1
+        print('Submit %d jobs (%d files are exists, and are skipped)'%(nmiss,nexist))
                                 
     #local worker script
     print 'Secondary file type',secFileType
