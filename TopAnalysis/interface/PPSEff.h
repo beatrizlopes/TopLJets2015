@@ -9,18 +9,23 @@
 #include <iostream>
 #include <string>
 
-// PPS helper from https://twiki.cern.ch/twiki/bin/view/CMS/TaggedProtonsFiducialCuts
-//#include "aperture_param_v2.h"
-
 enum class Periods {
-	era2017B  = 0,
-	era2017C1 = 1,
-	era2017C2 = 2,
-	era2017D  = 3,
-	era2017E  = 4,
-	era2017F1 = 5,
-	era2017F2 = 6,
-	era2017F3 = 7,
+	undefined = 0,
+	era2017B  = 1,
+	era2017C1 = 2,
+	era2017C2 = 3,
+	era2017D  = 4,
+	era2017E  = 5,
+	era2017F1 = 6,
+	era2017F2 = 7,
+	era2017F3 = 8,
+	Count     = 9
+};
+
+float sqr(float x){return x*x;}
+
+TString era[static_cast<int>(Periods::Count)] = {
+	"UNDEF","2017B","2017C1","2017C2","2017D","2017E","2017F1","2017F2","2017F3"
 };
 
 class PPSEff
@@ -36,93 +41,44 @@ class PPSEff
 	// Destructor 
 	~PPSEff() {_file0->Close();}
 	
-	float getStripEff(float x, float y, int arm, unsigned int runNumber){
-		if(!EffInit && !is2D){ std::cout << "ERROR: call getStripEff() w/o proper initialization" << std::endl; return 0;}
+	int GetRunIndx(unsigned int runNumber){
+		if(runNumber>=297050&& runNumber<=299329) return static_cast<int>(Periods::era2017B);
+		if(runNumber>=299368&& runNumber<=300780) return static_cast<int>(Periods::era2017C1);
+		if(runNumber>=300806&& runNumber<=302029) return static_cast<int>(Periods::era2017C2);
+		if(runNumber>=302031&& runNumber<=302663) return static_cast<int>(Periods::era2017D);
+		if(runNumber>=303825&& runNumber<=304797) return static_cast<int>(Periods::era2017E);
+		if(runNumber>=305044&& runNumber<=305114) return static_cast<int>(Periods::era2017F1);
+		if(runNumber>=305178&& runNumber<=305902) return static_cast<int>(Periods::era2017F2);
+		if(runNumber>=305967&& runNumber<=306460) return static_cast<int>(Periods::era2017F3);
+		return static_cast<int>(Periods::undefined);
+	}
+	
+	float getEff(float x, float y, int arm, unsigned int runNumber){
+		if(!EffInit){ std::cout << "ERROR: call getEff() w/o proper initialization" << std::endl; return 0;}
 		if(arm==0){
-			int ibin = _hrad201745[0]->FindBin(x,y);
-			if(runNumber>=297050&& runNumber<=299329) return _hrad201745[static_cast<int>(Periods::era2017B)]->GetBinContent(ibin);
-			if(runNumber>=299368&& runNumber<=300780) return _hrad201745[static_cast<int>(Periods::era2017C1)]->GetBinContent(ibin);
-			if(runNumber>=300806&& runNumber<=302029) return _hrad201745[static_cast<int>(Periods::era2017C2)]->GetBinContent(ibin);
-			if(runNumber>=302031&& runNumber<=302663) return _hrad201745[static_cast<int>(Periods::era2017D)]->GetBinContent(ibin);
-			if(runNumber>=303825&& runNumber<=304797) return _hrad201745[static_cast<int>(Periods::era2017E)]->GetBinContent(ibin);
-			if(runNumber>=305044&& runNumber<=305114) return _hrad201745[static_cast<int>(Periods::era2017F1)]->GetBinContent(ibin);
-			if(runNumber>=305178&& runNumber<=305902) return _hrad201745[static_cast<int>(Periods::era2017F2)]->GetBinContent(ibin);
-			if(runNumber>=305967&& runNumber<=306460) return _hrad201745[static_cast<int>(Periods::era2017F3)]->GetBinContent(ibin);
-			return 0;
+			int ibin = _heff201745[0]->FindBin(x,y);
+			return _heff201745[GetRunIndx(runNumber)]->GetBinContent(ibin);
 		}
 		else if(arm==1){
-			int ibin = _hrad201756[0]->FindBin(x,y);
-			if(runNumber>=297050&& runNumber<=299329) return _hrad201756[static_cast<int>(Periods::era2017B)]->GetBinContent(ibin);
-			if(runNumber>=299368&& runNumber<=300780) return _hrad201756[static_cast<int>(Periods::era2017C1)]->GetBinContent(ibin);
-			if(runNumber>=300806&& runNumber<=302029) return _hrad201756[static_cast<int>(Periods::era2017C2)]->GetBinContent(ibin);
-			if(runNumber>=302031&& runNumber<=302663) return _hrad201756[static_cast<int>(Periods::era2017D)]->GetBinContent(ibin);
-			if(runNumber>=303825&& runNumber<=304797) return _hrad201756[static_cast<int>(Periods::era2017E)]->GetBinContent(ibin);
-			if(runNumber>=305044&& runNumber<=305114) return _hrad201756[static_cast<int>(Periods::era2017F1)]->GetBinContent(ibin);
-			if(runNumber>=305178&& runNumber<=305902) return _hrad201756[static_cast<int>(Periods::era2017F2)]->GetBinContent(ibin);
-			if(runNumber>=305967&& runNumber<=306460) return _hrad201756[static_cast<int>(Periods::era2017F3)]->GetBinContent(ibin);
-			return 0;
+			int ibin = _heff201756[0]->FindBin(x,y);
+			return _heff201756[GetRunIndx(runNumber)]->GetBinContent(ibin);
+		}
+		else{ std::cout <<" wrong arm number (expect 0 or 1), return 0...\n"; return 0;}
+	}
+
+	float getEffErr(float x, float y, int arm, unsigned int runNumber){ // returns stat + sys error
+		if(!EffInit){ std::cout << "ERROR: call getEffErr() w/o proper initialization" << std::endl; return 0;}
+		if(arm==0){
+			int ibin = _heff201745[0]->FindBin(x,y);
+			return sqrt(sqr(_heff201745[GetRunIndx(runNumber)]->GetBinError(ibin))+sqr(addUncFlat));
+		}
+		else if(arm==1){
+			int ibin = _heff201756[0]->FindBin(x,y);
+			return _heff201756[GetRunIndx(runNumber)]->GetBinError(ibin);
 		}
 		else{ std::cout <<" wrong arm number (expect 0 or 1), return 0...\n"; return 0;}
 	}
 	
-	float getEff(float xi, int arm, unsigned int runNumber){
-		if(!EffInit){ std::cout << "ERROR: call getEff() w/o proper initialization" << std::endl; return 0;}
-		if( xi < _xmin || xi > _xmax) return 0;
-		int ibin = int( (xi-_xmin)/_bw ) + 1;
-		if(arm==0){
-			if(runNumber>=297050&& runNumber<=299329) return _hef201745[static_cast<int>(Periods::era2017B)]->GetBinContent(ibin);
-			if(runNumber>=299368&& runNumber<=300780) return _hef201745[static_cast<int>(Periods::era2017C1)]->GetBinContent(ibin);
-			if(runNumber>=300806&& runNumber<=302029) return _hef201745[static_cast<int>(Periods::era2017C2)]->GetBinContent(ibin);
-			if(runNumber>=302031&& runNumber<=302663) return _hef201745[static_cast<int>(Periods::era2017D)]->GetBinContent(ibin);
-			if(runNumber>=303825&& runNumber<=304797) return _hef201745[static_cast<int>(Periods::era2017E)]->GetBinContent(ibin);
-			if(runNumber>=305044&& runNumber<=305114) return _hef201745[static_cast<int>(Periods::era2017F1)]->GetBinContent(ibin);
-			if(runNumber>=305178&& runNumber<=305902) return _hef201745[static_cast<int>(Periods::era2017F2)]->GetBinContent(ibin);
-			if(runNumber>=305967&& runNumber<=306460) return _hef201745[static_cast<int>(Periods::era2017F3)]->GetBinContent(ibin);
-			return 0;
-		}
-		else if(arm==1){
-			if(runNumber>=297050&& runNumber<=299329) return _hef201756[static_cast<int>(Periods::era2017B)]->GetBinContent(ibin);
-			if(runNumber>=299368&& runNumber<=300780) return _hef201756[static_cast<int>(Periods::era2017C1)]->GetBinContent(ibin);
-			if(runNumber>=300806&& runNumber<=302029) return _hef201756[static_cast<int>(Periods::era2017C2)]->GetBinContent(ibin);
-			if(runNumber>=302031&& runNumber<=302663) return _hef201756[static_cast<int>(Periods::era2017D)]->GetBinContent(ibin);
-			if(runNumber>=303825&& runNumber<=304797) return _hef201756[static_cast<int>(Periods::era2017E)]->GetBinContent(ibin);
-			if(runNumber>=305044&& runNumber<=305114) return _hef201756[static_cast<int>(Periods::era2017F1)]->GetBinContent(ibin);
-			if(runNumber>=305178&& runNumber<=305902) return _hef201756[static_cast<int>(Periods::era2017F2)]->GetBinContent(ibin);
-			if(runNumber>=305967&& runNumber<=306460) return _hef201756[static_cast<int>(Periods::era2017F3)]->GetBinContent(ibin);
-			return 0;
-		}
-		else{ std::cout <<" wrong arm number (expect 0 or 1), return 0...\n"; return 0;}
-	}
-
-	float getEffErr(float xi, int arm, unsigned int runNumber){
-		if(!EffInit){ std::cout << "ERROR: call getEffErr() w/o proper initialization" << std::endl; return 0;}
-		if( xi < _xmin || xi > _xmax) return 0;
-		int ibin = int( (xi-_xmin)/_bw ) + 1;
-		if(arm==0){
-			if(runNumber>=297050&& runNumber<=299329) return _hef201745[static_cast<int>(Periods::era2017B)]->GetBinError(ibin);
-			if(runNumber>=299368&& runNumber<=300780) return _hef201745[static_cast<int>(Periods::era2017C1)]->GetBinError(ibin);
-			if(runNumber>=300806&& runNumber<=302029) return _hef201745[static_cast<int>(Periods::era2017C2)]->GetBinError(ibin);
-			if(runNumber>=302031&& runNumber<=302663) return _hef201745[static_cast<int>(Periods::era2017D)]->GetBinError(ibin);
-			if(runNumber>=303825&& runNumber<=304797) return _hef201745[static_cast<int>(Periods::era2017E)]->GetBinError(ibin);
-			if(runNumber>=305044&& runNumber<=305114) return _hef201745[static_cast<int>(Periods::era2017F1)]->GetBinError(ibin);
-			if(runNumber>=305178&& runNumber<=305902) return _hef201745[static_cast<int>(Periods::era2017F2)]->GetBinError(ibin);
-			if(runNumber>=305967&& runNumber<=306460) return _hef201745[static_cast<int>(Periods::era2017F3)]->GetBinError(ibin);
-			return 0;
-		}
-		else if(arm==1){
-			if(runNumber>=297050&& runNumber<=299329) return _hef201756[static_cast<int>(Periods::era2017B)]->GetBinError(ibin);
-			if(runNumber>=299368&& runNumber<=300780) return _hef201756[static_cast<int>(Periods::era2017C1)]->GetBinError(ibin);
-			if(runNumber>=300806&& runNumber<=302029) return _hef201756[static_cast<int>(Periods::era2017C2)]->GetBinError(ibin);
-			if(runNumber>=302031&& runNumber<=302663) return _hef201756[static_cast<int>(Periods::era2017D)]->GetBinError(ibin);
-			if(runNumber>=303825&& runNumber<=304797) return _hef201756[static_cast<int>(Periods::era2017E)]->GetBinError(ibin);
-			if(runNumber>=305044&& runNumber<=305114) return _hef201756[static_cast<int>(Periods::era2017F1)]->GetBinError(ibin);
-			if(runNumber>=305178&& runNumber<=305902) return _hef201756[static_cast<int>(Periods::era2017F2)]->GetBinError(ibin);
-			if(runNumber>=305967&& runNumber<=306460) return _hef201756[static_cast<int>(Periods::era2017F3)]->GetBinError(ibin);
-			return 0;
-		}
-		else{ std::cout <<" wrong arm number (expect 0 or 1), return 0...\n"; return 0;}
-	}
-
 	float getRecoErr(float xi, int arm, unsigned int runNumber){
 		if(!RecoInit){ std::cout << "ERROR: call getRecoErr() w/o proper initialization" << std::endl; return 0;}
 		if(arm==0){
@@ -169,13 +125,15 @@ class PPSEff
     }
 	
 	private: 
+	float addUncFlat=0; // additional flat systematic uncertainty (see L167 for more info)
+	const static int Nperiods = static_cast<int>(Periods::Count);
 	int _nbins; float _bw, _xmin=0, _xmax=0.2;
 	bool RecoInit = false, EffInit = false, is2D = false;
 	TFile * _file0 = NULL;
-	TH1D *_hef201745[8], *_hef201756[8];
-	TH2D *_hrad201745[8], *_hrad201756[8];
+	TH2D *_heff201745[Nperiods], *_heff201756[Nperiods];
 	TGraphErrors * _reco_err45[2], * _reco_err56[2];
 	void init(std::string filename){
+		TString hname;
 		if(filename.empty()) {
 			std::cout << "Warning: PPSEff::init() No initialization file specified" << std::endl;
 			return;
@@ -193,52 +151,43 @@ class PPSEff
 			RecoInit=true;
 		}
 		else if(filename.find("1D2DMultiTrack")!=std::string::npos){
-		// load the strips efficiency histograms
-		_hrad201745[static_cast<int>(Periods::era2017B)]  = (TH2D *)_file0->Get("Strips/2017/2017B/h45_2017B_all_2D");
-		_hrad201756[static_cast<int>(Periods::era2017B)]  = (TH2D *)_file0->Get("Strips/2017/2017B/h56_2017B_all_2D");
-		_hrad201745[static_cast<int>(Periods::era2017C1)] = (TH2D *)_file0->Get("Strips/2017/2017C1/h45_2017C1_all_2D");
-		_hrad201756[static_cast<int>(Periods::era2017C1)] = (TH2D *)_file0->Get("Strips/2017/2017C1/h56_2017C1_all_2D");
-		_hrad201745[static_cast<int>(Periods::era2017C2)] = (TH2D *)_file0->Get("Strips/2017/2017C2/h45_2017C2_all_2D");
-		_hrad201756[static_cast<int>(Periods::era2017C2)] = (TH2D *)_file0->Get("Strips/2017/2017C2/h56_2017C2_all_2D");
-		_hrad201745[static_cast<int>(Periods::era2017D)]  = (TH2D *)_file0->Get("Strips/2017/2017D/h45_2017D_all_2D");
-		_hrad201756[static_cast<int>(Periods::era2017D)]  = (TH2D *)_file0->Get("Strips/2017/2017D/h56_2017D_all_2D");
-		_hrad201745[static_cast<int>(Periods::era2017E)]  = (TH2D *)_file0->Get("Strips/2017/2017E/h45_2017E_all_2D");
-		_hrad201756[static_cast<int>(Periods::era2017E)]  = (TH2D *)_file0->Get("Strips/2017/2017E/h56_2017E_all_2D");
-		_hrad201745[static_cast<int>(Periods::era2017F1)] = (TH2D *)_file0->Get("Strips/2017/2017F1/h45_2017F1_all_2D");
-		_hrad201756[static_cast<int>(Periods::era2017F1)] = (TH2D *)_file0->Get("Strips/2017/2017F1/h56_2017F1_all_2D");
-		_hrad201745[static_cast<int>(Periods::era2017F2)] = (TH2D *)_file0->Get("Strips/2017/2017F2/h45_2017F2_all_2D");
-		_hrad201756[static_cast<int>(Periods::era2017F2)] = (TH2D *)_file0->Get("Strips/2017/2017F2/h56_2017F2_all_2D");
-		_hrad201745[static_cast<int>(Periods::era2017F3)] = (TH2D *)_file0->Get("Strips/2017/2017F3/h45_2017F3_all_2D");
-		_hrad201756[static_cast<int>(Periods::era2017F3)] = (TH2D *)_file0->Get("Strips/2017/2017F3/h56_2017F3_all_2D");
-		is2D=true;
+			// load the strips efficiency histograms
+			for(int i=1;i<Nperiods;i++){
+				hname = Form("Strips/2017/%s/h45_%s_all_2D",era[i].Data(),era[i].Data());
+				_heff201745[i]  = (TH2D *)_file0->Get(hname);
+				if(!_heff201745[i]) {cout << "ERROR init() " << hname<< " not loaded " << endl; return;}
+				hname = Form("Strips/2017/%s/h56_%s_all_2D",era[i].Data(),era[i].Data());
+				_heff201756[i]  = (TH2D *)_file0->Get(hname);
+				if(!_heff201756[i]) {cout << "ERROR init() " << hname<< " not loaded " << endl; return;}				
+			}
+			_heff201745[0] = (TH2D *)_heff201745[1]->Clone("empty"); _heff201745[0]->Reset();
+			_heff201756[0] = (TH2D *)_heff201756[1]->Clone("empty"); _heff201756[0]->Reset();
+			EffInit=true;
+			// set Flat unc from https://twiki.cern.ch/twiki/bin/viewauth/CMS/TaggedProtonsStripsEfficiencies#2017
+			addUncFlat = sqrt(0.01*0.01+0.01*0.01+0.02*0.02);
+		}
+		else if(filename.find("pixelEfficiencies_multiRP")!=std::string::npos){
+			// load the strips efficiency histograms
+			for(int i=1;i<Nperiods;i++){
+				hname=Form("Pixel/2017/%s/h45_220_%s_all_2D",era[i].Data(),era[i].Data());
+				_heff201745[i]  = (TH2D *)_file0->Get(hname);
+				if(!_heff201745[i]) {cout << "ERROR init() " << hname<< " not loaded " << endl; return;}				
+				hname = Form("Pixel/2017/%s/h56_220_%s_all_2D",era[i].Data(),era[i].Data());
+				_heff201756[i]  = (TH2D *)_file0->Get(hname);
+				if(!_heff201756[i]) {cout << "ERROR init() " << hname<< " not loaded " << endl; return;}								
+			}
+			_heff201745[0] = (TH2D *)_heff201745[1]->Clone("empty"); _heff201745[0]->Reset();
+			_heff201756[0] = (TH2D *)_heff201756[1]->Clone("empty"); _heff201756[0]->Reset();
+			EffInit=true;
+			addUncFlat = 0;
 		}
 		else{
-		// load the efficiency histograms
-		_hef201745[static_cast<int>(Periods::era2017B)]  = (TH1D *)_file0->Get("Pixel/2017/2017B/h45_220_2017B_all_1D");
-		_hef201756[static_cast<int>(Periods::era2017B)]  = (TH1D *)_file0->Get("Pixel/2017/2017B/h56_220_2017B_all_1D");
-		_hef201745[static_cast<int>(Periods::era2017C1)] = (TH1D *)_file0->Get("Pixel/2017/2017C1/h45_220_2017C1_all_1D");
-		_hef201756[static_cast<int>(Periods::era2017C1)] = (TH1D *)_file0->Get("Pixel/2017/2017C1/h56_220_2017C1_all_1D");
-		_hef201745[static_cast<int>(Periods::era2017C2)] = (TH1D *)_file0->Get("Pixel/2017/2017C2/h45_220_2017C2_all_1D");
-		_hef201756[static_cast<int>(Periods::era2017C2)] = (TH1D *)_file0->Get("Pixel/2017/2017C2/h56_220_2017C2_all_1D");
-		_hef201745[static_cast<int>(Periods::era2017D)]  = (TH1D *)_file0->Get("Pixel/2017/2017D/h45_220_2017D_all_1D");
-		_hef201756[static_cast<int>(Periods::era2017D)]  = (TH1D *)_file0->Get("Pixel/2017/2017D/h56_220_2017D_all_1D");
-		_hef201745[static_cast<int>(Periods::era2017E)]  = (TH1D *)_file0->Get("Pixel/2017/2017E/h45_220_2017E_all_1D");
-		_hef201756[static_cast<int>(Periods::era2017E)]  = (TH1D *)_file0->Get("Pixel/2017/2017E/h56_220_2017E_all_1D");
-		_hef201745[static_cast<int>(Periods::era2017F1)] = (TH1D *)_file0->Get("Pixel/2017/2017F1/h45_220_2017F1_all_1D");
-		_hef201756[static_cast<int>(Periods::era2017F1)] = (TH1D *)_file0->Get("Pixel/2017/2017F1/h56_220_2017F1_all_1D");
-		_hef201745[static_cast<int>(Periods::era2017F2)] = (TH1D *)_file0->Get("Pixel/2017/2017F2/h45_220_2017F2_all_1D");
-		_hef201756[static_cast<int>(Periods::era2017F2)] = (TH1D *)_file0->Get("Pixel/2017/2017F2/h56_220_2017F2_all_1D");
-		_hef201745[static_cast<int>(Periods::era2017F3)] = (TH1D *)_file0->Get("Pixel/2017/2017F3/h45_220_2017F3_all_1D");
-		_hef201756[static_cast<int>(Periods::era2017F3)] = (TH1D *)_file0->Get("Pixel/2017/2017F3/h56_220_2017F3_all_1D");
-		
-		_nbins = _hef201756[0]->GetNbinsX();
-		_bw    = _hef201756[0]->GetBinWidth(1);
-		_xmin  = _hef201756[0]->GetBinCenter(1) - 0.5 * _bw;
-		_xmax  = _hef201756[0]->GetBinCenter(_nbins) + 0.5 * _bw;	
-		
-		EffInit=true;
-		
+			std::cout << "ERROR: PPSEff::init() Wrong initialization file specified - " << filename << std::endl;
 		}
+		//_nbins = _hef201756[0]->GetNbinsX();
+		//_bw    = _hef201756[0]->GetBinWidth(1);
+		//_xmin  = _hef201756[0]->GetBinCenter(1) - 0.5 * _bw;
+		//_xmax  = _hef201756[0]->GetBinCenter(_nbins) + 0.5 * _bw;	
 	}
 	
 	

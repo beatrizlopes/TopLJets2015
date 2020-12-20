@@ -465,6 +465,7 @@ void RunExclusiveTop(TString filename,
         "l_pt", "l_eta", "l_phi", "l_m", "l_E", "lepton_isolation",
         "nu_pt", "nu_eta", "nu_phi",
         "p1_xi", "p2_xi", "ppsSF_wgt", "ppsSF_wgt_err",
+		"p1_x","p2_x","p1_y","p2_y",
 		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt",
 		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err",
 		"ren_Up","fac_Up","scale_Up",
@@ -661,6 +662,8 @@ void RunExclusiveTop(TString filename,
         std::vector<Particle> selectedLeptons;
         double p1_xi =0.; // proton in positive pot
         double p2_xi =0.; // proton in negative pot
+        double p1_x = 0, p1_y =0.; // proton near track position in positive pot
+	double p2_x = 0, p2_y =0.; // proton near track position in positive pot
         
         //  selection of lightJets and bJets
         for(size_t ij=0; ij<jets.size(); ij++) {
@@ -682,14 +685,19 @@ void RunExclusiveTop(TString filename,
         for (int ift=0; ift<ev.nfwdtrk; ift++) {
             const unsigned short pot_raw_id = ev.fwdtrk_pot[ift];
             if(ev.fwdtrk_method[ift]==1){  // selecting only MultiRP protons
-                if (pot_raw_id<100){ // positive z  (pot_raw_id=3)
+              if (pot_raw_id<100){ // positive z  (pot_raw_id=3)
                     p1_xi = ev.fwdtrk_xi[ift] + pps_err*PPS_reco->getRecoErr(ev.fwdtrk_xi[ift],0,ev.run);
-                }
-            else {   // negative z   (pot_raw_id=103)
+		    p1_x = ev.fwdtrk_NearX[ift];
+		    p1_y = ev.fwdtrk_NearY[ift];
+              }
+              else {   // negative z   (pot_raw_id=103)
                 p2_xi = ev.fwdtrk_xi[ift] + pps_err*PPS_reco->getRecoErr(ev.fwdtrk_xi[ift],1,ev.run);
+		p2_x = ev.fwdtrk_NearX[ift];
+		p2_y = ev.fwdtrk_NearY[ift];
+
+              }
             }
         }
-    }
 	
         outVars["nJets"]=jets.size();
         outVars["nBjets"]=bJets.size();
@@ -1186,6 +1194,11 @@ void RunExclusiveTop(TString filename,
 
             outVars["p1_xi"]=p1_xi;
             outVars["p2_xi"]=p2_xi;
+
+            outVars["p1_x"]=p1_x;
+            outVars["p2_x"]=p2_x;
+            outVars["p1_y"]=p1_y;
+            outVars["p2_y"]=p2_y;
 			
             outVars["lightJet0_pt"]=lightJets[0].Pt();
             outVars["lightJet0_eta"]=lightJets[0].Rapidity();
