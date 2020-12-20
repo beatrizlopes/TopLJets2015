@@ -4,6 +4,7 @@
 #include "TGraphErrors.h"
 #include "TFile.h"
 #include "TString.h"
+#include "TMath.h"
 
 // cpp include
 #include <iostream>
@@ -22,11 +23,7 @@ enum class Periods {
 	Count     = 9
 };
 
-float sqr(float x){return x*x;}
 
-TString era[static_cast<int>(Periods::Count)] = {
-	"UNDEF","2017B","2017C1","2017C2","2017D","2017E","2017F1","2017F2","2017F3"
-};
 
 class PPSEff
 {
@@ -53,6 +50,10 @@ class PPSEff
 		return static_cast<int>(Periods::undefined);
 	}
 	
+	TString era[static_cast<int>(Periods::Count)] = {
+		"UNDEF","2017B","2017C1","2017C2","2017D","2017E","2017F1","2017F2","2017F3"
+	};
+	
 	float getEff(float x, float y, int arm, unsigned int runNumber){
 		if(!EffInit){ std::cout << "ERROR: call getEff() w/o proper initialization" << std::endl; return 0;}
 		if(arm==0){
@@ -70,7 +71,8 @@ class PPSEff
 		if(!EffInit){ std::cout << "ERROR: call getEffErr() w/o proper initialization" << std::endl; return 0;}
 		if(arm==0){
 			int ibin = _heff201745[0]->FindBin(x,y);
-			return sqrt(sqr(_heff201745[GetRunIndx(runNumber)]->GetBinError(ibin))+sqr(addUncFlat));
+			return sqrt( TMath::Power((_heff201745[GetRunIndx(runNumber)]->GetBinError(ibin)),2)+
+				         TMath::Power(addUncFlat,2) );
 		}
 		else if(arm==1){
 			int ibin = _heff201756[0]->FindBin(x,y);
@@ -155,10 +157,10 @@ class PPSEff
 			for(int i=1;i<Nperiods;i++){
 				hname = Form("Strips/2017/%s/h45_%s_all_2D",era[i].Data(),era[i].Data());
 				_heff201745[i]  = (TH2D *)_file0->Get(hname);
-				if(!_heff201745[i]) {cout << "ERROR init() " << hname<< " not loaded " << endl; return;}
+				if(!_heff201745[i]) {std::cout << "ERROR init() " << hname<< " not loaded " << std::endl; return;}
 				hname = Form("Strips/2017/%s/h56_%s_all_2D",era[i].Data(),era[i].Data());
 				_heff201756[i]  = (TH2D *)_file0->Get(hname);
-				if(!_heff201756[i]) {cout << "ERROR init() " << hname<< " not loaded " << endl; return;}				
+				if(!_heff201756[i]) {std::cout << "ERROR init() " << hname<< " not loaded " << std::endl; return;}				
 			}
 			_heff201745[0] = (TH2D *)_heff201745[1]->Clone("empty"); _heff201745[0]->Reset();
 			_heff201756[0] = (TH2D *)_heff201756[1]->Clone("empty"); _heff201756[0]->Reset();
@@ -171,10 +173,10 @@ class PPSEff
 			for(int i=1;i<Nperiods;i++){
 				hname=Form("Pixel/2017/%s/h45_220_%s_all_2D",era[i].Data(),era[i].Data());
 				_heff201745[i]  = (TH2D *)_file0->Get(hname);
-				if(!_heff201745[i]) {cout << "ERROR init() " << hname<< " not loaded " << endl; return;}				
+				if(!_heff201745[i]) {std::cout << "ERROR init() " << hname<< " not loaded " << std::endl; return;}				
 				hname = Form("Pixel/2017/%s/h56_220_%s_all_2D",era[i].Data(),era[i].Data());
 				_heff201756[i]  = (TH2D *)_file0->Get(hname);
-				if(!_heff201756[i]) {cout << "ERROR init() " << hname<< " not loaded " << endl; return;}								
+				if(!_heff201756[i]) {std::cout << "ERROR init() " << hname<< " not loaded " << std::endl; return;}								
 			}
 			_heff201745[0] = (TH2D *)_heff201745[1]->Clone("empty"); _heff201745[0]->Reset();
 			_heff201756[0] = (TH2D *)_heff201756[1]->Clone("empty"); _heff201756[0]->Reset();

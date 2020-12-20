@@ -725,7 +725,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             ev_.fwdtrk_timeError[ev_.nfwdtrk] = proton.timeError();
 
             ev_.fwdtrk_xi[ev_.nfwdtrk]        = proton.xi();
-            ev_.fwdtrk_xiSF[ev_.nfwdtrk]      = PPS_eff_->getEff(proton.xi(),detid.arm(),ev_.run);
+            ev_.fwdtrk_xiSF[ev_.nfwdtrk]      = 1.;
             ev_.fwdtrk_xiError[ev_.nfwdtrk]   = proton.xiError();
             ev_.fwdtrk_t[ev_.nfwdtrk]         = proton.t();
 			if(ev_.fwdtrk_method[ev_.nfwdtrk]==1) {
