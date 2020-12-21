@@ -69,17 +69,39 @@ class PPSEff
 
 	float getEffErr(float x, float y, int arm, unsigned int runNumber){ // returns stat + sys error
 		if(!EffInit){ std::cout << "ERROR: call getEffErr() w/o proper initialization" << std::endl; return 0;}
+		float val = 0 , err = 0;
 		if(arm==0){
 			int ibin = _heff201745[0]->FindBin(x,y);
-			return sqrt( TMath::Power((_heff201745[GetRunIndx(runNumber)]->GetBinError(ibin)),2)+
-				         TMath::Power(addUncFlat,2) );
+            val = _heff201745[GetRunIndx(runNumber)]->GetBinContent(ibin);
+			err = _heff201745[GetRunIndx(runNumber)]->GetBinError(ibin);
+			return sqrt( err*err + (val*addUncFlat)*(val*addUncFlat) );
 		}
 		else if(arm==1){
 			int ibin = _heff201756[0]->FindBin(x,y);
-			return _heff201756[GetRunIndx(runNumber)]->GetBinError(ibin);
+			val = _heff201745[GetRunIndx(runNumber)]->GetBinContent(ibin);
+			err = _heff201745[GetRunIndx(runNumber)]->GetBinError(ibin);
+			return sqrt( err*err + (val*addUncFlat)*(val*addUncFlat) );
 		}
 		else{ std::cout <<" wrong arm number (expect 0 or 1), return 0...\n"; return 0;}
 	}
+	
+	float getRelEffErrSq(float x, float y, int arm, unsigned int runNumber){ // returns squared relative (stat + sys) error
+		if(!EffInit){ std::cout << "ERROR: call getEffErr() w/o proper initialization" << std::endl; return 0;}
+		float val = 0 , err = 0;
+		if(arm==0){
+			int ibin = _heff201745[0]->FindBin(x,y);
+			val = _heff201745[GetRunIndx(runNumber)]->GetBinContent(ibin);
+			err = _heff201745[GetRunIndx(runNumber)]->GetBinError(ibin);
+            return (val>0) ? ((err/val)*(err/val) + addUncFlat*addUncFlat) : 0;
+		}
+		else if(arm==1){
+			int ibin = _heff201756[0]->FindBin(x,y);
+			val = _heff201756[GetRunIndx(runNumber)]->GetBinContent(ibin);
+			err = _heff201756[GetRunIndx(runNumber)]->GetBinError(ibin);
+            return (val>0) ? ((err/val)*(err/val) + addUncFlat*addUncFlat) : 0;
+		}
+		else{ std::cout <<" wrong arm number (expect 0 or 1), return 0...\n"; return 0;}
+	}	
 	
 	float getRecoErr(float xi, int arm, unsigned int runNumber){
 		if(!RecoInit){ std::cout << "ERROR: call getRecoErr() w/o proper initialization" << std::endl; return 0;}
