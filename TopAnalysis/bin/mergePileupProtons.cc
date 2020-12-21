@@ -244,7 +244,7 @@ kipped." << endl;
   unsigned int run; int nvtx;
   float beamXangle, p1_xi, p2_xi, weight, ppsSF_wgt, ppsSF_wgt_err, pu_wgt, ptag_wgt, ptag_wgt_err; 
   float p1_x = 0, p1_y = 0, p2_x = 0, p2_y = 0;  
-  float p1_220_x = 0, p1_220_y = 0, p2_220_x = 0, p2_220_y = 0;  
+  //float p1_220_x = 0, p1_220_y = 0, p2_220_x = 0, p2_220_y = 0;  
   chMCEvents->SetBranchAddress("run",&run);
   chMCEvents->SetBranchAddress("beamXangle",&beamXangle);
   chMCEvents->SetBranchAddress("p1_xi",&p1_xi);
@@ -254,10 +254,10 @@ kipped." << endl;
 	  chMCEvents->SetBranchAddress("p1_y",&p1_y);
 	  chMCEvents->SetBranchAddress("p2_x",&p2_x);
 	  chMCEvents->SetBranchAddress("p2_y",&p2_y);
-	  chMCEvents->SetBranchAddress("p1_220_x",&p1_220_x);
-	  chMCEvents->SetBranchAddress("p1_220_y",&p1_220_y);
-	  chMCEvents->SetBranchAddress("p2_220_x",&p2_220_x);
-	  chMCEvents->SetBranchAddress("p2_220_y",&p2_220_y);
+	  //chMCEvents->SetBranchAddress("p1_220_x",&p1_220_x);
+	  //chMCEvents->SetBranchAddress("p1_220_y",&p1_220_y);
+	  //chMCEvents->SetBranchAddress("p2_220_x",&p2_220_x);
+	  //chMCEvents->SetBranchAddress("p2_220_y",&p2_220_y);
   }
   chMCEvents->SetBranchAddress("weight",&weight);
   chMCEvents->SetBranchAddress("pu_wgt",&pu_wgt);
@@ -327,9 +327,9 @@ kipped." << endl;
 		ptag_wgt *= ptr.trueZeroTracksRatio(run, beamXangle, 0) * ptr.trueZeroTracksRatio(run, beamXangle, 1);
 		ptag_wgt_err = norm_weight_0p_err[i_reg];
 		weight *= ptag_wgt;
-		ppsSF_wgt = PPS_eff->getEff(p1_220_x,p1_220_y,0,run) *  PPS_eff->getEff(p2_220_x,p2_220_y,1,run);
-		ppsSF_wgt_err = PPS_eff->getRelEffErrSq(p1_220_x,p1_220_y,0,run) + 
-		                PPS_eff->getRelEffErrSq(p2_220_x,p2_220_y,1,run);
+		ppsSF_wgt = PPS_eff->getEff(p1_x,p1_y,0,run) *  PPS_eff->getEff(p2_x,p2_y,1,run);
+		ppsSF_wgt_err = PPS_eff->getRelEffErrSq(p1_x,p1_y,0,run) + 
+		                PPS_eff->getRelEffErrSq(p2_x,p2_y,1,run);
 		ppsSF_wgt_err = sqrt(ppsSF_wgt_err);
 		// strip efficiency
 		ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run) * Strip_eff->getEff(p2_x,p2_y,1,run);
@@ -341,8 +341,8 @@ kipped." << endl;
 		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 0) * norm_weight_1pRP1[i_reg];
 		ptag_wgt_err = norm_weight_1pRP1_err[i_reg];
 		weight *= ptag_wgt;
-		ppsSF_wgt = PPS_eff->getEff(p2_220_x,p2_220_y,1,run);
-		ppsSF_wgt_err = PPS_eff->getRelEffErrSq(p2_220_x,p2_220_y,1,run);
+		ppsSF_wgt = PPS_eff->getEff(p2_x,p2_y,1,run);
+		ppsSF_wgt_err = PPS_eff->getRelEffErrSq(p2_x,p2_y,1,run);
 		// strip efficiency
 		ppsSF_wgt *= Strip_eff->getEff(p2_x,p2_y,1,run);
 		signal_protons = 1;
@@ -353,8 +353,8 @@ kipped." << endl;
 		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 1) * norm_weight_1pRP0[i_reg];
 		ptag_wgt_err = norm_weight_1pRP0_err[i_reg];
 		weight *= ptag_wgt;
-		ppsSF_wgt = PPS_eff->getEff(p1_220_x,p1_220_y,0,run);
-		ppsSF_wgt_err = PPS_eff->getRelEffErrSq(p1_220_x,p1_220_y,0,run);
+		ppsSF_wgt = PPS_eff->getEff(p1_x,p1_y,0,run);
+		ppsSF_wgt_err = PPS_eff->getRelEffErrSq(p1_x,p1_y,0,run);
 		// strip efficiency
 		ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run);
 		signal_protons = 1;
