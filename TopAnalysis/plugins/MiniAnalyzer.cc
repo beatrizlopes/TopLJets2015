@@ -481,51 +481,14 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   }
   ev_.g_sumPVChPt=pvP4.Pt();
 
-  //Bhadrons and top quarks (lastCopy)
-  edm::Handle<reco::GenParticleCollection> prunedGenParticles;
-  iEvent.getByToken(prunedGenParticlesToken_,prunedGenParticles);
-  ev_.ngtop=0;
-  if(prunedGenParticles.isValid()){
-    for (size_t i = 0; i < prunedGenParticles->size(); ++i)
-      {
-        const reco::GenParticle & genIt = (*prunedGenParticles)[i];
-        int absid=abs(genIt.pdgId());
-        bool outGoingProton( absid==2212 && genIt.status()==1 && fabs(genIt.eta())>4.7 );
-        bool topLastCopy(absid==6 && genIt.isLastCopy());
-        bool wLastCopy(absid==24 && genIt.isLastCopy());
-        if(outGoingProton || topLastCopy)
-          {
-            ev_.gtop_id[ ev_.ngtop ]  = genIt.pdgId();
-            ev_.gtop_pt[ ev_.ngtop ]  = genIt.pt();
-            ev_.gtop_pz[ ev_.ngtop ]  = genIt.pz();
-            ev_.gtop_eta[ ev_.ngtop ] = genIt.eta();
-            ev_.gtop_phi[ ev_.ngtop ] = genIt.phi();
-            ev_.gtop_m[ ev_.ngtop ]   = genIt.mass();
-            ev_.ngtop++;
-          }
-
-        //save top daughters
-        if(topLastCopy || wLastCopy) {
-          size_t ndau=genIt.numberOfDaughters();
-          for(size_t idau=0; idau<ndau; idau++){
-            const reco::Candidate *d=genIt.daughter(idau);
-            ev_.gtop_id[ ev_.ngtop ]  = d->pdgId();
-            ev_.gtop_pt[ ev_.ngtop ]  = d->pt();
-            ev_.gtop_pz[ ev_.ngtop ]  = d->pz();
-            ev_.gtop_eta[ ev_.ngtop ] = d->eta();
-            ev_.gtop_phi[ ev_.ngtop ] = d->phi();
-            ev_.gtop_m[ ev_.ngtop ]   = d->mass();
-            ev_.ngtop++;
-          }
-        }
-      }
-  }
-  
+  // Save generator particles //
+  ev_.ngtop=0; 
   //Save pileup protons (for PPS reconstruction)
   edm::Handle<reco::GenParticleCollection> genPUProtons;
   iEvent.getByToken(genPUProtonsToken_,genPUProtons);
-  float XIMIN = 0.01, XIMAX = 0.3, EBEAM=6500;
-  if(genPUProtons.isValid()){
+  float XIMIN = 0.01, XIMAX = 0.2, EBEAM=6500;
+  bool hasPUProtons (genPUProtons.isValid());
+  if(hasPUProtons){
     for (size_t i = 0; i < genPUProtons->size(); ++i)
       {
         const reco::GenParticle & genIt = (*genPUProtons)[i];
@@ -542,6 +505,49 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             ev_.gtop_m[ ev_.ngtop ]   = genIt.mass();
             ev_.ngtop++;
           }
+      }
+  }
+  
+  //W,Z and top quarks (lastCopy)
+  // don't keep protons if hasPUProtons and not using premix_stage2 modifier
+  edm::Handle<reco::GenParticleCollection> prunedGenParticles;
+  iEvent.getByToken(prunedGenParticlesToken_,prunedGenParticles);
+  if(prunedGenParticles.isValid()){
+    for (size_t i = 0; i < prunedGenParticles->size(); ++i)
+      {
+        const reco::GenParticle & genIt = (*prunedGenParticles)[i];
+        int absid=abs(genIt.pdgId());
+        bool outGoingProton( absid==2212 && genIt.status()==1 && fabs(genIt.eta())>4.7 && !hasPUProtons);
+        bool topLastCopy(absid==6 && genIt.isLastCopy());
+        bool wLastCopy(absid==24 && genIt.isLastCopy());
+        bool zLastCopy(absid==23 && genIt.isLastCopy());
+		bool toKeep = outGoingProton || topLastCopy || zLastCopy || wLastCopy;
+        if(toKeep)
+          {
+            ev_.gtop_id[ ev_.ngtop ]  = genIt.pdgId();
+            ev_.gtop_pt[ ev_.ngtop ]  = genIt.pt();
+            ev_.gtop_pz[ ev_.ngtop ]  = genIt.pz();
+            ev_.gtop_eta[ ev_.ngtop ] = genIt.eta();
+            ev_.gtop_phi[ ev_.ngtop ] = genIt.phi();
+            ev_.gtop_m[ ev_.ngtop ]   = genIt.mass();
+            ev_.ngtop++;
+          }
+
+        //save daughters
+        if(topLastCopy || wLastCopy || zLastCopy) {
+          size_t ndau=genIt.numberOfDaughters();
+          for(size_t idau=0; idau<ndau; idau++){
+            const reco::Candidate *d=genIt.daughter(idau);
+			if(abs(d->pdgId())==24) continue; // keep all W's anyway
+            ev_.gtop_id[ ev_.ngtop ]  = d->pdgId();
+            ev_.gtop_pt[ ev_.ngtop ]  = d->pt();
+            ev_.gtop_pz[ ev_.ngtop ]  = d->pz();
+            ev_.gtop_eta[ ev_.ngtop ] = d->eta();
+            ev_.gtop_phi[ ev_.ngtop ] = d->phi();
+            ev_.gtop_m[ ev_.ngtop ]   = d->mass();
+            ev_.ngtop++;
+          }
+        }
       }
   }
   
@@ -712,10 +718,32 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 			//apply aperture cuts (Depending on the run number) https://twiki.cern.ch/twiki/bin/viewauth/CMS/TaggedProtonsGettingStarted#Fiducial_cuts
 			if(proton.xi() > PPS_eff_->getXiHigh(detid.arm(),ev_.run,ev_.beamXangle)) continue;
 			
-
+			// keep only tracker information (no timing detectors)
+			if(detid.rp()!=3) continue;
+            ev_.fwdtrk_method[ev_.nfwdtrk]    = Short_t(proton.method());
+			bool isPixel = (detid.station()==2), isMultiRP = (ev_.fwdtrk_method[ev_.nfwdtrk]==1);
+			
+			// Veto track: if not fiducial or is shifted (only for pixels)
+			bool skipTrack = false;
+			if(isPixel){ // 3+3 reconstruction check
+				CTPPSpixelLocalTrackReconstructionInfo pixtrackinfo = (*proton.contributingLocalTracks().begin())->getPixelTrackRecoInfo();
+				bool pixShift = !(pixtrackinfo == CTPPSpixelLocalTrackReconstructionInfo::notShiftedRun || 
+								pixtrackinfo == CTPPSpixelLocalTrackReconstructionInfo::noShiftedPlanes ||
+								pixtrackinfo == CTPPSpixelLocalTrackReconstructionInfo::invalid);
+				if(pixShift) skipTrack = true;
+			}
+			if(isPixel || isMultiRP){ // check fiducial cut
+				for (const auto &pr_tr : proton.contributingLocalTracks()) {
+					CTPPSDetId rpId(pr_tr->getRPId());
+					if(rpId.station()!=2) continue; // only pixels
+					float x = pr_tr->getX(), y = pr_tr->getY();
+					if(!PPS_eff_->InFiducial(detid.arm(), 2, ev_.run, x, y)) skipTrack = true;
+				}
+			}
+			if(skipTrack) continue;
+			
             ev_.fwdtrk_pot[ev_.nfwdtrk]       = 100*detid.arm()+10*detid.station()+detid.rp();
             ev_.fwdtrk_chisqnorm[ev_.nfwdtrk] = proton.normalizedChi2();
-            ev_.fwdtrk_method[ev_.nfwdtrk]    = Short_t(proton.method());
             ev_.fwdtrk_thetax[ev_.nfwdtrk]    = proton.thetaX();
             ev_.fwdtrk_thetay[ev_.nfwdtrk]    = proton.thetaY();
             ev_.fwdtrk_vx[ev_.nfwdtrk]        = proton.vx();
@@ -725,24 +753,29 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             ev_.fwdtrk_timeError[ev_.nfwdtrk] = proton.timeError();
 
             ev_.fwdtrk_xi[ev_.nfwdtrk]        = proton.xi();
+			std::cout << "pot, xi method = " << ev_.fwdtrk_pot[ev_.nfwdtrk] << ", " << proton.xi() << " , "<< ev_.fwdtrk_method[ev_.nfwdtrk] << std::endl;
             ev_.fwdtrk_xiSF[ev_.nfwdtrk]      = 1.;
             ev_.fwdtrk_xiError[ev_.nfwdtrk]   = proton.xiError();
             ev_.fwdtrk_t[ev_.nfwdtrk]         = proton.t();
-			if(ev_.fwdtrk_method[ev_.nfwdtrk]==1) {
-				nmultiprotons_[detid.arm()]++;
-				//Loop over tracks
-				for (const auto &pr_tr : proton.contributingLocalTracks()) {
-					CTPPSDetId rpId(pr_tr->getRPId());
-					if(rpId.station()){
-					  ev_.fwdtrk_FarX[ev_.nfwdtrk] = pr_tr->getX();
-					  ev_.fwdtrk_FarY[ev_.nfwdtrk] = pr_tr->getY();
-					}
-					else{
+			if(isMultiRP) nmultiprotons_[detid.arm()]++;
+			
+			// Get detector track x-y
+			ev_.fwdtrk_FarX[ev_.nfwdtrk] = 0;
+			ev_.fwdtrk_FarY[ev_.nfwdtrk] = 0;
+			ev_.fwdtrk_NearX[ev_.nfwdtrk] = 0;
+			ev_.fwdtrk_NearY[ev_.nfwdtrk] = 0;
+			for (const auto &pr_tr : proton.contributingLocalTracks()) {
+				CTPPSDetId rpId(pr_tr->getRPId());
+				if(rpId.rp()==6) continue; // skip timing tracks
+				if(rpId.station()){
+					ev_.fwdtrk_FarX[ev_.nfwdtrk] = pr_tr->getX();
+					ev_.fwdtrk_FarY[ev_.nfwdtrk] = pr_tr->getY();
+				}
+				else{
 					  ev_.fwdtrk_NearX[ev_.nfwdtrk] = pr_tr->getX();
 					  ev_.fwdtrk_NearY[ev_.nfwdtrk] = pr_tr->getY();
-					}
 				}
-			}
+			}			
             ev_.nfwdtrk++;
           }
       }
@@ -1447,17 +1480,17 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 			  ev_.sumPVChPz_v[_bin]+=(pf->pz());
 			  ev_.sumPVChHt_v[_bin]+=pf->pt();
 			  vtxPt[_bin]+=pf->p4();
+			  if(ev_.ntrk<ev_.MAXTRACKS){
+			    ev_.track_pt[ev_.ntrk] = pf->pt();
+			    ev_.track_eta[ev_.ntrk] = pf->eta();
+			    ev_.track_phi[ev_.ntrk] = pf->phi();
+			    ev_.ntrk++;
+			  }			  
 		      if(pvassoc>pat::PackedCandidate::PVTight) {_bin=3;
 			    ev_.nchPV_v[_bin]++;
 			    ev_.sumPVChPz_v[_bin]+=(pf->pz());
 			    ev_.sumPVChHt_v[_bin]+=pf->pt();
 			    vtxPt[_bin]+=pf->p4();
-				if(ev_.ntrk<ev_.MAXTRACKS){
-				  ev_.track_pt[ev_.ntrk] = pf->pt();
-				  ev_.track_eta[ev_.ntrk] = pf->eta();
-				  ev_.track_phi[ev_.ntrk] = pf->phi();
-				  ev_.ntrk++;
-				}
 		      }
 		  }
 		  if(pvassoc>pat::PackedCandidate::PVTight) {_bin=2;
@@ -1538,7 +1571,7 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
     iSetup.get<LHCInfoRcd>().get(lhcInfoLabel, hLHCInfo);
     if(hLHCInfo.isValid()){
       ev_.beamXangle=hLHCInfo->crossingAngle();
-      ev_.instLumi=hLHCInfo->instLumi();
+      ev_.instLumi=hLHCInfo->instLumi(); // instantaneous luminosity in ub-1
       ev_.betaStar=hLHCInfo->betaStar();
       ev_.fill=hLHCInfo->fillNumber();
     }
@@ -1570,7 +1603,7 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
   //save event if at least one object at gen or reco level
   if(!saveTree_) return;
   // Define some filters, otherwise, you might store a lot of empty events (check returns in recAnalysis)
-  if(applyFilt_){ 
+  if(applyFilt_){
 	//if (FilterType_.find("ttbar")!=std::string::npos) if(nrecbjets_<2 || nrecjets_<4 || nrecleptons_==0) return;
       if (FilterType_.find("ttbar")!=std::string::npos) {
 		  // skim (nJ>=4 and nL>0) OR (nL>1)
@@ -1581,8 +1614,8 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	  }
 	  if (FilterType_.find("dilep")!=std::string::npos) if(nrecleptons_<2) return;
 	  if (FilterType_.find("lowmu")!=std::string::npos) {
-		  if(ev_.nl==0 && (ev_.nj==0)) return;
-		  if(ev_.nj>0 && ev_.j_pt[0]<100) return;
+		  if(ev_.nl==0 && ev_.nj==0) return;
+		  if(ev_.nl==0 && ev_.nj>0 && ev_.j_pt[0]<100) return;
 	  }
 	// data - skim on event w/o forward protons but save the event count
 	histContainer_["counter"]->Fill(2);

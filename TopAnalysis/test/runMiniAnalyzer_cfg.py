@@ -244,12 +244,12 @@ print (', using ListVars=\''+options.ListVars+'\'') if options.saveTree else ''
 if options.runProtonFastSim: 
   print 'INFO:\t Run proton simulation with xangle = ',options.runProtonFastSim,'murad'
   if options.doPUProtons:
-      process.analysis.PUprotons = cms.InputTag("genPUProtons","genPUProtons")
+      process.analysis.PUprotons = cms.InputTag("genPUProtons","")
 
 process.analysis.ListVars = ANALYSISVARS[options.ListVars]
 process.analysis.FilterType = options.ListVars
 
-if 'lowmu' in options.ListVars and 'data' not in options.ListVars: process.analysis.EGIDVersion = cms.string("1")
+#if 'lowmu' in options.ListVars and 'data' not in options.ListVars: process.analysis.EGIDVersion = cms.string("1")
 
 if not options.runOnData:
       process.analysis.runNumber = cms.untracked.int32(ANALYSISRUNS[options.era])
@@ -264,6 +264,7 @@ if 'era2017' in options.era:
         print '\t Using 2017 single lepton and dilepton triggers/jet ids' 
       elif 'lowmu' in options.ListVars:
         process.analysis.triggersToUse=ANALYSISTRIGGERLISTS['lowmu2017']
+        process.analysis.metFilterBits = cms.InputTag("TriggerResults","","RECO")
         print '\t Using 2017 lowmu triggers'   
       else:
         process.analysis.triggersToUse=ANALYSISTRIGGERLISTS[2017]

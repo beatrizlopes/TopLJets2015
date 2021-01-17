@@ -122,17 +122,19 @@ int main(int argc, char* argv[]){
   tree_out.Branch("p2_xi",&entry49,"p2_xi/D");
   
   //MC weights variaitons to pass to a new output:
-  unsigned int run; float beamXangle, pu_wgt, ptag_wgt_err, ppsSF_wgt_err, trigSF_wgt_err, selSF_wgt_err; 
+  unsigned int run; float beamXangle, pu_wgt, toppt_wgt, ptag_wgt_err, L1Prefire_wgt_err, ppsSF_wgt_err, trigSF_wgt_err, selSF_wgt_err; 
   float ren_Up, fac_Up, scale_Up, isr_Up, fsr_Up;
   float ren_Down, fac_Down, scale_Down, isr_Down, fsr_Down;
   int signal_protons =0 ;
   tree_out.Branch("run",&run,"run/i");
   tree_out.Branch("beamXangle",&beamXangle);
   tree_out.Branch("pu_wgt",&pu_wgt);
+  tree_out.Branch("toppt_wgt",&toppt_wgt);
   tree_out.Branch("ptag_wgt_err",&  ptag_wgt_err);
   tree_out.Branch("ppsSF_wgt_err",&  ppsSF_wgt_err);
   tree_out.Branch("trigSF_wgt_err",&trigSF_wgt_err);
   tree_out.Branch("selSF_wgt_err",&selSF_wgt_err);
+  tree_out.Branch("L1Prefire_wgt_err",&L1Prefire_wgt_err);
   
   tree_out.Branch("ren_Up",&ren_Up);
   tree_out.Branch("fac_Up",&fac_Up);
@@ -308,10 +310,12 @@ int main(int argc, char* argv[]){
 	run = tree->GetLeaf("run")->GetValue(0);
 	beamXangle = tree->GetLeaf("beamXangle")->GetValue(0);
 	pu_wgt = tree->GetLeaf("pu_wgt")->GetValue(0);
+	toppt_wgt = tree->GetLeaf("toppt_wgt")->GetValue(0);
 	ptag_wgt_err = tree->GetLeaf("ptag_wgt_err")->GetValue(0);
 	ppsSF_wgt_err = tree->GetLeaf("ppsSF_wgt_err")->GetValue(0);
 	trigSF_wgt_err = tree->GetLeaf("trigSF_wgt_err")->GetValue(0);
 	selSF_wgt_err =tree->GetLeaf("selSF_wgt_err")->GetValue(0); 
+	L1Prefire_wgt_err =tree->GetLeaf("L1Prefire_wgt_err")->GetValue(0); 
 	ren_Up =tree->GetLeaf("ren_Up")->GetValue(0); 
 	fac_Up =tree->GetLeaf("fac_Up")->GetValue(0); 
 	scale_Up =tree->GetLeaf("scale_Up")->GetValue(0); 

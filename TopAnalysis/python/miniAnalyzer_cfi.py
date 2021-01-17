@@ -146,7 +146,10 @@ ANALYSISTRIGGERLISTS={
       'lowmu2017':['HLT_HIPFJet140_v',
           'HLT_HIPFJetFwd140_v',
           'HLT_HIEle15_WPLoose_Gsf_v',
-          'HLT_HIMu15_v'
+          'HLT_HIMu15_v',
+          'HLT_AK4PFJet120_v',
+          'HLT_Ele20_WPLoose_Gsf_v',
+          'HLT_Mu17_v'
       ],          
     2016:['HLT_Ele32_eta2p1_WPTight_Gsf_v',
           'HLT_IsoMu24_v',
@@ -222,7 +225,7 @@ ANALYSISRUNS={
     'era2017_F1':305044,
     'era2017_F2':305178,
     'era2017_F3':305967,
-    'era2017_H' :306926
+    'era2017_H' :306936
 }
 
 

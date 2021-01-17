@@ -148,6 +148,24 @@ class PPSEff
 		return -thX_max;
     }
 	
+	bool InFiducial(int arm, int det, unsigned int runNumber, float x, float y){
+		TString era("");
+		if(runNumber>=297050&& runNumber<=299329) era="2017B";
+		if(runNumber>=299368&& runNumber<=300780) era="2017C1";
+		if(runNumber>=300806&& runNumber<=302029) era="2017C2";
+		if(runNumber>=302031&& runNumber<=302663) era="2017D";
+		if(runNumber>=303825&& runNumber<=304797) era="2017E";
+		if(runNumber>=305044&& runNumber<=305114) era="2017F1";
+		if(runNumber>=305178&& runNumber<=305902) era="2017F2";
+		if(runNumber>=305967&& runNumber<=306460) era="2017F3";
+		if(runNumber>=306936&& runNumber<=307082) era="2017H";
+
+		std::map<std::pair<int, int>, double> XLow_, XHigh_, YLow_, YHigh_;
+		fillFiducialCutsVectors(era, XLow_, XHigh_, YLow_, YHigh_);
+		std::pair<int, int> rp(arm,det);
+		return (x>XLow_[rp]) && (x<XHigh_[rp]) && (y>YLow_[rp]) && (y<YHigh_[rp]);
+	}	
+	
 	private: 
 	float addUncFlat=0; // additional flat systematic uncertainty (see L167 for more info)
 	const static int Nperiods = static_cast<int>(Periods::Count);
@@ -213,7 +231,164 @@ class PPSEff
 		//_xmin  = _hef201756[0]->GetBinCenter(1) - 0.5 * _bw;
 		//_xmax  = _hef201756[0]->GetBinCenter(_nbins) + 0.5 * _bw;	
 	}
+    
 	
+    void fillFiducialCutsVectors( // see https://twiki.cern.ch/twiki/bin/viewauth/CMS/TaggedProtonsPixelEfficiencies
+		TString era, std::map<std::pair<int, int>, double> &fiducialXLow_,
+		std::map<std::pair<int, int>, double> &fiducialXHigh_,
+		std::map<std::pair<int, int>, double> &fiducialYLow_,
+		std::map<std::pair<int, int>, double> &fiducialYHigh_) {
+		if (era == "2017B") {
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 1.995;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.479;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -11.098;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 4.298;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.422;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -10.698;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 4.698;
+		} else if (era == "2017C1") {
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 1.860;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.334;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -11.098;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 4.298;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.422;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -10.698;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 4.698;
+		} else if (era == "2017E") {
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 1.995;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.479;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -10.098;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 4.998;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.422;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -9.698;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 5.398;
+		} else if (era == "2017F1") {
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 1.995;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.479;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -10.098;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 4.998;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.422;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -9.698;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 5.398;
+		} else if (era == "2017H") {
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 1.995;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.479;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -10.098;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 4.998;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.422;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -9.698;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 5.398;
+		} else if (era == "2018A") {
+		fiducialXLow_[std::pair<int, int>(0, 0)] = 2.710;
+		fiducialXHigh_[std::pair<int, int>(0, 0)] = 17.927;
+		fiducialYLow_[std::pair<int, int>(0, 0)] = -11.598;
+		fiducialYHigh_[std::pair<int, int>(0, 0)] = 3.698;
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 2.278;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -10.898;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 4.398;
+		fiducialXLow_[std::pair<int, int>(1, 0)] = 3.000;
+		fiducialXHigh_[std::pair<int, int>(1, 0)] = 18.498;
+		fiducialYLow_[std::pair<int, int>(1, 0)] = -11.298;
+		fiducialYHigh_[std::pair<int, int>(1, 0)] = 4.098;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.420;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 20.045;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -10.398;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 5.098;
+		} else if (era == "2018B1") {
+		fiducialXLow_[std::pair<int, int>(0, 0)] = 2.850;
+		fiducialXHigh_[std::pair<int, int>(0, 0)] = 17.927;
+		fiducialYLow_[std::pair<int, int>(0, 0)] = -11.598;
+		fiducialYHigh_[std::pair<int, int>(0, 0)] = 3.698;
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 2.420;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -10.798;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 4.298;
+		fiducialXLow_[std::pair<int, int>(1, 0)] = 3.000;
+		fiducialXHigh_[std::pair<int, int>(1, 0)] = 18.070;
+		fiducialYLow_[std::pair<int, int>(1, 0)] = -11.198;
+		fiducialYHigh_[std::pair<int, int>(1, 0)] = 4.098;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.420;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 25.045;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -10.398;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 5.098;
+		} else if (era == "2018B2") {
+		fiducialXLow_[std::pair<int, int>(0, 0)] = 2.562;
+		fiducialXHigh_[std::pair<int, int>(0, 0)] = 17.640;
+		fiducialYLow_[std::pair<int, int>(0, 0)] = -11.098;
+		fiducialYHigh_[std::pair<int, int>(0, 0)] = 4.198;
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 2.135;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -11.398;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 3.798;
+		fiducialXLow_[std::pair<int, int>(1, 0)] = 3.000;
+		fiducialXHigh_[std::pair<int, int>(1, 0)] = 17.931;
+		fiducialYLow_[std::pair<int, int>(1, 0)] = -10.498;
+		fiducialYHigh_[std::pair<int, int>(1, 0)] = 4.698;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.279;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.760;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -10.598;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 4.498;
+		} else if (era == "2018C") {
+		fiducialXLow_[std::pair<int, int>(0, 0)] = 2.564;
+		fiducialXHigh_[std::pair<int, int>(0, 0)] = 17.930;
+		fiducialYLow_[std::pair<int, int>(0, 0)] = -11.098;
+		fiducialYHigh_[std::pair<int, int>(0, 0)] = 4.198;
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 2.278;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -11.398;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 3.698;
+		fiducialXLow_[std::pair<int, int>(1, 0)] = 3.000;
+		fiducialXHigh_[std::pair<int, int>(1, 0)] = 17.931;
+		fiducialYLow_[std::pair<int, int>(1, 0)] = -10.498;
+		fiducialYHigh_[std::pair<int, int>(1, 0)] = 4.698;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.279;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.760;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -10.598;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 4.398;
+		} else if (era == "2018D1") {
+		fiducialXLow_[std::pair<int, int>(0, 0)] = 2.847;
+		fiducialXHigh_[std::pair<int, int>(0, 0)] = 17.930;
+		fiducialYLow_[std::pair<int, int>(0, 0)] = -11.098;
+		fiducialYHigh_[std::pair<int, int>(0, 0)] = 4.098;
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 2.278;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -11.398;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 3.698;
+		fiducialXLow_[std::pair<int, int>(1, 0)] = 3.000;
+		fiducialXHigh_[std::pair<int, int>(1, 0)] = 17.931;
+		fiducialYLow_[std::pair<int, int>(1, 0)] = -10.498;
+		fiducialYHigh_[std::pair<int, int>(1, 0)] = 4.698;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.279;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.760;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -10.598;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 4.398;
+		} else if (era == "2018D2") {
+		fiducialXLow_[std::pair<int, int>(0, 0)] = 2.847;
+		fiducialXHigh_[std::pair<int, int>(0, 0)] = 17.931;
+		fiducialYLow_[std::pair<int, int>(0, 0)] = -10.598;
+		fiducialYHigh_[std::pair<int, int>(0, 0)] = 4.498;
+		fiducialXLow_[std::pair<int, int>(0, 2)] = 2.278;
+		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.620;
+		fiducialYLow_[std::pair<int, int>(0, 2)] = -11.598;
+		fiducialYHigh_[std::pair<int, int>(0, 2)] = 3.398;
+		fiducialXLow_[std::pair<int, int>(1, 0)] = 3.000;
+		fiducialXHigh_[std::pair<int, int>(1, 0)] = 17.931;
+		fiducialYLow_[std::pair<int, int>(1, 0)] = -10.498;
+		fiducialYHigh_[std::pair<int, int>(1, 0)] = 4.698;
+		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.279;
+		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.760;
+		fiducialYLow_[std::pair<int, int>(1, 2)] = -10.598;
+		fiducialYHigh_[std::pair<int, int>(1, 2)] = 3.898;
+		} else
+		  std::cout << "WARNING: Era not recognized!" << std::endl;
+		return;
+	}	
 	
 };
 

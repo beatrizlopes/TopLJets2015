@@ -72,7 +72,7 @@ kipped." << endl;
   }
    
    // Proton efficiency class
-   PPSEff *PPS_eff = new PPSEff(Form("%s/pixelEfficiencies_multiRP.root",data_path.Data()));
+   PPSEff *MultiRP_eff = new PPSEff(Form("%s/pixelEfficiencies_multiRP.root",data_path.Data()));
    PPSEff *Strip_eff = new PPSEff(Form("%s/PreliminaryEfficiencies_July132020_1D2DMultiTrack.root",data_path.Data()));
    
    // ---------------------------------------------------------------------------------------------------------------------------------- //
@@ -327,9 +327,9 @@ kipped." << endl;
 		ptag_wgt *= ptr.trueZeroTracksRatio(run, beamXangle, 0) * ptr.trueZeroTracksRatio(run, beamXangle, 1);
 		ptag_wgt_err = norm_weight_0p_err[i_reg];
 		weight *= ptag_wgt;
-		ppsSF_wgt = PPS_eff->getEff(p1_x,p1_y,0,run) *  PPS_eff->getEff(p2_x,p2_y,1,run);
-		ppsSF_wgt_err = PPS_eff->getRelEffErrSq(p1_x,p1_y,0,run) + 
-		                PPS_eff->getRelEffErrSq(p2_x,p2_y,1,run);
+		ppsSF_wgt = MultiRP_eff->getEff(p1_x,p1_y,0,run) *  MultiRP_eff->getEff(p2_x,p2_y,1,run);
+		ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p1_x,p1_y,0,run) + 
+		                MultiRP_eff->getRelEffErrSq(p2_x,p2_y,1,run);
 		ppsSF_wgt_err = sqrt(ppsSF_wgt_err);
 		// strip efficiency
 		ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run) * Strip_eff->getEff(p2_x,p2_y,1,run);
@@ -341,8 +341,8 @@ kipped." << endl;
 		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 0) * norm_weight_1pRP1[i_reg];
 		ptag_wgt_err = norm_weight_1pRP1_err[i_reg];
 		weight *= ptag_wgt;
-		ppsSF_wgt = PPS_eff->getEff(p2_x,p2_y,1,run);
-		ppsSF_wgt_err = PPS_eff->getRelEffErrSq(p2_x,p2_y,1,run);
+		ppsSF_wgt = MultiRP_eff->getEff(p2_x,p2_y,1,run);
+		ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p2_x,p2_y,1,run);
 		// strip efficiency
 		ppsSF_wgt *= Strip_eff->getEff(p2_x,p2_y,1,run);
 		signal_protons = 1;
@@ -353,8 +353,8 @@ kipped." << endl;
 		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 1) * norm_weight_1pRP0[i_reg];
 		ptag_wgt_err = norm_weight_1pRP0_err[i_reg];
 		weight *= ptag_wgt;
-		ppsSF_wgt = PPS_eff->getEff(p1_x,p1_y,0,run);
-		ppsSF_wgt_err = PPS_eff->getRelEffErrSq(p1_x,p1_y,0,run);
+		ppsSF_wgt = MultiRP_eff->getEff(p1_x,p1_y,0,run);
+		ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p1_x,p1_y,0,run);
 		// strip efficiency
 		ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run);
 		signal_protons = 1;

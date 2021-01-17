@@ -26,6 +26,7 @@
 #include "TopLJets2015/TopAnalysis/interface/NeutrinoEllipseCalculator.h"
 #include "TopQuarkAnalysis/TopTools/interface/MEzCalculator.h"
 #include "TopLJets2015/TopAnalysis/interface/PPSEff.h"
+#include "TopLJets2015/TopAnalysis/interface/L1PrefireEfficiencyWrapper.h"
 
 
 using namespace std;
@@ -384,6 +385,9 @@ void RunExclusiveTop(TString filename,
     //LUMINOSITY+PILEUP
     LumiTools lumi(era,genPU);
     
+    //L1-prefire 
+    L1PrefireEfficiencyWrapper l1PrefireWR(isData,era);
+
     //LEPTON EFFICIENCIES
     EfficiencyScaleFactorsWrapper lepEffH(isData,era);
     
@@ -467,8 +471,8 @@ void RunExclusiveTop(TString filename,
         "p1_xi", "p2_xi", "ppsSF_wgt", "ppsSF_wgt_err",
 		"p1_x","p2_x","p1_y","p2_y",
 		"p1_220_x","p2_220_x","p1_220_y","p2_220_y",
-		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt",
-		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err",
+		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt", "L1Prefire_wgt",
+		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err","L1Prefire_wgt_err",
 		"ren_Up","fac_Up","scale_Up",
 		"ren_Down","fac_Down","scale_Down",
 		"isr_Up","fsr_Up",
@@ -546,6 +550,7 @@ void RunExclusiveTop(TString filename,
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(6,"=1 lep");
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(7,"#geq4 jets");
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(8,"#geq2 bjets");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(9,"#geq2 ljets");
     ht.getPlots()["evt_count"]->SetBinContent(1,counter->GetBinContent(1));
     ht.getPlots()["evt_count"]->SetBinContent(2,counter->GetBinContent(2));
     ht.getPlots()["evt_count"]->SetBinContent(3,counter->GetBinContent(3));	
@@ -658,8 +663,9 @@ void RunExclusiveTop(TString filename,
         ht.fill("ch_tag", ch_tag, plotwgts);
 #endif
         std::vector<Particle> &leptons     = selector.getSelLeptons();
-        std::vector<Jet>      &jets        = selector.getJets();
-        std::vector<Jet>      bJets,lightJets;
+		//std::vector<Particle> allPhotons=selector.getSelPhotons();
+        std::vector<Jet>      &allJets        = selector.getJets();
+        std::vector<Jet>      jets,bJets,lightJets;
         std::vector<Particle> selectedLeptons;
         double p1_xi =0.; // proton in positive pot
         double p2_xi =0.; // proton in negative pot
@@ -669,9 +675,16 @@ void RunExclusiveTop(TString filename,
 	    double p2_220_x = 0, p2_220_y =0.; // proton near track position in positive pot
         
         //  selection of lightJets and bJets
-        for(size_t ij=0; ij<jets.size(); ij++) {
-            if(jets[ij].flavor()==5) bJets.push_back(jets[ij]);
-            else                     lightJets.push_back(jets[ij]);
+        for(size_t ij=0; ij<allJets.size(); ij++) {
+			
+			int idx=allJets[ij].getJetIndex();		
+			int jid=ev.j_id[idx];
+			bool passLoosePu((jid>>2)&0x1);    
+			if(!passLoosePu) {continue;}
+			
+			jets.push_back(allJets[ij]);
+            if(allJets[ij].flavor()==5) bJets.push_back(allJets[ij]);
+            else                     lightJets.push_back(allJets[ij]);
         }
         
         // selection of leptons
@@ -734,13 +747,19 @@ void RunExclusiveTop(TString filename,
 #ifdef HISTOGRAMS_ON
         ht.fill("evt_count", 7, plotwgts); // count events after selection on number of Bjets
 #endif
+        if(lightJets.size()<2)       continue; // ONLY events with at least 2 light Jets
+#ifdef HISTOGRAMS_ON
+        ht.fill("evt_count", 8, plotwgts); // count events after selection on number of light jets
+#endif  
 
 #ifdef HISTOGRAMS_ON
         ht.fill("puwgtctr",0,plotwgts);
 #endif  
         outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = outVars["selSF_wgt"] = outVars["trigSF_wgt"] = 1;
-        outVars["pu_wgt"] = outVars["ptag_wgt"] =  outVars["ppsSF_wgt"] = 1;
+        outVars["pu_wgt"] = outVars["ptag_wgt"] =  outVars["L1Prefire_wgt"] = outVars["ppsSF_wgt"] = 1;
+        
 
+		outVars["trigSF_wgt_err"] = outVars["selSF_wgt_err"] =  outVars["L1Prefire_wgt_err"] =  0;
 		outVars["ppsSF_wgt_err"] = outVars["ptag_wgt_err"] = 0;
 		
         outVars["ren_Down"] = outVars["scale_Down"] = outVars["fac_Down"] = 0;
@@ -756,8 +775,9 @@ void RunExclusiveTop(TString filename,
             ht.fill("puwgtctr",1,puPlotWgts);
 #endif
             
+
             // lepton trigger*selection weights (update the code later)
-            EffCorrection_t trigSF = lepEffH.getTriggerCorrection(leptons,{},{},period);
+            EffCorrection_t trigSF = lepEffH.getTriggerCorrection(leptons,{},{},"");
             EffCorrection_t  selSF = lepEffH.getOfflineCorrection(leptons[0], period);
 			outVars["trigSF_wgt"] = trigSF.first;
 			outVars["trigSF_wgt_err"] = trigSF.second;
@@ -765,7 +785,13 @@ void RunExclusiveTop(TString filename,
 			outVars["selSF_wgt"] = selSF.first;
 			outVars["selSF_wgt_err"] = selSF.second;
 			if(!outVars["trigSF_wgt"]) cout << "WARNING: trigSF = 0, check your selection! " << endl;
-            wgt *= outVars["trigSF_wgt"]*outVars["selSF_wgt"];
+
+			//L1 pre-fire
+			EffCorrection_t l1prefireProb=l1PrefireWR.getCorrection(allJets,{});
+			outVars["L1Prefire_wgt"] = l1prefireProb.first;
+			outVars["L1Prefire_wgt_err"] = l1prefireProb.second;
+
+            wgt *= outVars["trigSF_wgt"]*outVars["selSF_wgt"]*outVars["L1Prefire_wgt"];
             
             //top pt weighting
             outVars["toppt_wgt"] = 1.0;
@@ -827,8 +853,7 @@ void RunExclusiveTop(TString filename,
         //        proton_reco.reconstruct(xangle, pot_raw_id, ev.fwdtrk_x[ift]/10.+align.x_align, xi, xi_error);
         //    }
         //}
-        
-        
+      
         // ----- START RECONSTRUCTION OF TTBAR -------------------------------------------------------
         if(bJets.size()>=2 && lightJets.size()>=2)        {    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             //  in theory this selection was made already

@@ -12,6 +12,7 @@ def getEraConfiguration(era,isData):
     jecFiles    = {
         'era2016':('Summer16_07Aug2017_V11_MC', 'Summer16_07Aug2017All_V11_DATA', 'Summer16_07Aug2017_V11_MC_UncertaintySources_AK4PFchs'),
         'era2017':('Summer19UL17_V5_MC',        'Summer19UL17_RunBCDEF_V5_DATA',  'Summer19UL17_V5_MC_UncertaintySources_AK4PFchs'),
+        'era2017_C':('Summer19UL17_V5_MC',        'Summer19UL17_RunBCDEF_V5_DATA',  'Summer19UL17_V5_MC_UncertaintySources_AK4PFchs'),
         'era2017_H':('Fall17_17Nov2017_V32_94X_MC', 'Fall17_17Nov2017_V32_94X_DATA',  'Fall17_17Nov2017_V32_MC_UncertaintySources_AK4PFchs'), 
         'era2018':('Summer19UL18_V5_MC',           'ERROR:NO_COMBINED_CORRECTION_SETERA','Summer19UL18_MC_UncertaintySources_AK4PFchs'),                                               
         'era2018_A':('Summer19UL18_V5_MC',           'Summer19UL18_RunA_V5_DATA',      'Summer19UL18_MC_UncertaintySources_AK4PFchs'),

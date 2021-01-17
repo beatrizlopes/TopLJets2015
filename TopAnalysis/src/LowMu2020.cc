@@ -40,13 +40,17 @@ void RunLowMu2020(const TString in_fname,
 
   bool isData = in_fname.Contains("Data13TeV") || in_fname.Contains("SingleMuon") || in_fname.Contains("HighEGJet");
   //bool isPythia8 = in_fname.Contains("pythia8");
-  float sqrt_s = 13000.;
+  float EBEAM(6500);
+  //float XIMIN(0.03);
+  float XIMAX(0.2);
+  float sqrt_s = 2*EBEAM;
   
   //object selection cuts
   float minLeadJetPt(145);
   float minLeadLeptonPt(17);
   float minJetPt(25);
   float minLeptonPt(8);
+  float minLeptonEta(2.1);
   
    
   //CORRECTIONS: LEPTON EFFICIENCIES
@@ -92,6 +96,7 @@ void RunLowMu2020(const TString in_fname,
   outPT->Branch("run",&ev.run,"run/i");
   outPT->Branch("event",&ev.event,"event/l");
   outPT->Branch("lumi",&ev.lumi,"lumi/i");
+  outPT->Branch("instLumi",&ev.instLumi,"instLumi/F");
   outPT->Branch("nvtx",&ev.nvtx,"nvtx/I");
   outPT->Branch("rho",&ev.rho,"rho/F");
   outPT->Branch("nchPV",&ev.nchPV,"nchPV/I");
@@ -105,6 +110,7 @@ void RunLowMu2020(const TString in_fname,
   outT->Branch("run",&ev.run,"run/i");
   outT->Branch("event",&ev.event,"event/l");
   outT->Branch("lumi",&ev.lumi,"lumi/i");
+  outT->Branch("instLumi",&ev.instLumi,"instLumi/F");
   outT->Branch("nvtx",&ev.nvtx,"nvtx/I");
   outT->Branch("rho",&ev.rho,"rho/F");
   outT->Branch("nchPV",&ev.nchPV,"nchPV/I");
@@ -124,7 +130,8 @@ void RunLowMu2020(const TString in_fname,
   TString bvars[]={
 					"HLT_HIMu15","HLT_HIEle15","HLT_HIPFJetFwd140","HLT_HIPFJet140",
 					
-					"passLepSel", "passJetSel", "passTopSel"
+					"passLepSel", "passJetSel", "passTopSel",
+					"isOS", "isSF"
   };
 
 				  
@@ -138,6 +145,8 @@ void RunLowMu2020(const TString in_fname,
 					"j2m","j2dphi","j2pt","j2Y",
 					"j3m","j3thrust","j3pt","j3Y",
 					"mpp","Ypp","xip","xin",
+					"xip_truth","xin_truth",
+					"deta_gap_p","deta_gap_n",
 					
 					"HT","mWT","cs_xp","cs_xn","xip_cms","xin_cms",
 					
@@ -148,19 +157,31 @@ void RunLowMu2020(const TString in_fname,
   float jet_pt[ev.MAXJET];
   float jet_eta[ev.MAXJET];
   float jet_deepcsv[ev.MAXJET];
+  float jet_gap_p[ev.MAXJET];
+  float jet_gap_n[ev.MAXJET];
   
   outT->Branch("jet_n",&jet_n,"jet_n/I");
   outT->Branch("jet_pt",jet_pt,"jet_pt[jet_n]/F");
   outT->Branch("jet_eta",jet_eta,"jet_eta[jet_n]/F");
   outT->Branch("jet_deepcsv",jet_deepcsv,"jet_deepcsv[jet_n]/F");
+  outT->Branch("jet_gap_p",jet_gap_p,"jet_gap_p[jet_n]/F");
+  outT->Branch("jet_gap_n",jet_gap_n,"jet_gap_n[jet_n]/F");
 	
   int lep_n(0);
   int lep_id[ev.MAXLEP];
   int lep_q[ev.MAXLEP];
   float lep_pt[ev.MAXLEP];
+  float lep_eta[ev.MAXLEP];
+  float lep_phi[ev.MAXLEP];
+  float lep_gap_p[ev.MAXLEP];
+  float lep_gap_n[ev.MAXLEP];
 
   outT->Branch("lep_n",&lep_n,"lep_n/I");
   outT->Branch("lep_pt",lep_pt,"lep_pt[lep_n]/F");
+  outT->Branch("lep_eta",lep_eta,"lep_eta[lep_n]/F");
+  outT->Branch("lep_phi",lep_phi,"lep_phi[lep_n]/F");
+  outT->Branch("lep_gap_p",lep_gap_p,"lep_gap_p[lep_n]/F");
+  outT->Branch("lep_gap_n",lep_gap_n,"lep_gap_n[lep_n]/F");
   outT->Branch("lep_id",lep_id,"lep_id[lep_n]/I");
   outT->Branch("lep_q",lep_q,"lep_q[lep_n]/I");
   
@@ -262,15 +283,15 @@ void RunLowMu2020(const TString in_fname,
       boutVars["HLT_HIPFJetFwd140"]=(selector.hasTriggerBit("HLT_HIPFJetFwd140_v", ev.addTriggerBits) );   
 	  
 	  bool passTrigger = selector.passSingleLeptonTrigger(ev) || selector.passJetTrigger(ev);
-      if(!passTrigger) continue;
+      if(isData && !passTrigger) continue;
       ht.fill("evt_count", 3, plotwgts);  // count events after trigger cut
 	  
       //////////////////////
       // OBJECT SELECTION //
       //////////////////////
       //lepton selection
-      std::vector<Particle> bare_leptons = selector.flaggedLeptons(ev, minLeptonPt, 2.5);   
-      bare_leptons = selector.selLeptons(bare_leptons,SelectionTool::TIGHT,SelectionTool::MVA90,minLeptonPt,2.5);
+      std::vector<Particle> bare_leptons = selector.flaggedLeptons(ev, minLeptonPt, minLeptonEta);   
+      bare_leptons = selector.selLeptons(bare_leptons,SelectionTool::TIGHT,SelectionTool::MVA90,minLeptonPt,minLeptonEta);
       std::vector<Particle> leptons;
       for( size_t i_lept=0;i_lept<bare_leptons.size();i_lept++) {
 		if (bare_leptons[i_lept].id()==11 && fabs(bare_leptons[i_lept].eta())>2.1) continue;
@@ -356,6 +377,17 @@ void RunLowMu2020(const TString in_fname,
         //evWgt  = trigSF.first*selSF.first;
         foutVars["gen_wgt"] = (ev.g_nw>0 ? ev.g_w[0] : 1.0);        
         evWgt *= foutVars["gen_wgt"];
+		
+		// truth information (if available)
+		if(debug) cout << "ngtop="<<ev.ngtop<<endl;
+		foutVars["xip_truth"] = foutVars["xin_truth"] = 0;
+		for(int i=0;i<ev.ngtop;i++){
+			if(i==0 && ev.gtop_id[i]==2212){ // stable proton with xi < XIMAX (small momentum loss)
+				if(ev.gtop_pz[i]>(1-XIMAX)*EBEAM) {foutVars["xip_truth"] = 1 - ev.gtop_pz[i]/EBEAM; }
+				else if(ev.gtop_pz[i]<(XIMAX-1)*EBEAM) {foutVars["xin_truth"] = 1 + ev.gtop_pz[i]/EBEAM;}
+			}
+		}
+		
       }
       
       //met
@@ -375,10 +407,36 @@ void RunLowMu2020(const TString in_fname,
       lep_n   = int(leptons.size());
 	  for(size_t ij=0; ij<leptons.size(); ij++) {
         lep_pt[ij] = leptons[ij].Pt();
+        lep_eta[ij] = leptons[ij].Eta();
+        lep_phi[ij] = leptons[ij].Phi();
         lep_id[ij] = leptons[ij].id();
         lep_q[ij] = leptons[ij].charge();
+		lep_gap_p[ij] = lep_gap_n[ij] = 0;
+		for(int jtrk=0;jtrk<ev.ntrk;jtrk++){
+			if(ev.track_eta[jtrk]>lep_eta[ij]){
+				float deta=(ev.track_eta[jtrk]-lep_eta[ij])/(2.1-lep_eta[ij]);
+				float dphi=acos(cos(ev.track_eta[jtrk]-lep_phi[ij]))/TMath::Pi();
+				lep_gap_p[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
+			}
+			else if(ev.track_eta[jtrk]<lep_eta[ij]){
+				float deta=(lep_eta[ij]-ev.track_eta[jtrk])/(lep_eta[ij]-(-2.1));
+				float dphi=acos(cos(ev.track_eta[jtrk]-lep_phi[ij]))/TMath::Pi();
+				lep_gap_n[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
+			}
+		}
 	  }
-
+	  if(lep_n==2){
+		  boutVars["isOS"] = (lep_q[0]!=lep_q[1]);
+		  boutVars["isSF"] = (lep_id[0]==lep_id[1]);
+	  }
+	  else{boutVars["isOS"] = false; boutVars["isSF"] = false;}
+	  
+	  // rapidity gap
+	  foutVars["deta_gap_p"] = foutVars["deta_gap_n"] = 5;
+	  for(int jtrk=0;jtrk<ev.ntrk;jtrk++){
+		  if( (2.1-ev.track_eta[jtrk]) < foutVars["deta_gap_p"] ) foutVars["deta_gap_p"] = (2.1-ev.track_eta[jtrk]);
+		  if( (ev.track_eta[jtrk]-(-2.1)) < foutVars["deta_gap_n"] ) foutVars["deta_gap_n"] = (ev.track_eta[jtrk]-(-2.1));
+	  }
 	  // set boson kinematics
 	  TLorentzVector boson(0,0,0,0);
 	  if(lep_n==1) boson = (leptons[0] + neutrino);
@@ -392,6 +450,19 @@ void RunLowMu2020(const TString in_fname,
         jet_pt[ij] = jets[ij].Pt();
         jet_eta[ij] = jets[ij].Eta();
         scalarht += jets[ij].pt();
+		jet_gap_p[ij] = jet_gap_n[ij] = 0;
+		for(int jtrk=0;jtrk<ev.ntrk;jtrk++){
+			if(ev.track_eta[jtrk]>jet_eta[ij]){
+				float deta=(ev.track_eta[jtrk]-jet_eta[ij])/(2.1-jet_eta[ij]);
+				float dphi=acos(cos(ev.track_eta[jtrk]-lep_phi[ij]))/TMath::Pi();
+				jet_gap_p[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
+			}
+			else if(ev.track_eta[jtrk]<jet_eta[ij]){
+				float deta=(jet_eta[ij]-ev.track_eta[jtrk])/(jet_eta[ij]-(-2.1));
+				float dphi=acos(cos(ev.track_eta[jtrk]-lep_phi[ij]))/TMath::Pi();
+				jet_gap_n[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
+			}
+		}
       }
       if(boutVars["passLepSel"]) scalarht += leptons[0].pt();
       if(lep_n==1) scalarht += neutrino.Pt();
@@ -449,8 +520,12 @@ void RunLowMu2020(const TString in_fname,
 	  foutVars["ttpt"] = ttbar.Pt();
 	  foutVars["ttY"] = ttbar.Rapidity();
 	  foutVars["ttdphi"] = boutVars["passTopSel"] ? top1.DeltaPhi(top2) : 999;
-
-      if(jet_n==2){
+	  
+      foutVars["j2m"] = foutVars["j3m"] = 0;
+	  foutVars["j2pt"] = foutVars["j3pt"] = 0;
+	  foutVars["j2Y"] = foutVars["j3Y"] = 999;
+	  foutVars["j2dphi"] = foutVars["j3thrust"] = 999;
+	  if(jet_n==2){
 		TLorentzVector v_jets = (jets[0]+jets[1]);
 	    foutVars["j2m"] = v_jets.M();
 	    foutVars["j2pt"] = v_jets.Pt();
@@ -463,12 +538,6 @@ void RunLowMu2020(const TString in_fname,
 	    foutVars["j3pt"] = v_jets.Pt();
 	    foutVars["j3Y"] = v_jets.Rapidity();
 	    foutVars["j3thrust"] = 999;
-	  }
-	  else{
-	    foutVars["j2m"] = foutVars["j3m"] = 0;
-	    foutVars["j2pt"] = foutVars["j3pt"] = 0;
-	    foutVars["j2Y"] = foutVars["j3Y"] = 999;
-	    foutVars["j2dphi"] = foutVars["j3thrust"] = 999;
 	  }								
       foutVars["HT"] = scalarht;
 
@@ -503,7 +572,7 @@ void RunLowMu2020(const TString in_fname,
   f->Close();
   
   //save histos to file  
-  cout << endl << "Writes " << fOut->GetName() << endl;
+  cout << endl << "Writes " << fOut->GetName() << ", with " << outT->GetEntries() << " events" << endl;
   fOut->cd();
   for (auto& it : ht.getPlots())  { 
     if(it.second->GetEntries()==0) continue;

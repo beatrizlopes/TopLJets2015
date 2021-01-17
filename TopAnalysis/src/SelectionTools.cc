@@ -45,8 +45,10 @@ bool SelectionTool::passSingleLeptonTrigger(MiniEvent_t &ev) {
 		     hasTriggerBit("HLT_IsoMu27_v",                                            ev.triggerBits) );
   
   if(anType_==LOWMU){
-	hasETrigger= hasTriggerBit("HLT_HIEle15_WPLoose_Gsf_v", ev.triggerBits) ;
-	hasMTrigger=  hasTriggerBit("HLT_HIMu15_v",           ev.triggerBits) ;
+	hasETrigger= hasTriggerBit("HLT_HIEle15_WPLoose_Gsf_v", ev.triggerBits) || 
+				 hasTriggerBit("HLT_Ele20_WPLoose_Gsf_v", ev.triggerBits) ;
+	hasMTrigger=  hasTriggerBit("HLT_HIMu15_v",           ev.triggerBits) ||
+	              hasTriggerBit("HLT_Mu17_v",           ev.triggerBits);
   }
   
   
@@ -62,7 +64,8 @@ bool SelectionTool::passSingleLeptonTrigger(MiniEvent_t &ev) {
 bool SelectionTool::passJetTrigger(MiniEvent_t &ev) {
   //check if triggers have fired and are consistent with the offline selection	  
   bool hasTrigger(  hasTriggerBit("HLT_HIPFJet140_v",           ev.triggerBits) ||
-                     hasTriggerBit("HLT_HIPFJetFwd140_v",     ev.triggerBits) );
+                     hasTriggerBit("HLT_HIPFJetFwd140_v",           ev.triggerBits) ||
+					 hasTriggerBit("HLT_AK4PFJet120_v",     ev.triggerBits) );
   
   if(anType_!=LOWMU){
 	std::cout << "WARNING: Jet triggers are for low-pile setup only!!!" << std::endl;
