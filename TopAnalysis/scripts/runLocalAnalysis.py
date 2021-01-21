@@ -15,7 +15,7 @@ Wrapper to be used when run in parallel
 """
 def RunMethodPacked(args):
 
-    method,inF,outF,channel,charge,flag,runSysts,systVar,era,tag,debug,CR,QCDTemp,SRfake,skimtree,genWeights,xsec=args
+    method,inF,outF,channel,charge,seed,flag,runSysts,systVar,era,tag,debug,CR,QCDTemp,SRfake,skimtree,genWeights,xsec=args
     print args
     print 'Running ',method,' on ',inF
     print 'Output file',outF
@@ -35,6 +35,7 @@ def RunMethodPacked(args):
         if skimtree : cmd += ' --skimtree'
         if CR : cmd += ' --CR'
         if QCDTemp : cmd += ' --QCDTemp'
+        if seed: cmd += ' --seed '+str(seed)
         if SRfake : cmd += ' --SRfake'
         print(cmd)
         os.system(cmd)
@@ -65,6 +66,7 @@ def main():
     parser.add_option(      '--xsec',        dest='xsec',        help='use this xsec value instead of the json one  [%default]',   default=None,          type=float)
     parser.add_option(      '--ch',          dest='channel',     help='channel  [%default]',                                    default=13,         type=int)
     parser.add_option(      '--charge',      dest='charge',      help='charge  [%default]',                                     default=0,          type=int)
+    parser.add_option(      '--seed',        dest='seed',        help='random seed  [%default]',                                     default=0,          type=int)
     parser.add_option(      '--era',         dest='era',         help='era to use for corrections/uncertainties  [%default]',   default='era2016',       type='string')
     parser.add_option(      '--tag',         dest='tag',         help='normalize from this tag  [%default]',                    default=None,       type='string')
     parser.add_option('-q', '--queue',       dest='queue',       help='if not local send to batch with condor. queues are now called flavours, see http://batchdocs.web.cern.ch/batchdocs/local/submit.html#job-flavours   [%default]',     default='local',    type='string')    
@@ -158,7 +160,7 @@ def main():
             if opt.tag in onlyListXsec: xsec=onlyListXsec[opt.tag]
             if opt.xsec: xsec=opt.xsec
             if systVar != 'nominal' and not systVar in opt.output: outF=opt.output[:-5]+'_'+systVar+'.root'
-            task_list.append( (opt.method,inF,outF,opt.channel,opt.charge,opt.flag,opt.runSysts,systVar,opt.era,opt.tag,opt.debug, opt.CR, opt.QCDTemp, opt.SRfake, opt.skimtree,opt.genWeights,xsec) )
+            task_list.append( (opt.method,inF,outF,opt.channel,opt.charge,opt.seed,opt.flag,opt.runSysts,systVar,opt.era,opt.tag,opt.debug, opt.CR, opt.QCDTemp, opt.SRfake, opt.skimtree,opt.genWeights,xsec) )
     else:
 
         inputTags=getEOSlslist(directory=opt.input,prepend='')

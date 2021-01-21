@@ -327,7 +327,9 @@ void RunExclusiveTop(TString filename,
                      TH1F *genPU,
                      TString era,
                      Bool_t debug,
-					 std::string systVar)
+					 std::string systVar,
+					 int seed
+					 )
 {
     /////////////////////
     // INITIALIZATION //
@@ -393,7 +395,7 @@ void RunExclusiveTop(TString filename,
     
     //B-TAG CALIBRATION
     //BTagSFUtil btvSF(era,"DeepCSV",BTagEntry::OperatingPoint::OP_MEDIUM,"",0);
-    BTagSFUtil btvSF(era,BTagEntry::OperatingPoint::OP_MEDIUM,"",0);
+    BTagSFUtil btvSF(era,BTagEntry::OperatingPoint::OP_MEDIUM,"",seed);
 	
     //JEC/JER
     JECTools jec(era);
@@ -601,12 +603,12 @@ void RunExclusiveTop(TString filename,
 	// btagSF settings
 	string option = "central";
 	if(systVar.find("btagUp")!=string::npos) {
-		cout << "INFO: Running btagSF up variation"<<endl;
+		cout << "INFO: Running btagSF up variation, seed = "<< seed << endl;
 		option = "up";}
 	else if(systVar.find("btagDn")!=string::npos) {
-		cout << "INFO: Running btagSF down variation"<<endl;
+		cout << "INFO: Running btagSF down variation, seed = "<< seed << endl;
 		option = "down";}
-	else{cout << "INFO: Running nominal btag SF"<<endl;}
+	else{cout << "INFO: Running nominal btag SF, seed = "<< seed << endl;}
     
 	// Proton reconstuction systematics
 	float pps_err = 0;
