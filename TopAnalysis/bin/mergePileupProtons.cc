@@ -333,13 +333,13 @@ kipped." << endl;
 		ppsSF_wgt_err = sqrt(ppsSF_wgt_err);
 		// strip efficiency
 		ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run) * Strip_eff->getEff(p2_x,p2_y,1,run);
-		signal_protons = 2;
+		signal_protons = 11;
 		weight *= ppsSF_wgt;
 	}
-	else if(isSignal && p1_xi==0 && p2_xi>0){ // one signal proton
+	else if(isSignal && p1_xi==0 && p2_xi>0){ // one signal proton in arm1
 		p1_xi = poll_p1_xi[i_reg];
-		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 0) * norm_weight_1pRP1[i_reg];
-		ptag_wgt_err = norm_weight_1pRP1_err[i_reg];
+		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 1) * norm_weight_1pRP0[i_reg];
+		ptag_wgt_err = norm_weight_1pRP0_err[i_reg];
 		weight *= ptag_wgt;
 		ppsSF_wgt = MultiRP_eff->getEff(p2_x,p2_y,1,run);
 		ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p2_x,p2_y,1,run);
@@ -348,16 +348,16 @@ kipped." << endl;
 		signal_protons = 1;
 		weight *= ppsSF_wgt;
 	}
-	else if(isSignal && p1_xi>0 && p2_xi==0){ // one signal proton
+	else if(isSignal && p1_xi>0 && p2_xi==0){ // one signal proton in arm0
 		p2_xi = poll_p2_xi[i_reg];
-		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 1) * norm_weight_1pRP0[i_reg];
-		ptag_wgt_err = norm_weight_1pRP0_err[i_reg];
+		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 0) * norm_weight_1pRP1[i_reg];
+		ptag_wgt_err = norm_weight_1pRP1_err[i_reg];
 		weight *= ptag_wgt;
 		ppsSF_wgt = MultiRP_eff->getEff(p1_x,p1_y,0,run);
 		ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p1_x,p1_y,0,run);
 		// strip efficiency
 		ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run);
-		signal_protons = 1;
+		signal_protons = 10;
 		weight *= ppsSF_wgt;
 	}
 	else{ // no signal protons in the acceptance region
