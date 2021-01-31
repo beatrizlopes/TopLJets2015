@@ -349,13 +349,13 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   iEvent.getByToken(generatorlheToken_, evet);
   if(evet.isValid()) 
     {
+	   unsigned int nom_wt = 1001;
 	   unsigned int ren_up = 1002;
 	   unsigned int ren_dn = 1003;
 	   unsigned int fac_up = 1004;
 	   unsigned int fac_dn = 1007;
 	   unsigned int com_up = 1005;
 	   unsigned int com_dn = 1009;
-	   unsigned int nom_wt = 1001;
 	   
 	   ev_.g_w[ev_.g_nw]=evet->weights()[nom_wt].wgt; ev_.g_nw++;
 	   ev_.g_w[ev_.g_nw]=evet->weights()[ren_up].wgt; ev_.g_nw++;
@@ -364,6 +364,11 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	   ev_.g_w[ev_.g_nw]=evet->weights()[fac_dn].wgt; ev_.g_nw++;
 	   ev_.g_w[ev_.g_nw]=evet->weights()[com_up].wgt; ev_.g_nw++;
 	   ev_.g_w[ev_.g_nw]=evet->weights()[com_dn].wgt; ev_.g_nw++;
+	   
+	   // PDF weights
+	   for (unsigned int iii=1010;iii<=1120;iii++)
+	   {ev_.g_w[ev_.g_nw]=evet->weights()[iii].wgt; ev_.g_nw++;}
+
 		
 	   if(ev_.MAXWEIGHTS<ev_.g_nw){
 		 cout << "WARNING: expected MAXN weights ("<<ev_.MAXWEIGHTS<<") is smaller than the N weights in MC ("<<ev_.g_nw<<")."<<endl;
@@ -753,7 +758,6 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
             ev_.fwdtrk_timeError[ev_.nfwdtrk] = proton.timeError();
 
             ev_.fwdtrk_xi[ev_.nfwdtrk]        = proton.xi();
-			std::cout << "pot, xi method = " << ev_.fwdtrk_pot[ev_.nfwdtrk] << ", " << proton.xi() << " , "<< ev_.fwdtrk_method[ev_.nfwdtrk] << std::endl;
             ev_.fwdtrk_xiSF[ev_.nfwdtrk]      = 1.;
             ev_.fwdtrk_xiError[ev_.nfwdtrk]   = proton.xiError();
             ev_.fwdtrk_t[ev_.nfwdtrk]         = proton.t();

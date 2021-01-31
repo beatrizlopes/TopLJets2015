@@ -429,14 +429,64 @@ void RunExclusiveTop(TString filename,
     outT->Branch("beamXangle",&ev.beamXangle,"beamXangle/F");
 	
 	// Parton shower weights
-	if(!isData){
-	  outT->Branch("g_npsw",    &ev.g_npsw,   "g_npsw/I");
-	  outT->Branch("g_psw",      ev.g_psw,    "g_psw[g_npsw]/F");
-	}
-    
+	//if(!isData){
+	//  outT->Branch("g_npsw",    &ev.g_npsw,   "g_npsw/I");
+	//  outT->Branch("g_psw",      ev.g_psw,    "g_psw[g_npsw]/F");
+	//}
+	
+	/// ISR/FSR Systematic variations, store as a vectors to account comp. split
+	// total, [g2gg, g2qq, q2ga, x2xg] X [muR, cNS]. Q=uds, X=cb, NS=non-singular
+	// see more info here: https://indico.cern.ch/event/746817/contributions/3101385/attachments/1702410/2742087/psweights_mseidel.pdf
+	const int NPSRad_weights = 9;
+	float isr_Up[NPSRad_weights], fsr_Up[NPSRad_weights], isr_Down[NPSRad_weights], fsr_Down[NPSRad_weights];
+	outT->Branch("isr_Up",isr_Up,Form("isr_Up[%d]/F",NPSRad_weights));
+	outT->Branch("fsr_Up",fsr_Up,Form("fsr_Up[%d]/F",NPSRad_weights));
+	outT->Branch("isr_Down",isr_Down,Form("isr_Down[%d]/F",NPSRad_weights));
+	outT->Branch("fsr_Down",fsr_Down,Form("fsr_Down[%d]/F",NPSRad_weights));
+	map<string,int> PSmap;
+    // from https://github.com/cms-sw/cmssw/blob/master/Configuration/Generator/python/PSweightsPythia/PythiaPSweightsSettings_cfi.py
+	PSmap["nominal"] = 0;
+	PSmap["isrDefHi"] = 6;
+	PSmap["fsrDefHi"] = 7;
+	PSmap["isrDefLo"] = 8;
+	PSmap["fsrDefLo"] = 9;
+	PSmap["fsr_G2GG_muR_dn"] = 14;
+	PSmap["fsr_G2GG_muR_up"] = 15;
+	PSmap["fsr_G2QQ_muR_dn"] = 16;
+	PSmap["fsr_G2QQ_muR_up"] = 17;
+	PSmap["fsr_Q2QG_muR_dn"] = 18;
+	PSmap["fsr_Q2QG_muR_up"] = 19;
+	PSmap["fsr_X2XG_muR_dn"] = 20;
+	PSmap["fsr_X2XG_muR_up"] = 21;
+	PSmap["fsr_G2GG_cNS_dn"] = 22;
+	PSmap["fsr_G2GG_cNS_up"] = 23;
+	PSmap["fsr_G2QQ_cNS_dn"] = 24;
+	PSmap["fsr_G2QQ_cNS_up"] = 25;
+	PSmap["fsr_Q2QG_cNS_dn"] = 26;
+	PSmap["fsr_Q2QG_cNS_up"] = 27;
+	PSmap["fsr_X2XG_cNS_dn"] = 28;
+	PSmap["fsr_X2XG_cNS_up"] = 29;
+	PSmap["isr_G2GG_muR_dn"] = 30;
+	PSmap["isr_G2GG_muR_up"] = 31;
+	PSmap["isr_G2QQ_muR_dn"] = 32;
+	PSmap["isr_G2QQ_muR_up"] = 33;
+	PSmap["isr_Q2QG_muR_dn"] = 34;
+	PSmap["isr_Q2QG_muR_up"] = 35;
+	PSmap["isr_X2XG_muR_dn"] = 36;
+	PSmap["isr_X2XG_muR_up"] = 37;
+	PSmap["isr_G2GG_cNS_dn"] = 38;
+	PSmap["isr_G2GG_cNS_up"] = 39;
+	PSmap["isr_G2QQ_cNS_dn"] = 40;
+	PSmap["isr_G2QQ_cNS_up"] = 41;
+	PSmap["isr_Q2QG_cNS_dn"] = 42;
+	PSmap["isr_Q2QG_cNS_up"] = 43;
+	PSmap["isr_X2XG_cNS_dn"] = 44;
+	PSmap["isr_X2XG_cNS_up"] = 45;
+				
 	ADDVAR(&ev.met_pt,"met_pt","/F",outT);
     ADDVAR(&ev.met_phi,"met_phi","/F",outT);
     ADDVAR(&ev.met_sig,"met_sig","/F",outT);
+	
 	
     TString fvars[]={
         "t_pt","t_eta", "t_phi", "t_m", "t_charge", "t_isHadronic",
@@ -477,8 +527,7 @@ void RunExclusiveTop(TString filename,
 		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err","L1Prefire_wgt_err",
 		"ren_Up","fac_Up","scale_Up",
 		"ren_Down","fac_Down","scale_Down",
-		"isr_Up","fsr_Up",
-		"isr_Down","fsr_Down",
+		"pdf_as_Up","pdf_hs_Up","pdf_as_Down","pdf_hs_Down",
 
         "bJet0_pt","bJet0_eta", "bJet0_phi", "bJet0_m", "bJet0_E",
         "bJet1_pt","bJet1_eta", "bJet1_phi", "bJet1_m", "bJet1_E",
@@ -822,20 +871,116 @@ void RunExclusiveTop(TString filename,
 				outVars["fac_Down"] = 1-(ev.g_w[5])/ev.g_w[1];
 				outVars["scale_Down"] = 1-(ev.g_w[7])/ev.g_w[1];
 			}
-			outVars["isr_Up"] = outVars["fsr_Up"] = 0;
-			outVars["isr_Down"] = outVars["fsr_Down"] = 0;
-			if(isPythia8){ // Py8 PS variations 
-//https://github.com/cms-sw/cmssw/blob/master/Configuration/Generator/python/PSweightsPythia/PythiaPSweightsSettings_cfi.py
-				int nW = ev.g_npsw;
-				if(nW==46 && ev.g_psw[0]){ // 46 weights of ISR and FSR, take only the first ones
-					outVars["isr_Up"] = (ev.g_psw[8])/ev.g_psw[0]-1;
-					outVars["fsr_Up"] = (ev.g_psw[9])/ev.g_psw[0]-1;
-					outVars["isr_Down"] = 1-(ev.g_psw[6])/ev.g_psw[0];
-					outVars["fsr_Down"] = 1-(ev.g_psw[7])/ev.g_psw[0];
+			if(ev.g_nw>118 && ev.g_w[8]){ // pdf variations
+				outVars["pdf_as_Up"] = (ev.g_w[118])/ev.g_w[8]-1;
+				outVars["pdf_as_Down"] = 1-(ev.g_w[111])/ev.g_w[8];
+				float pdf_up=ev.g_w[8],pdf_dn=ev.g_w[8];
+				for(int i=9;i<111;i++){ // clumsy envelope
+					float var=ev.g_w[i];
+					if(pdf_up<var) pdf_up=var;
+					if(var<pdf_dn) pdf_dn=var;
 				}
-				if(nW==24 && ev.g_psw[0]){ // in signal no ISR weights
-					outVars["fsr_Up"] = (ev.g_psw[5])/ev.g_psw[0]-1;
-					outVars["fsr_Down"] = 1-(ev.g_psw[6])/ev.g_psw[0];
+				outVars["pdf_hs_Up"] = (pdf_up)/ev.g_w[8]-1;
+				outVars["pdf_hs_Down"] = 1-(pdf_dn)/ev.g_w[8];
+			}			
+			for(int ips=0;ips<NPSRad_weights;ips++){
+				isr_Up[ips] = 0; fsr_Up[ips] = 0;
+				isr_Down[ips] = 0; fsr_Down[ips] = 0;
+			}
+			
+			if(isPythia8){ // Py8 PS variations 
+				int nW = ev.g_npsw;
+				float PSnom_weight = ev.g_psw[PSmap["nominal"]];
+				if(nW==46 && PSnom_weight){ // 46 weights of ISR and FSR, take only the first ones
+					isr_Up[0] = (ev.g_psw[PSmap["isrDefLo"]])/PSnom_weight-1;
+					fsr_Up[0] = (ev.g_psw[PSmap["fsrDefLo"]])/PSnom_weight-1;
+					isr_Down[0] = 1-(ev.g_psw[PSmap["isrDefHi"]])/PSnom_weight;
+					fsr_Down[0] = 1-(ev.g_psw[PSmap["fsrDefHi"]])/PSnom_weight;
+					
+					//G2GG muR
+					isr_Up[1] = (ev.g_psw[PSmap["isr_G2GG_muR_up"]])/PSnom_weight-1;
+					fsr_Up[1] = (ev.g_psw[PSmap["fsr_G2GG_muR_up"]])/PSnom_weight-1;
+					isr_Down[1] = 1-(ev.g_psw[PSmap["isr_G2GG_muR_dn"]])/PSnom_weight;
+					fsr_Down[1] = 1-(ev.g_psw[PSmap["fsr_G2GG_muR_dn"]])/PSnom_weight;
+
+					//G2QQ muR
+					isr_Up[2] = (ev.g_psw[PSmap["isr_G2QQ_muR_up"]])/PSnom_weight-1;
+					fsr_Up[2] = (ev.g_psw[PSmap["fsr_G2QQ_muR_up"]])/PSnom_weight-1;
+					isr_Down[2] = 1-(ev.g_psw[PSmap["isr_G2QQ_muR_dn"]])/PSnom_weight;
+					fsr_Down[2] = 1-(ev.g_psw[PSmap["fsr_G2QQ_muR_dn"]])/PSnom_weight;
+
+					//Q2QG muR
+					isr_Up[3] = (ev.g_psw[PSmap["isr_Q2QG_muR_up"]])/PSnom_weight-1;
+					fsr_Up[3] = (ev.g_psw[PSmap["fsr_Q2QG_muR_up"]])/PSnom_weight-1;
+					isr_Down[3] = 1-(ev.g_psw[PSmap["isr_Q2QG_muR_dn"]])/PSnom_weight;
+					fsr_Down[3] = 1-(ev.g_psw[PSmap["fsr_Q2QG_muR_dn"]])/PSnom_weight;
+
+					//X2XG muR
+					isr_Up[4] = (ev.g_psw[PSmap["isr_X2XG_muR_up"]])/PSnom_weight-1;
+					fsr_Up[4] = (ev.g_psw[PSmap["fsr_X2XG_muR_up"]])/PSnom_weight-1;
+					isr_Down[4] = 1-(ev.g_psw[PSmap["isr_X2XG_muR_dn"]])/PSnom_weight;
+					fsr_Down[4] = 1-(ev.g_psw[PSmap["fsr_X2XG_muR_dn"]])/PSnom_weight;
+
+					//G2GG cNS
+					isr_Up[5] = (ev.g_psw[PSmap["isr_G2GG_cNS_up"]])/PSnom_weight-1;
+					fsr_Up[5] = (ev.g_psw[PSmap["fsr_G2GG_cNS_up"]])/PSnom_weight-1;
+					isr_Down[5] = 1-(ev.g_psw[PSmap["isr_G2GG_cNS_dn"]])/PSnom_weight;
+					fsr_Down[5] = 1-(ev.g_psw[PSmap["fsr_G2GG_cNS_dn"]])/PSnom_weight;
+
+					//G2QQ cNS
+					isr_Up[6] = (ev.g_psw[PSmap["isr_G2QQ_cNS_up"]])/PSnom_weight-1;
+					fsr_Up[6] = (ev.g_psw[PSmap["fsr_G2QQ_cNS_up"]])/PSnom_weight-1;
+					isr_Down[6] = 1-(ev.g_psw[PSmap["isr_G2QQ_cNS_dn"]])/PSnom_weight;
+					fsr_Down[6] = 1-(ev.g_psw[PSmap["fsr_G2QQ_cNS_dn"]])/PSnom_weight;
+
+					//Q2QG cNS
+					isr_Up[7] = (ev.g_psw[PSmap["isr_Q2QG_cNS_up"]])/PSnom_weight-1;
+					fsr_Up[7] = (ev.g_psw[PSmap["fsr_Q2QG_cNS_up"]])/PSnom_weight-1;
+					isr_Down[7] = 1-(ev.g_psw[PSmap["isr_Q2QG_cNS_dn"]])/PSnom_weight;
+					fsr_Down[7] = 1-(ev.g_psw[PSmap["fsr_Q2QG_cNS_dn"]])/PSnom_weight;
+
+					//X2XG cNS
+					isr_Up[8] = (ev.g_psw[PSmap["isr_X2XG_cNS_up"]])/PSnom_weight-1;
+					fsr_Up[8] = (ev.g_psw[PSmap["fsr_X2XG_cNS_up"]])/PSnom_weight-1;
+					isr_Down[8] = 1-(ev.g_psw[PSmap["isr_X2XG_cNS_dn"]])/PSnom_weight;
+					fsr_Down[8] = 1-(ev.g_psw[PSmap["fsr_X2XG_cNS_dn"]])/PSnom_weight;			
+				}
+				if(nW==24 && PSnom_weight){ // in signal no ISR weights
+					fsr_Up[0] = (PSmap["fsrDefLo"]-4)/PSnom_weight-1;
+					fsr_Down[0] = 1-(ev.g_psw[PSmap["fsrDefHi"]-3])/PSnom_weight;
+
+					//G2GG muR
+					fsr_Up[1] = (ev.g_psw[PSmap["fsr_G2GG_muR_up"]-6])/PSnom_weight-1;
+					fsr_Down[1] = 1-(ev.g_psw[PSmap["fsr_G2GG_muR_dn"]-6])/PSnom_weight;
+
+					//G2QQ muR
+					fsr_Up[2] = (ev.g_psw[PSmap["fsr_G2QQ_muR_up"]-6])/PSnom_weight-1;
+					fsr_Down[2] = 1-(ev.g_psw[PSmap["fsr_G2QQ_muR_dn"]-6])/PSnom_weight;
+
+					//Q2QG muR
+					fsr_Up[3] = (ev.g_psw[PSmap["fsr_Q2QG_muR_up"]-6])/PSnom_weight-1;
+					fsr_Down[3] = 1-(ev.g_psw[PSmap["fsr_Q2QG_muR_dn"]-6])/PSnom_weight;
+
+					//X2XG muR
+					fsr_Up[4] = (ev.g_psw[PSmap["fsr_X2XG_muR_up"]-6])/PSnom_weight-1;
+					fsr_Down[4] = 1-(ev.g_psw[PSmap["fsr_X2XG_muR_dn"]-6])/PSnom_weight;
+
+					//G2GG cNS
+					fsr_Up[5] = (ev.g_psw[PSmap["fsr_G2GG_cNS_up"]-6])/PSnom_weight-1;
+					fsr_Down[5] = 1-(ev.g_psw[PSmap["fsr_G2GG_cNS_dn"]-6])/PSnom_weight;
+
+					//G2QQ cNS
+					fsr_Up[6] = (ev.g_psw[PSmap["fsr_G2QQ_cNS_up"]-6])/PSnom_weight-1;
+					fsr_Down[6] = 1-(ev.g_psw[PSmap["fsr_G2QQ_cNS_dn"]-6])/PSnom_weight;
+
+					//Q2QG cNS
+					fsr_Up[7] = (ev.g_psw[PSmap["fsr_Q2QG_cNS_up"]-6])/PSnom_weight-1;
+					fsr_Down[7] = 1-(ev.g_psw[PSmap["fsr_Q2QG_cNS_dn"]-6])/PSnom_weight;
+
+					//X2XG cNS
+					fsr_Up[8] = (ev.g_psw[PSmap["fsr_X2XG_cNS_up"]-6])/PSnom_weight-1;
+					fsr_Down[8] = 1-(ev.g_psw[PSmap["fsr_X2XG_cNS_dn"]-6])/PSnom_weight;	
+
 				}
 			}
 

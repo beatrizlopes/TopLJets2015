@@ -247,7 +247,7 @@ class PPSEff
 		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.620;
 		fiducialYLow_[std::pair<int, int>(1, 2)] = -10.698;
 		fiducialYHigh_[std::pair<int, int>(1, 2)] = 4.698;
-		} else if (era == "2017C1") {
+		} else if ((era == "2017C1")|| (era == "2017C2") || (era == "2017C") || (era == "2017D")) {
 		fiducialXLow_[std::pair<int, int>(0, 2)] = 1.860;
 		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.334;
 		fiducialYLow_[std::pair<int, int>(0, 2)] = -11.098;
@@ -265,16 +265,7 @@ class PPSEff
 		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.620;
 		fiducialYLow_[std::pair<int, int>(1, 2)] = -9.698;
 		fiducialYHigh_[std::pair<int, int>(1, 2)] = 5.398;
-		} else if (era == "2017F1") {
-		fiducialXLow_[std::pair<int, int>(0, 2)] = 1.995;
-		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.479;
-		fiducialYLow_[std::pair<int, int>(0, 2)] = -10.098;
-		fiducialYHigh_[std::pair<int, int>(0, 2)] = 4.998;
-		fiducialXLow_[std::pair<int, int>(1, 2)] = 2.422;
-		fiducialXHigh_[std::pair<int, int>(1, 2)] = 24.620;
-		fiducialYLow_[std::pair<int, int>(1, 2)] = -9.698;
-		fiducialYHigh_[std::pair<int, int>(1, 2)] = 5.398;
-		} else if (era == "2017H") {
+		} else if ((era == "2017F1")||(era == "2017F2")||(era == "2017F3")||(era == "2017F")||(era == "2017H")) {
 		fiducialXLow_[std::pair<int, int>(0, 2)] = 1.995;
 		fiducialXHigh_[std::pair<int, int>(0, 2)] = 24.479;
 		fiducialYLow_[std::pair<int, int>(0, 2)] = -10.098;

@@ -11,7 +11,7 @@ struct MiniEvent_t
     ngamma=0; nl=0; nj=0;
   }
 
-  static const int MAXWEIGHTS   =  10;  // was 1285 in ttbar MC
+  static const int MAXWEIGHTS   =  120;  // QCD(10) PDF(10) HessianPDF(100)
   static const int MAXPSWEIGHTS =  46;
   static const int MAXGENPAR    =  20;  // initialy was 500
   static const int MAXGENTOPAR  =  25;
