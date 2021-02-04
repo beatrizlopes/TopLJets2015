@@ -348,7 +348,7 @@ void RunExclusiveTop(TString filename,
     
     bool isTTbar = filename.Contains("_TTJets");
 	bool isData = filename.Contains("Data13TeV") || filename.Contains("SingleMuon") || filename.Contains("SingleElectron");
-	bool isPythia8 = filename.Contains("pythia8");
+	//bool isPythia8 = filename.Contains("pythia8");
     
     //PREPARE OUTPUT
     TString baseName=gSystem->BaseName(outname);
@@ -815,7 +815,14 @@ void RunExclusiveTop(TString filename,
 		
         outVars["ren_Down"] = outVars["scale_Down"] = outVars["fac_Down"] = 0;
         outVars["ren_Up"] = outVars["scale_Up"] = outVars["fac_Up"] = 0;
-		
+	    
+		outVars["pdf_as_Up"] = outVars["pdf_as_Down"] = 0;
+		outVars["pdf_hs_Up"] = outVars["pdf_hs_Down"] = 0;
+
+		for(int ips=0;ips<NPSRad_weights;ips++){
+			isr_Up[ips] = 0; fsr_Up[ips] = 0;
+			isr_Down[ips] = 0; fsr_Down[ips] = 0;
+		}		
 		
         if (!ev.isData) {
             wgt  = (normH? normH->GetBinContent(1) : 1.0);          // norm weight
@@ -883,107 +890,101 @@ void RunExclusiveTop(TString filename,
 				outVars["pdf_hs_Up"] = (pdf_up)/ev.g_w[8]-1;
 				outVars["pdf_hs_Down"] = 1-(pdf_dn)/ev.g_w[8];
 			}			
-			for(int ips=0;ips<NPSRad_weights;ips++){
-				isr_Up[ips] = 0; fsr_Up[ips] = 0;
-				isr_Down[ips] = 0; fsr_Down[ips] = 0;
-			}
 			
-			if(isPythia8){ // Py8 PS variations 
-				int nW = ev.g_npsw;
-				float PSnom_weight = ev.g_psw[PSmap["nominal"]];
-				if(nW==46 && PSnom_weight){ // 46 weights of ISR and FSR, take only the first ones
-					isr_Up[0] = (ev.g_psw[PSmap["isrDefLo"]])/PSnom_weight-1;
-					fsr_Up[0] = (ev.g_psw[PSmap["fsrDefLo"]])/PSnom_weight-1;
-					isr_Down[0] = 1-(ev.g_psw[PSmap["isrDefHi"]])/PSnom_weight;
-					fsr_Down[0] = 1-(ev.g_psw[PSmap["fsrDefHi"]])/PSnom_weight;
+			// Py8 PS variations 
+			int nW = ev.g_npsw;
+			float PSnom_weight = (nW>PSmap["nominal"]) ? ev.g_psw[PSmap["nominal"]] : 0;
+			if(nW==46 && PSnom_weight){ // 46 weights of ISR and FSR, take only the first ones
+				isr_Up[0] = (ev.g_psw[PSmap["isrDefLo"]])/PSnom_weight-1;
+				fsr_Up[0] = (ev.g_psw[PSmap["fsrDefLo"]])/PSnom_weight-1;
+				isr_Down[0] = 1-(ev.g_psw[PSmap["isrDefHi"]])/PSnom_weight;
+				fsr_Down[0] = 1-(ev.g_psw[PSmap["fsrDefHi"]])/PSnom_weight;
 					
-					//G2GG muR
-					isr_Up[1] = (ev.g_psw[PSmap["isr_G2GG_muR_up"]])/PSnom_weight-1;
-					fsr_Up[1] = (ev.g_psw[PSmap["fsr_G2GG_muR_up"]])/PSnom_weight-1;
-					isr_Down[1] = 1-(ev.g_psw[PSmap["isr_G2GG_muR_dn"]])/PSnom_weight;
-					fsr_Down[1] = 1-(ev.g_psw[PSmap["fsr_G2GG_muR_dn"]])/PSnom_weight;
+				//G2GG muR
+				isr_Up[1] = (ev.g_psw[PSmap["isr_G2GG_muR_up"]])/PSnom_weight-1;
+				fsr_Up[1] = (ev.g_psw[PSmap["fsr_G2GG_muR_up"]])/PSnom_weight-1;
+				isr_Down[1] = 1-(ev.g_psw[PSmap["isr_G2GG_muR_dn"]])/PSnom_weight;
+				fsr_Down[1] = 1-(ev.g_psw[PSmap["fsr_G2GG_muR_dn"]])/PSnom_weight;
 
-					//G2QQ muR
-					isr_Up[2] = (ev.g_psw[PSmap["isr_G2QQ_muR_up"]])/PSnom_weight-1;
-					fsr_Up[2] = (ev.g_psw[PSmap["fsr_G2QQ_muR_up"]])/PSnom_weight-1;
-					isr_Down[2] = 1-(ev.g_psw[PSmap["isr_G2QQ_muR_dn"]])/PSnom_weight;
-					fsr_Down[2] = 1-(ev.g_psw[PSmap["fsr_G2QQ_muR_dn"]])/PSnom_weight;
+				//G2QQ muR
+				isr_Up[2] = (ev.g_psw[PSmap["isr_G2QQ_muR_up"]])/PSnom_weight-1;
+				fsr_Up[2] = (ev.g_psw[PSmap["fsr_G2QQ_muR_up"]])/PSnom_weight-1;
+				isr_Down[2] = 1-(ev.g_psw[PSmap["isr_G2QQ_muR_dn"]])/PSnom_weight;
+				fsr_Down[2] = 1-(ev.g_psw[PSmap["fsr_G2QQ_muR_dn"]])/PSnom_weight;
 
-					//Q2QG muR
-					isr_Up[3] = (ev.g_psw[PSmap["isr_Q2QG_muR_up"]])/PSnom_weight-1;
-					fsr_Up[3] = (ev.g_psw[PSmap["fsr_Q2QG_muR_up"]])/PSnom_weight-1;
-					isr_Down[3] = 1-(ev.g_psw[PSmap["isr_Q2QG_muR_dn"]])/PSnom_weight;
-					fsr_Down[3] = 1-(ev.g_psw[PSmap["fsr_Q2QG_muR_dn"]])/PSnom_weight;
+				//Q2QG muR
+				isr_Up[3] = (ev.g_psw[PSmap["isr_Q2QG_muR_up"]])/PSnom_weight-1;
+				fsr_Up[3] = (ev.g_psw[PSmap["fsr_Q2QG_muR_up"]])/PSnom_weight-1;
+				isr_Down[3] = 1-(ev.g_psw[PSmap["isr_Q2QG_muR_dn"]])/PSnom_weight;
+				fsr_Down[3] = 1-(ev.g_psw[PSmap["fsr_Q2QG_muR_dn"]])/PSnom_weight;
 
-					//X2XG muR
-					isr_Up[4] = (ev.g_psw[PSmap["isr_X2XG_muR_up"]])/PSnom_weight-1;
-					fsr_Up[4] = (ev.g_psw[PSmap["fsr_X2XG_muR_up"]])/PSnom_weight-1;
-					isr_Down[4] = 1-(ev.g_psw[PSmap["isr_X2XG_muR_dn"]])/PSnom_weight;
-					fsr_Down[4] = 1-(ev.g_psw[PSmap["fsr_X2XG_muR_dn"]])/PSnom_weight;
+				//X2XG muR
+				isr_Up[4] = (ev.g_psw[PSmap["isr_X2XG_muR_up"]])/PSnom_weight-1;
+				fsr_Up[4] = (ev.g_psw[PSmap["fsr_X2XG_muR_up"]])/PSnom_weight-1;
+				isr_Down[4] = 1-(ev.g_psw[PSmap["isr_X2XG_muR_dn"]])/PSnom_weight;
+				fsr_Down[4] = 1-(ev.g_psw[PSmap["fsr_X2XG_muR_dn"]])/PSnom_weight;
 
-					//G2GG cNS
-					isr_Up[5] = (ev.g_psw[PSmap["isr_G2GG_cNS_up"]])/PSnom_weight-1;
-					fsr_Up[5] = (ev.g_psw[PSmap["fsr_G2GG_cNS_up"]])/PSnom_weight-1;
-					isr_Down[5] = 1-(ev.g_psw[PSmap["isr_G2GG_cNS_dn"]])/PSnom_weight;
-					fsr_Down[5] = 1-(ev.g_psw[PSmap["fsr_G2GG_cNS_dn"]])/PSnom_weight;
+				//G2GG cNS
+				isr_Up[5] = (ev.g_psw[PSmap["isr_G2GG_cNS_up"]])/PSnom_weight-1;
+				fsr_Up[5] = (ev.g_psw[PSmap["fsr_G2GG_cNS_up"]])/PSnom_weight-1;
+				isr_Down[5] = 1-(ev.g_psw[PSmap["isr_G2GG_cNS_dn"]])/PSnom_weight;
+				fsr_Down[5] = 1-(ev.g_psw[PSmap["fsr_G2GG_cNS_dn"]])/PSnom_weight;
 
-					//G2QQ cNS
-					isr_Up[6] = (ev.g_psw[PSmap["isr_G2QQ_cNS_up"]])/PSnom_weight-1;
-					fsr_Up[6] = (ev.g_psw[PSmap["fsr_G2QQ_cNS_up"]])/PSnom_weight-1;
-					isr_Down[6] = 1-(ev.g_psw[PSmap["isr_G2QQ_cNS_dn"]])/PSnom_weight;
-					fsr_Down[6] = 1-(ev.g_psw[PSmap["fsr_G2QQ_cNS_dn"]])/PSnom_weight;
+				//G2QQ cNS
+				isr_Up[6] = (ev.g_psw[PSmap["isr_G2QQ_cNS_up"]])/PSnom_weight-1;
+				fsr_Up[6] = (ev.g_psw[PSmap["fsr_G2QQ_cNS_up"]])/PSnom_weight-1;
+				isr_Down[6] = 1-(ev.g_psw[PSmap["isr_G2QQ_cNS_dn"]])/PSnom_weight;
+				fsr_Down[6] = 1-(ev.g_psw[PSmap["fsr_G2QQ_cNS_dn"]])/PSnom_weight;
 
-					//Q2QG cNS
-					isr_Up[7] = (ev.g_psw[PSmap["isr_Q2QG_cNS_up"]])/PSnom_weight-1;
-					fsr_Up[7] = (ev.g_psw[PSmap["fsr_Q2QG_cNS_up"]])/PSnom_weight-1;
-					isr_Down[7] = 1-(ev.g_psw[PSmap["isr_Q2QG_cNS_dn"]])/PSnom_weight;
-					fsr_Down[7] = 1-(ev.g_psw[PSmap["fsr_Q2QG_cNS_dn"]])/PSnom_weight;
+				//Q2QG cNS
+				isr_Up[7] = (ev.g_psw[PSmap["isr_Q2QG_cNS_up"]])/PSnom_weight-1;
+				fsr_Up[7] = (ev.g_psw[PSmap["fsr_Q2QG_cNS_up"]])/PSnom_weight-1;
+				isr_Down[7] = 1-(ev.g_psw[PSmap["isr_Q2QG_cNS_dn"]])/PSnom_weight;
+				fsr_Down[7] = 1-(ev.g_psw[PSmap["fsr_Q2QG_cNS_dn"]])/PSnom_weight;
 
-					//X2XG cNS
-					isr_Up[8] = (ev.g_psw[PSmap["isr_X2XG_cNS_up"]])/PSnom_weight-1;
-					fsr_Up[8] = (ev.g_psw[PSmap["fsr_X2XG_cNS_up"]])/PSnom_weight-1;
-					isr_Down[8] = 1-(ev.g_psw[PSmap["isr_X2XG_cNS_dn"]])/PSnom_weight;
-					fsr_Down[8] = 1-(ev.g_psw[PSmap["fsr_X2XG_cNS_dn"]])/PSnom_weight;			
-				}
-				if(nW==24 && PSnom_weight){ // in signal no ISR weights
-					fsr_Up[0] = (PSmap["fsrDefLo"]-4)/PSnom_weight-1;
-					fsr_Down[0] = 1-(ev.g_psw[PSmap["fsrDefHi"]-3])/PSnom_weight;
-
-					//G2GG muR
-					fsr_Up[1] = (ev.g_psw[PSmap["fsr_G2GG_muR_up"]-6])/PSnom_weight-1;
-					fsr_Down[1] = 1-(ev.g_psw[PSmap["fsr_G2GG_muR_dn"]-6])/PSnom_weight;
-
-					//G2QQ muR
-					fsr_Up[2] = (ev.g_psw[PSmap["fsr_G2QQ_muR_up"]-6])/PSnom_weight-1;
-					fsr_Down[2] = 1-(ev.g_psw[PSmap["fsr_G2QQ_muR_dn"]-6])/PSnom_weight;
-
-					//Q2QG muR
-					fsr_Up[3] = (ev.g_psw[PSmap["fsr_Q2QG_muR_up"]-6])/PSnom_weight-1;
-					fsr_Down[3] = 1-(ev.g_psw[PSmap["fsr_Q2QG_muR_dn"]-6])/PSnom_weight;
-
-					//X2XG muR
-					fsr_Up[4] = (ev.g_psw[PSmap["fsr_X2XG_muR_up"]-6])/PSnom_weight-1;
-					fsr_Down[4] = 1-(ev.g_psw[PSmap["fsr_X2XG_muR_dn"]-6])/PSnom_weight;
-
-					//G2GG cNS
-					fsr_Up[5] = (ev.g_psw[PSmap["fsr_G2GG_cNS_up"]-6])/PSnom_weight-1;
-					fsr_Down[5] = 1-(ev.g_psw[PSmap["fsr_G2GG_cNS_dn"]-6])/PSnom_weight;
-
-					//G2QQ cNS
-					fsr_Up[6] = (ev.g_psw[PSmap["fsr_G2QQ_cNS_up"]-6])/PSnom_weight-1;
-					fsr_Down[6] = 1-(ev.g_psw[PSmap["fsr_G2QQ_cNS_dn"]-6])/PSnom_weight;
-
-					//Q2QG cNS
-					fsr_Up[7] = (ev.g_psw[PSmap["fsr_Q2QG_cNS_up"]-6])/PSnom_weight-1;
-					fsr_Down[7] = 1-(ev.g_psw[PSmap["fsr_Q2QG_cNS_dn"]-6])/PSnom_weight;
-
-					//X2XG cNS
-					fsr_Up[8] = (ev.g_psw[PSmap["fsr_X2XG_cNS_up"]-6])/PSnom_weight-1;
-					fsr_Down[8] = 1-(ev.g_psw[PSmap["fsr_X2XG_cNS_dn"]-6])/PSnom_weight;	
-
-				}
+				//X2XG cNS
+				isr_Up[8] = (ev.g_psw[PSmap["isr_X2XG_cNS_up"]])/PSnom_weight-1;
+				fsr_Up[8] = (ev.g_psw[PSmap["fsr_X2XG_cNS_up"]])/PSnom_weight-1;
+				isr_Down[8] = 1-(ev.g_psw[PSmap["isr_X2XG_cNS_dn"]])/PSnom_weight;
+				fsr_Down[8] = 1-(ev.g_psw[PSmap["fsr_X2XG_cNS_dn"]])/PSnom_weight;			
 			}
+			if(nW==24 && PSnom_weight){ // in signal no ISR weights
 
+				fsr_Up[0] = (ev.g_psw[PSmap["fsrDefLo"]-4])/PSnom_weight-1;
+				fsr_Down[0] = 1-(ev.g_psw[PSmap["fsrDefHi"]-3])/PSnom_weight;
+
+				//G2GG muR
+				fsr_Up[1] = (ev.g_psw[PSmap["fsr_G2GG_muR_up"]-6])/PSnom_weight-1;
+				fsr_Down[1] = 1-(ev.g_psw[PSmap["fsr_G2GG_muR_dn"]-6])/PSnom_weight;
+
+				//G2QQ muR
+				fsr_Up[2] = (ev.g_psw[PSmap["fsr_G2QQ_muR_up"]-6])/PSnom_weight-1;
+				fsr_Down[2] = 1-(ev.g_psw[PSmap["fsr_G2QQ_muR_dn"]-6])/PSnom_weight;
+
+				//Q2QG muR
+				fsr_Up[3] = (ev.g_psw[PSmap["fsr_Q2QG_muR_up"]-6])/PSnom_weight-1;
+				fsr_Down[3] = 1-(ev.g_psw[PSmap["fsr_Q2QG_muR_dn"]-6])/PSnom_weight;
+
+				//X2XG muR
+				fsr_Up[4] = (ev.g_psw[PSmap["fsr_X2XG_muR_up"]-6])/PSnom_weight-1;
+				fsr_Down[4] = 1-(ev.g_psw[PSmap["fsr_X2XG_muR_dn"]-6])/PSnom_weight;
+
+				//G2GG cNS
+				fsr_Up[5] = (ev.g_psw[PSmap["fsr_G2GG_cNS_up"]-6])/PSnom_weight-1;
+				fsr_Down[5] = 1-(ev.g_psw[PSmap["fsr_G2GG_cNS_dn"]-6])/PSnom_weight;
+
+				//G2QQ cNS
+				fsr_Up[6] = (ev.g_psw[PSmap["fsr_G2QQ_cNS_up"]-6])/PSnom_weight-1;
+				fsr_Down[6] = 1-(ev.g_psw[PSmap["fsr_G2QQ_cNS_dn"]-6])/PSnom_weight;
+
+				//Q2QG cNS
+				fsr_Up[7] = (ev.g_psw[PSmap["fsr_Q2QG_cNS_up"]-6])/PSnom_weight-1;
+				fsr_Down[7] = 1-(ev.g_psw[PSmap["fsr_Q2QG_cNS_dn"]-6])/PSnom_weight;
+
+				//X2XG cNS
+				fsr_Up[8] = (ev.g_psw[PSmap["fsr_X2XG_cNS_up"]-6])/PSnom_weight-1;
+				fsr_Down[8] = 1-(ev.g_psw[PSmap["fsr_X2XG_cNS_dn"]-6])/PSnom_weight;	
+			}
 		
         } // end is MC
         

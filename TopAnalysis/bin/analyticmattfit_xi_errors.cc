@@ -14,6 +14,7 @@
 #include "TCanvas.h"
 #include "TLorentzVector.h"
 #include "TGraph.h"
+#include "TSystem.h"
 
 using namespace std;
 
@@ -52,6 +53,12 @@ int main(int argc, char* argv[]){
          << "Usage: " << argv[0] << " inputMCFileName [<nMCEventsToProcess>=all] [<nMCEventsToSkip>=0]" << endl;
     cout << "Exampe: " << argv[0] << " /eos/cms/store/group/phys_top/TTbarCentralExclProd/ntuples/mc/excl_ttbar_semilep_QED_xa120_era2017_preTS2.root" << endl;
     return 1;
+  }
+
+  // Check input files
+  if(gSystem->AccessPathName(argv[1])){
+	  cout << "ERROR: missing input file " << argv[1] << endl;
+	  return 0;
   }
   
   //Preparing output file
@@ -123,8 +130,13 @@ int main(int argc, char* argv[]){
   
   //MC weights variaitons to pass to a new output:
   unsigned int run; float beamXangle, pu_wgt, toppt_wgt, ptag_wgt_err, L1Prefire_wgt_err, ppsSF_wgt_err, trigSF_wgt_err, selSF_wgt_err; 
-  float ren_Up, fac_Up, scale_Up, isr_Up, fsr_Up;
-  float ren_Down, fac_Down, scale_Down, isr_Down, fsr_Down;
+  float ren_Up, fac_Up, scale_Up;
+  float ren_Down, fac_Down, scale_Down;
+  float pdf_as_Up, pdf_hs_Up, pdf_as_Down, pdf_hs_Down;
+  const int NPSRad_weights = 9;
+  float isr_Up[NPSRad_weights], fsr_Up[NPSRad_weights], isr_Down[NPSRad_weights], fsr_Down[NPSRad_weights];
+
+  
   int signal_protons =0 ;
   tree_out.Branch("run",&run,"run/i");
   tree_out.Branch("beamXangle",&beamXangle);
@@ -135,18 +147,22 @@ int main(int argc, char* argv[]){
   tree_out.Branch("trigSF_wgt_err",&trigSF_wgt_err);
   tree_out.Branch("selSF_wgt_err",&selSF_wgt_err);
   tree_out.Branch("L1Prefire_wgt_err",&L1Prefire_wgt_err);
-  
+
+  tree_out.Branch("pdf_as_Up",&pdf_as_Up);
+  tree_out.Branch("pdf_hs_Up",&pdf_hs_Up);
+  tree_out.Branch("pdf_as_Down",&pdf_as_Down);
+  tree_out.Branch("pdf_hs_Down",&pdf_hs_Down);
+  tree_out.Branch("isr_Up",isr_Up,Form("isr_Up[%d]/F",NPSRad_weights));
+  tree_out.Branch("fsr_Up",fsr_Up,Form("fsr_Up[%d]/F",NPSRad_weights));
+  tree_out.Branch("isr_Down",isr_Down,Form("isr_Down[%d]/F",NPSRad_weights));
+  tree_out.Branch("fsr_Down",fsr_Down,Form("fsr_Down[%d]/F",NPSRad_weights));
+
   tree_out.Branch("ren_Up",&ren_Up);
   tree_out.Branch("fac_Up",&fac_Up);
   tree_out.Branch("scale_Up",&scale_Up);
-  tree_out.Branch("isr_Up",&isr_Up);
-  tree_out.Branch("fsr_Up",&fsr_Up);
-
   tree_out.Branch("ren_Down",&ren_Down);
   tree_out.Branch("fac_Down",&fac_Down);
   tree_out.Branch("scale_Down",&scale_Down);
-  tree_out.Branch("isr_Down",&isr_Down);
-  tree_out.Branch("fsr_Down",&fsr_Down);
   tree_out.Branch("signal_protons",&signal_protons);
 
   
@@ -316,16 +332,24 @@ int main(int argc, char* argv[]){
 	trigSF_wgt_err = tree->GetLeaf("trigSF_wgt_err")->GetValue(0);
 	selSF_wgt_err =tree->GetLeaf("selSF_wgt_err")->GetValue(0); 
 	L1Prefire_wgt_err =tree->GetLeaf("L1Prefire_wgt_err")->GetValue(0); 
+	
+	pdf_as_Up =tree->GetLeaf("pdf_as_Up")->GetValue(0); 
+	pdf_hs_Up =tree->GetLeaf("pdf_hs_Up")->GetValue(0); 
+	pdf_as_Down =tree->GetLeaf("pdf_as_Down")->GetValue(0); 
+	pdf_hs_Down =tree->GetLeaf("pdf_hs_Down")->GetValue(0); 
+	for(int i=0;i<NPSRad_weights;i++){
+		isr_Up[i]=tree->GetLeaf("isr_Up")->GetValue(i);
+		fsr_Up[i]=tree->GetLeaf("fsr_Up")->GetValue(i);
+		isr_Down[i]=tree->GetLeaf("isr_Down")->GetValue(i);
+		fsr_Down[i]=tree->GetLeaf("fsr_Down")->GetValue(i);
+	}	
+
 	ren_Up =tree->GetLeaf("ren_Up")->GetValue(0); 
 	fac_Up =tree->GetLeaf("fac_Up")->GetValue(0); 
 	scale_Up =tree->GetLeaf("scale_Up")->GetValue(0); 
-	isr_Up =tree->GetLeaf("isr_Up")->GetValue(0); 
-	fsr_Up =tree->GetLeaf("fsr_Up")->GetValue(0); 
 	ren_Down =tree->GetLeaf("ren_Down")->GetValue(0); 
 	fac_Down =tree->GetLeaf("fac_Down")->GetValue(0); 
 	scale_Down =tree->GetLeaf("scale_Down")->GetValue(0); 
-	isr_Down =tree->GetLeaf("isr_Down")->GetValue(0); 
-	fsr_Down =tree->GetLeaf("fsr_Down")->GetValue(0); 
 	signal_protons =tree->GetLeaf("signal_protons")->GetValue(0); 
   
     ////Definisco il vettore di traslazione
@@ -371,9 +395,14 @@ int main(int argc, char* argv[]){
     C[15][15]=pow(abs(e_q2_x),2);
     C[16][16]=pow(abs(e_q2_y),2);
     C[17][17]=pow(abs(e_q2_z),2);
-    C[18][18]=pow(0.0164*bar_xi_1+0.00129,2);
-    C[19][19]=pow(0.0152*bar_xi_2+0.00130,2);
-    
+    //C[18][18]=pow(0.0164*bar_xi_1+0.00129,2);
+    //C[19][19]=pow(0.0152*bar_xi_2+0.00130,2);
+    // preTS2
+	//C[18][18]=pow(8585.*pow(bar_xi_1,5)-2896.*pow(bar_xi_1,4)+374.*pow(bar_xi_1,3)-23.07*pow(bar_xi_1,2)+0.745*bar_xi_1-0.0067,2);
+	//C[19][19]=pow(111.*pow(bar_xi_2,4)-31.41*pow(bar_xi_2,3)+2.823*pow(bar_xi_2,2)-0.014*bar_xi_2+0.00146,2);
+	// postTS2
+	C[18][18]=pow(3424.*pow(bar_xi_1,5)-1273.*pow(bar_xi_1,4)+182.*pow(bar_xi_1,3)-12.51*pow(bar_xi_1,2)+0.478*bar_xi_1-0.0043,2);
+	C[19][19]=pow(10.7*pow(bar_xi_2,4)+1.637*pow(bar_xi_2,3)-1.075*pow(bar_xi_2,2)+0.0176*bar_xi_2-0.00176,2);
     
     }
     
@@ -970,6 +999,7 @@ int main(int argc, char* argv[]){
   ciao.Close();
   output.cd();
   if(evt_count) evt_count->Write();
+  cout << "Writes " << output.GetName() << endl;
   output.Write();
   output.Close();
   //app.Run("true");

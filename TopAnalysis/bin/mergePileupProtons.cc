@@ -20,6 +20,7 @@ NOTE: for the events in /eos/cms/store/group/phys_top/TTbarCentralExclProd/ntupl
 #include <TBranch.h>
 #include <TRandom3.h>
 #include <TMath.h>
+#include "TSystem.h"
 
 #include "TopLJets2015/TopAnalysis/interface/protonTrackRatios.h"
 #include "TopLJets2015/TopAnalysis/interface/PPSEff.h"
@@ -50,6 +51,17 @@ int main(int argc, char* argv[])
 /eos/cms/store/group/phys_top/TTbarCentralExclProd/ntuples/data/" << endl;
     return 1;
   }
+  
+  // Check input files
+  if(gSystem->AccessPathName(argv[1])){
+	  cout << "ERROR! Missing input file: " << argv[1] << endl;
+	  return 0;
+  }
+  if(gSystem->AccessPathName(argv[2])){
+	  cout << "ERROR! wrong path to data files: " << argv[2] << endl;
+	  return 0;
+  }  
+  
   string inMCFileName = argv[1];
   string inPUFileName = argv[2];
   string outFileName = inMCFileName.substr(inMCFileName.find_last_of('/') + 1, inMCFileName.find_last_of('.') - inMCFileName.find_last_of('/') - 1) + "_enriched.root";
@@ -233,7 +245,7 @@ kipped." << endl;
    
    
   // read MC file    
-  TFile *oldfile = new TFile(inMCFileName.c_str());   
+  TFile *oldfile = new TFile(inMCFileName.c_str());
   TTree * chMCEvents = (TTree *)oldfile->Get("tree");
   cout << "Store MC nvtx distribution " << endl;
   TH1F * mc_pu = new TH1F("mc_pu",";nvtx;w",100,0,100);
