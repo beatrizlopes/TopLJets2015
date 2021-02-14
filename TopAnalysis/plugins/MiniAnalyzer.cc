@@ -349,27 +349,32 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   iEvent.getByToken(generatorlheToken_, evet);
   if(evet.isValid()) 
     {
-	   unsigned int nom_wt = 1001;
-	   unsigned int ren_up = 1002;
-	   unsigned int ren_dn = 1003;
-	   unsigned int fac_up = 1004;
-	   unsigned int fac_dn = 1007;
-	   unsigned int com_up = 1005;
-	   unsigned int com_dn = 1009;
-	   
-	   ev_.g_w[ev_.g_nw]=evet->weights()[nom_wt].wgt; ev_.g_nw++;
-	   ev_.g_w[ev_.g_nw]=evet->weights()[ren_up].wgt; ev_.g_nw++;
-	   ev_.g_w[ev_.g_nw]=evet->weights()[ren_dn].wgt; ev_.g_nw++;
-	   ev_.g_w[ev_.g_nw]=evet->weights()[fac_up].wgt; ev_.g_nw++;
-	   ev_.g_w[ev_.g_nw]=evet->weights()[fac_dn].wgt; ev_.g_nw++;
-	   ev_.g_w[ev_.g_nw]=evet->weights()[com_up].wgt; ev_.g_nw++;
-	   ev_.g_w[ev_.g_nw]=evet->weights()[com_dn].wgt; ev_.g_nw++;
-	   
-	   // PDF weights
-	   for (unsigned int iii=1010;iii<=1120;iii++)
-	   {ev_.g_w[ev_.g_nw]=evet->weights()[iii].wgt; ev_.g_nw++;}
 
-		
+       // Store 5 scale weights and 103 PDF weights
+	   ev_.g_nw+=(5+103);
+	   float origW = evet->originalXWGTUP();
+	   for(int i=1;i<ev_.g_nw;i++) ev_.g_w[i]=0;   
+       //cout << "Original wegiht = " << origW << endl;
+	   for (unsigned int i=0; i<evet->weights().size(); i++) {
+		   int id=atoi(evet->weights()[i].id.c_str());
+		   // Scale uncertainties
+		   if (id == 1001) ev_.g_w[1]=evet->weights()[i].wgt; // nominal
+		   if (id == 1002) ev_.g_w[2]=evet->weights()[i].wgt; // muF*2.0
+		   if (id == 1003) ev_.g_w[3]=evet->weights()[i].wgt; // muF*0.5
+		   if (id == 1004) ev_.g_w[4]=evet->weights()[i].wgt; // muR*2.0
+		   if (id == 1007) ev_.g_w[5]=evet->weights()[i].wgt; // muR*0.5
+		   
+		   // PDF uncertanties (NNPDF31_nnlo_hessian_pdfas, 306000)
+		   if (id == 1010) ev_.g_w[6]=evet->weights()[i].wgt; // central value
+		   if (id>=1011 && id <= 1110) ev_.g_w[id-1004]=evet->weights()[i].wgt; // PDF eig.
+		   if (id == 1111) ev_.g_w[107]=evet->weights()[i].wgt; // aS=0.116
+		   if (id == 1112) ev_.g_w[108]=evet->weights()[i].wgt; // aS=0.120
+		   
+		   //cout << i << ": "<< id << ", val = " << evet->weights()[i].wgt << endl;
+
+		   
+	   }
+
 	   if(ev_.MAXWEIGHTS<ev_.g_nw){
 		 cout << "WARNING: expected MAXN weights ("<<ev_.MAXWEIGHTS<<") is smaller than the N weights in MC ("<<ev_.g_nw<<")."<<endl;
 		 cout <<"\t\t... will store only the first " << ev_.MAXWEIGHTS << "weights."<<endl;
@@ -1657,13 +1662,12 @@ MiniAnalyzer::endRun(const edm::Run& iRun,
     //edm::Handle<LHERunInfoProduct> lheruninfo;
     //typedef std::vector<LHERunInfoProduct::Header>::const_iterator headers_const_iterator;
     //iRun.getByToken(generatorRunInfoToken_, lheruninfo );
-//    iRun.getByLabel( "externalLHEProducer", lheruninfo );
 
     //LHERunInfoProduct myLHERunInfoProduct = *(lheruninfo.product());
 	
 	// Print all weights and corresponding integers
 	//for (headers_const_iterator iter=myLHERunInfoProduct.headers_begin(); iter!=myLHERunInfoProduct.headers_end(); iter++){
-    //  std::cout << iter->tag() << std::endl;
+    //  std::cout << "tag="<<iter->tag() << std::endl;
     //  std::vector<std::string> lines = iter->lines();
     //  for (unsigned int iLine = 0; iLine<lines.size(); iLine++) {
 	//	if(lines.at(iLine)=="") continue;

@@ -525,9 +525,9 @@ void RunExclusiveTop(TString filename,
 		"p1_220_x","p2_220_x","p1_220_y","p2_220_y",
 		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt", "L1Prefire_wgt",
 		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err","L1Prefire_wgt_err",
-		"ren_Up","fac_Up","scale_Up",
-		"ren_Down","fac_Down","scale_Down",
-		"pdf_as_Up","pdf_hs_Up","pdf_as_Down","pdf_hs_Down",
+		"ren_Up","fac_Up",
+		"ren_Down","fac_Down",
+		"pdf_as","pdf_hs",
 
         "bJet0_pt","bJet0_eta", "bJet0_phi", "bJet0_m", "bJet0_E",
         "bJet1_pt","bJet1_eta", "bJet1_phi", "bJet1_m", "bJet1_E",
@@ -813,11 +813,11 @@ void RunExclusiveTop(TString filename,
 		outVars["trigSF_wgt_err"] = outVars["selSF_wgt_err"] =  outVars["L1Prefire_wgt_err"] =  0;
 		outVars["ppsSF_wgt_err"] = outVars["ptag_wgt_err"] = 0;
 		
-        outVars["ren_Down"] = outVars["scale_Down"] = outVars["fac_Down"] = 0;
-        outVars["ren_Up"] = outVars["scale_Up"] = outVars["fac_Up"] = 0;
+        outVars["ren_Down"] = outVars["fac_Down"] = 0;
+        outVars["ren_Up"] = outVars["fac_Up"] = 0;
 	    
-		outVars["pdf_as_Up"] = outVars["pdf_as_Down"] = 0;
-		outVars["pdf_hs_Up"] = outVars["pdf_hs_Down"] = 0;
+		outVars["pdf_as"] = 0;
+		outVars["pdf_hs"] = 0;
 
 		for(int ips=0;ips<NPSRad_weights;ips++){
 			isr_Up[ips] = 0; fsr_Up[ips] = 0;
@@ -871,26 +871,34 @@ void RunExclusiveTop(TString filename,
 			
 			// Systematic uncertainties (convert to 1 +/- form):
 			if(ev.g_nw>5 && ev.g_w[1]){ // scale variations
-				outVars["ren_Up"] = (ev.g_w[2])/ev.g_w[1]-1;
-				outVars["fac_Up"] = (ev.g_w[4])/ev.g_w[1]-1;
-				outVars["scale_Up"] = (ev.g_w[6])/ev.g_w[1]-1;
-				outVars["ren_Down"] = 1-(ev.g_w[3])/ev.g_w[1];
-				outVars["fac_Down"] = 1-(ev.g_w[5])/ev.g_w[1];
-				outVars["scale_Down"] = 1-(ev.g_w[7])/ev.g_w[1];
+				outVars["fac_Up"] = (ev.g_w[2]) ? (ev.g_w[2])/ev.g_w[1]-1 : 0;
+				outVars["fac_Down"] = (ev.g_w[3]) ? 1-(ev.g_w[3])/ev.g_w[1] : 0;
+				outVars["ren_Up"] = (ev.g_w[4]) ? (ev.g_w[4])/ev.g_w[1]-1 : 0;
+				outVars["ren_Down"] = (ev.g_w[5]) ? 1-(ev.g_w[5])/ev.g_w[1] : 0;
 			}
-			if(ev.g_nw>118 && ev.g_w[8]){ // pdf variations
-				outVars["pdf_as_Up"] = (ev.g_w[118])/ev.g_w[8]-1;
-				outVars["pdf_as_Down"] = 1-(ev.g_w[111])/ev.g_w[8];
-				float pdf_up=ev.g_w[8],pdf_dn=ev.g_w[8];
-				for(int i=9;i<111;i++){ // clumsy envelope
-					float var=ev.g_w[i];
-					if(pdf_up<var) pdf_up=var;
-					if(var<pdf_dn) pdf_dn=var;
-				}
-				outVars["pdf_hs_Up"] = (pdf_up)/ev.g_w[8]-1;
-				outVars["pdf_hs_Down"] = 1-(pdf_dn)/ev.g_w[8];
-			}			
 			
+			// pdf variations 
+			float sig_mean = 0; float Nmem=0;
+			for (int i=7;i<107;i++){
+				if (ev.g_w[i]==0) continue;
+				sig_mean+=ev.g_w[i];
+				Nmem++;
+			}
+			if(Nmem){
+			  sig_mean /=Nmem; // eq 22 in https://arxiv.org/pdf/1510.03865.pdf
+			
+			  float sig_var = 0;
+			  for (int i=7;i<107;i++){
+				if (ev.g_w[i]==0) continue;
+				sig_var+=(ev.g_w[i]-sig_mean)*(ev.g_w[i]-sig_mean);
+			  }			
+			  outVars["pdf_hs"] = sqrt(sig_var/(Nmem-1))/sig_mean; // eq 21 in https://arxiv.org/pdf/1510.03865.pdf
+			  
+			  // for pdf_as use eq 27 in https://arxiv.org/pdf/1510.03865.pdf
+			  // r=0.75 used to adjust to 68% for d(as)=0.002 as suggested in eq 29 
+			  outVars["pdf_as"] = 0.75*0.5*(ev.g_w[108]-ev.g_w[107])/sig_mean; 
+			}
+
 			// Py8 PS variations 
 			int nW = ev.g_npsw;
 			float PSnom_weight = (nW>PSmap["nominal"]) ? ev.g_psw[PSmap["nominal"]] : 0;

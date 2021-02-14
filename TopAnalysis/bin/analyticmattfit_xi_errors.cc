@@ -152,10 +152,12 @@ int main(int argc, char* argv[]){
   tree_out.Branch("pdf_hs_Up",&pdf_hs_Up);
   tree_out.Branch("pdf_as_Down",&pdf_as_Down);
   tree_out.Branch("pdf_hs_Down",&pdf_hs_Down);
-  tree_out.Branch("isr_Up",isr_Up,Form("isr_Up[%d]/F",NPSRad_weights));
-  tree_out.Branch("fsr_Up",fsr_Up,Form("fsr_Up[%d]/F",NPSRad_weights));
-  tree_out.Branch("isr_Down",isr_Down,Form("isr_Down[%d]/F",NPSRad_weights));
-  tree_out.Branch("fsr_Down",fsr_Down,Form("fsr_Down[%d]/F",NPSRad_weights));
+  for(int i=0;i<NPSRad_weights;i++){
+    tree_out.Branch(Form("isr%d_Up",i),&isr_Up[i]);
+    tree_out.Branch(Form("fsr%d_Up",i),&fsr_Up[i]);
+    tree_out.Branch(Form("isr%d_Down",i),&isr_Down[i]);
+    tree_out.Branch(Form("fsr%d_Down",i),&fsr_Down[i]);
+  }
 
   tree_out.Branch("ren_Up",&ren_Up);
   tree_out.Branch("fac_Up",&fac_Up);
@@ -337,6 +339,13 @@ int main(int argc, char* argv[]){
 	pdf_hs_Up =tree->GetLeaf("pdf_hs_Up")->GetValue(0); 
 	pdf_as_Down =tree->GetLeaf("pdf_as_Down")->GetValue(0); 
 	pdf_hs_Down =tree->GetLeaf("pdf_hs_Down")->GetValue(0); 
+
+	// add guard from nans, and large values (broken weights)
+	if(pdf_as_Up!=pdf_as_Up || fabs(pdf_as_Up)>1) pdf_as_Up=0;
+	if(pdf_hs_Up!=pdf_hs_Up || fabs(pdf_hs_Up)>1) pdf_hs_Up=0;
+	if(pdf_as_Down!=pdf_as_Down || fabs(pdf_as_Down)>1) pdf_as_Down=0;
+	if(pdf_hs_Down!=pdf_hs_Down || fabs(pdf_hs_Down)>1) pdf_hs_Down=0;
+	
 	for(int i=0;i<NPSRad_weights;i++){
 		isr_Up[i]=tree->GetLeaf("isr_Up")->GetValue(i);
 		fsr_Up[i]=tree->GetLeaf("fsr_Up")->GetValue(i);
@@ -395,14 +404,14 @@ int main(int argc, char* argv[]){
     C[15][15]=pow(abs(e_q2_x),2);
     C[16][16]=pow(abs(e_q2_y),2);
     C[17][17]=pow(abs(e_q2_z),2);
-    //C[18][18]=pow(0.0164*bar_xi_1+0.00129,2);
-    //C[19][19]=pow(0.0152*bar_xi_2+0.00130,2);
+    C[18][18]=pow(0.0164*bar_xi_1+0.00129,2);
+    C[19][19]=pow(0.0152*bar_xi_2+0.00130,2);
     // preTS2
 	//C[18][18]=pow(8585.*pow(bar_xi_1,5)-2896.*pow(bar_xi_1,4)+374.*pow(bar_xi_1,3)-23.07*pow(bar_xi_1,2)+0.745*bar_xi_1-0.0067,2);
 	//C[19][19]=pow(111.*pow(bar_xi_2,4)-31.41*pow(bar_xi_2,3)+2.823*pow(bar_xi_2,2)-0.014*bar_xi_2+0.00146,2);
 	// postTS2
-	C[18][18]=pow(3424.*pow(bar_xi_1,5)-1273.*pow(bar_xi_1,4)+182.*pow(bar_xi_1,3)-12.51*pow(bar_xi_1,2)+0.478*bar_xi_1-0.0043,2);
-	C[19][19]=pow(10.7*pow(bar_xi_2,4)+1.637*pow(bar_xi_2,3)-1.075*pow(bar_xi_2,2)+0.0176*bar_xi_2-0.00176,2);
+	//C[18][18]=pow(3424.*pow(bar_xi_1,5)-1273.*pow(bar_xi_1,4)+182.*pow(bar_xi_1,3)-12.51*pow(bar_xi_1,2)+0.478*bar_xi_1-0.0043,2);
+	//C[19][19]=pow(10.7*pow(bar_xi_2,4)+1.637*pow(bar_xi_2,3)-1.075*pow(bar_xi_2,2)+0.0176*bar_xi_2-0.00176,2);
     
     }
     
