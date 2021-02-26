@@ -130,9 +130,9 @@ int main(int argc, char* argv[]){
   
   //MC weights variaitons to pass to a new output:
   unsigned int run; float beamXangle, pu_wgt, toppt_wgt, ptag_wgt_err, L1Prefire_wgt_err, ppsSF_wgt_err, trigSF_wgt_err, selSF_wgt_err; 
-  float ren_Up, fac_Up, scale_Up;
-  float ren_Down, fac_Down, scale_Down;
-  float pdf_as_Up, pdf_hs_Up, pdf_as_Down, pdf_hs_Down;
+  float ren_Up, fac_Up;
+  float ren_Down, fac_Down;
+  float pdf_as, pdf_hs;
   const int NPSRad_weights = 9;
   float isr_Up[NPSRad_weights], fsr_Up[NPSRad_weights], isr_Down[NPSRad_weights], fsr_Down[NPSRad_weights];
 
@@ -148,10 +148,8 @@ int main(int argc, char* argv[]){
   tree_out.Branch("selSF_wgt_err",&selSF_wgt_err);
   tree_out.Branch("L1Prefire_wgt_err",&L1Prefire_wgt_err);
 
-  tree_out.Branch("pdf_as_Up",&pdf_as_Up);
-  tree_out.Branch("pdf_hs_Up",&pdf_hs_Up);
-  tree_out.Branch("pdf_as_Down",&pdf_as_Down);
-  tree_out.Branch("pdf_hs_Down",&pdf_hs_Down);
+  tree_out.Branch("pdf_as_err",&pdf_as);
+  tree_out.Branch("pdf_hs_err",&pdf_hs);
   for(int i=0;i<NPSRad_weights;i++){
     tree_out.Branch(Form("isr%d_Up",i),&isr_Up[i]);
     tree_out.Branch(Form("fsr%d_Up",i),&fsr_Up[i]);
@@ -161,10 +159,8 @@ int main(int argc, char* argv[]){
 
   tree_out.Branch("ren_Up",&ren_Up);
   tree_out.Branch("fac_Up",&fac_Up);
-  tree_out.Branch("scale_Up",&scale_Up);
   tree_out.Branch("ren_Down",&ren_Down);
   tree_out.Branch("fac_Down",&fac_Down);
-  tree_out.Branch("scale_Down",&scale_Down);
   tree_out.Branch("signal_protons",&signal_protons);
 
   
@@ -335,16 +331,12 @@ int main(int argc, char* argv[]){
 	selSF_wgt_err =tree->GetLeaf("selSF_wgt_err")->GetValue(0); 
 	L1Prefire_wgt_err =tree->GetLeaf("L1Prefire_wgt_err")->GetValue(0); 
 	
-	pdf_as_Up =tree->GetLeaf("pdf_as_Up")->GetValue(0); 
-	pdf_hs_Up =tree->GetLeaf("pdf_hs_Up")->GetValue(0); 
-	pdf_as_Down =tree->GetLeaf("pdf_as_Down")->GetValue(0); 
-	pdf_hs_Down =tree->GetLeaf("pdf_hs_Down")->GetValue(0); 
+	pdf_as =tree->GetLeaf("pdf_as")->GetValue(0); 
+	pdf_hs =tree->GetLeaf("pdf_hs")->GetValue(0); 
 
 	// add guard from nans, and large values (broken weights)
-	if(pdf_as_Up!=pdf_as_Up || fabs(pdf_as_Up)>1) pdf_as_Up=0;
-	if(pdf_hs_Up!=pdf_hs_Up || fabs(pdf_hs_Up)>1) pdf_hs_Up=0;
-	if(pdf_as_Down!=pdf_as_Down || fabs(pdf_as_Down)>1) pdf_as_Down=0;
-	if(pdf_hs_Down!=pdf_hs_Down || fabs(pdf_hs_Down)>1) pdf_hs_Down=0;
+	if(pdf_as!=pdf_as) pdf_as=0;
+	if(pdf_hs!=pdf_hs) pdf_hs=0;
 	
 	for(int i=0;i<NPSRad_weights;i++){
 		isr_Up[i]=tree->GetLeaf("isr_Up")->GetValue(i);
@@ -355,10 +347,8 @@ int main(int argc, char* argv[]){
 
 	ren_Up =tree->GetLeaf("ren_Up")->GetValue(0); 
 	fac_Up =tree->GetLeaf("fac_Up")->GetValue(0); 
-	scale_Up =tree->GetLeaf("scale_Up")->GetValue(0); 
 	ren_Down =tree->GetLeaf("ren_Down")->GetValue(0); 
 	fac_Down =tree->GetLeaf("fac_Down")->GetValue(0); 
-	scale_Down =tree->GetLeaf("scale_Down")->GetValue(0); 
 	signal_protons =tree->GetLeaf("signal_protons")->GetValue(0); 
   
     ////Definisco il vettore di traslazione
