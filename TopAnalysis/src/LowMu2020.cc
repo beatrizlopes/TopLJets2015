@@ -38,7 +38,7 @@ void RunLowMu2020(const TString in_fname,
   //const char* CMSSW_BASE = getenv("CMSSW_BASE");
   MiniEvent_t ev;
 
-  bool isData = in_fname.Contains("Data13TeV") || in_fname.Contains("SingleMuon") || in_fname.Contains("HighEGJet");
+  bool isData = in_fname.Contains("Data13TeV");
   //bool isPythia8 = in_fname.Contains("pythia8");
   float EBEAM(6500);
   //float XIMIN(0.03);
@@ -46,7 +46,7 @@ void RunLowMu2020(const TString in_fname,
   float sqrt_s = 2*EBEAM;
   
   //object selection cuts
-  float minLeadJetPt(145);
+  float minLeadJetPt(125);
   float minLeadLeptonPt(17);
   float minJetPt(25);
   float minLeptonPt(8);
@@ -147,7 +147,7 @@ void RunLowMu2020(const TString in_fname,
 					"mpp","Ypp","xip","xin",
 					"xip_truth","xin_truth",
 					"deta_gap_p","deta_gap_n",
-					
+					"nTracksGap",
 					"HT","mWT","cs_xp","cs_xn","xip_cms","xin_cms",
 					
 					"weight","gen_wgt","pu_wgt","ptag_wgt","ptag_wgt_err"
@@ -431,11 +431,14 @@ void RunLowMu2020(const TString in_fname,
 	  }
 	  else{boutVars["isOS"] = false; boutVars["isSF"] = false;}
 	  
-	  // rapidity gap
+	  // rapidity gap 
 	  foutVars["deta_gap_p"] = foutVars["deta_gap_n"] = 5;
+	  foutVars["nTracksGap"] = 0;
 	  for(int jtrk=0;jtrk<ev.ntrk;jtrk++){
-		  if( (2.1-ev.track_eta[jtrk]) < foutVars["deta_gap_p"] ) foutVars["deta_gap_p"] = (2.1-ev.track_eta[jtrk]);
-		  if( (ev.track_eta[jtrk]-(-2.1)) < foutVars["deta_gap_n"] ) foutVars["deta_gap_n"] = (ev.track_eta[jtrk]-(-2.1));
+		  float tr_eta = ev.track_eta[jtrk];
+		  if(tr_eta>-1 && tr_eta<1)foutVars["nTracksGap"]++;
+		  if( (2.1-tr_eta) < foutVars["deta_gap_p"] ) foutVars["deta_gap_p"] = (2.1-tr_eta);
+		  if( (tr_eta-(-2.1)) < foutVars["deta_gap_n"] ) foutVars["deta_gap_n"] = (tr_eta-(-2.1));
 	  }
 	  // set boson kinematics
 	  TLorentzVector boson(0,0,0,0);

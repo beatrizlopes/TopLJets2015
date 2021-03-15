@@ -13,6 +13,7 @@ SelectionTool::SelectionTool(TString dataset_,bool debug,TH1 *triggerList, Analy
   isZeroBiasPD_(dataset.Contains("ZeroBias")), 
   isSingleElectronPD_(dataset.Contains("SingleElectron") || dataset.Contains("HighEGJet")), 
   isSingleMuonPD_(dataset.Contains("SingleMuon")), 
+  isFSQJetPD_(dataset.Contains("FSQJet")), 
   isDoubleEGPD_(dataset.Contains("DoubleEG")), 
   isDoubleMuonPD_(dataset.Contains("DoubleMuon")), 
   isMuonEGPD_(dataset.Contains("MuonEG")),
@@ -53,7 +54,7 @@ bool SelectionTool::passSingleLeptonTrigger(MiniEvent_t &ev) {
   
   
   if(!hasETrigger && !hasMTrigger) return false;
-  if(ev.isData) {
+  if(ev.isData && !isFSQJetPD_) {
 	if(hasETrigger && !hasMTrigger) { if(!isSingleElectronPD_) return false; }
  	if(!hasETrigger && hasMTrigger) { if(!isSingleMuonPD_)     return false; }
   	if(hasETrigger && hasMTrigger)  { if(!isSingleMuonPD_)     return false; }
@@ -72,10 +73,9 @@ bool SelectionTool::passJetTrigger(MiniEvent_t &ev) {
 	return false;
   }
   
-  if(ev.isData) {
-	return (hasTrigger && isJetHTPD_);
-  }
-  return true;
+  // check if datastreams are jetHT/FSQ
+  if(ev.isData && !isFSQJetPD_ && !isJetHTPD_) return false;
+  return hasTrigger;
 }
 
 

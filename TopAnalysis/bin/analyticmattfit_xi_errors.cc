@@ -394,14 +394,14 @@ int main(int argc, char* argv[]){
     C[15][15]=pow(abs(e_q2_x),2);
     C[16][16]=pow(abs(e_q2_y),2);
     C[17][17]=pow(abs(e_q2_z),2);
-    C[18][18]=pow(0.0164*bar_xi_1+0.00129,2);
-    C[19][19]=pow(0.0152*bar_xi_2+0.00130,2);
+    //C[18][18]=pow(0.0164*bar_xi_1+0.00129,2);
+    //C[19][19]=pow(0.0152*bar_xi_2+0.00130,2);
     // preTS2
 	//C[18][18]=pow(8585.*pow(bar_xi_1,5)-2896.*pow(bar_xi_1,4)+374.*pow(bar_xi_1,3)-23.07*pow(bar_xi_1,2)+0.745*bar_xi_1-0.0067,2);
 	//C[19][19]=pow(111.*pow(bar_xi_2,4)-31.41*pow(bar_xi_2,3)+2.823*pow(bar_xi_2,2)-0.014*bar_xi_2+0.00146,2);
 	// postTS2
-	//C[18][18]=pow(3424.*pow(bar_xi_1,5)-1273.*pow(bar_xi_1,4)+182.*pow(bar_xi_1,3)-12.51*pow(bar_xi_1,2)+0.478*bar_xi_1-0.0043,2);
-	//C[19][19]=pow(10.7*pow(bar_xi_2,4)+1.637*pow(bar_xi_2,3)-1.075*pow(bar_xi_2,2)+0.0176*bar_xi_2-0.00176,2);
+	C[18][18]=pow(3424.*pow(bar_xi_1,5)-1273.*pow(bar_xi_1,4)+182.*pow(bar_xi_1,3)-12.51*pow(bar_xi_1,2)+0.478*bar_xi_1-0.0043,2);
+	C[19][19]=pow(10.7*pow(bar_xi_2,4)+1.637*pow(bar_xi_2,3)-1.075*pow(bar_xi_2,2)+0.0176*bar_xi_2-0.00176,2);
     
     }
     

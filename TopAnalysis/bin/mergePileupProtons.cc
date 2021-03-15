@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   string inMCFileName = argv[1];
   string inPUFileName = argv[2];
   string outFileName = inMCFileName.substr(inMCFileName.find_last_of('/') + 1, inMCFileName.find_last_of('.') - inMCFileName.find_last_of('/') - 1) + "_enriched.root";
-  bool isSignal = TString(inMCFileName.c_str()).Contains("excl_ttbar");
+  bool isSignal = TString(inMCFileName.c_str()).Contains("excl_ttbar") || TString(inMCFileName.c_str()).Contains("ExclusiveTTbar");
   
   if (argc >= 4) {
     TString arg3 = TString(argv[3]);
@@ -85,7 +85,8 @@ kipped." << endl;
    
    // Proton efficiency class
    PPSEff *MultiRP_eff = new PPSEff(Form("%s/pixelEfficiencies_multiRP.root",data_path.Data()));
-   PPSEff *Strip_eff = new PPSEff(Form("%s/PreliminaryEfficiencies_July132020_1D2DMultiTrack.root",data_path.Data()));
+   //PPSEff *Strip_eff = new PPSEff(Form("%s/PreliminaryEfficiencies_July132020_1D2DMultiTrack.root",data_path.Data()));
+   PPSEff *Strip_eff = new PPSEff(Form("%s/Alt2017ERestrictedRuns_PreliminaryEfficiencies_March122021_1D2DMultiTrack.root",data_path.Data()));
    
    // ---------------------------------------------------------------------------------------------------------------------------------- //
    // ---------------------------------------------------------------------------------------------------------------------------------- //
@@ -97,6 +98,7 @@ kipped." << endl;
    int xangle[] = {120, 130, 140, 150}; int n_xa = (sizeof(xangle)/sizeof(int));
    
    const int n_PUregionsMAX = n_era * n_xa; // used in signal normalization
+   
    // Extra normalization factor used for signal since we have dedicated signal samples per era/xangle
    float signal_fraction_regions[n_PUregionsMAX], extra_signal_normalization=0;
    if(isSignal){
@@ -140,6 +142,7 @@ kipped." << endl;
 	  
 	  // set to 1 the crossing angle counter
 	  n_xa=1; 
+	  cout << "Signal extra normalization = " << extra_signal_normalization << endl;
    }
 
    const int n_PUregions = n_era * n_xa;
@@ -205,14 +208,14 @@ kipped." << endl;
 	       norm_weight_err[i_era*n_xa+i_xa] = (n_p2_sys/float(n_sys)) / norm_weight[i_era*n_xa+i_xa];
 		   		   
 		   // probabilities for 1 track in signal events
-	       norm_weight_1pRP0[i_era*n_xa+i_xa] = n_p1_RP0/float(n); // probability of 0 tracks
+	       norm_weight_1pRP0[i_era*n_xa+i_xa] = n_p1_RP0/float(n); // probability of 0 tracks in RP0
 	       norm_weight_1pRP0_err[i_era*n_xa+i_xa] = 0.95; // 5% flat
 
-	       norm_weight_1pRP1[i_era*n_xa+i_xa] = n_p1_RP1/float(n); // probability of 0 tracks
+	       norm_weight_1pRP1[i_era*n_xa+i_xa] = n_p1_RP1/float(n); // probability of 0 tracks in RP1
 	       norm_weight_1pRP1_err[i_era*n_xa+i_xa] = 0.95; // 5% flat
 
 		   // probabilities for 0 track in signal events
-	       norm_weight_0p[i_era*n_xa+i_xa] = (n_p0)/float(n); // probability of 0 tracks
+	       norm_weight_0p[i_era*n_xa+i_xa] = (n_p0)/float(n); // probability of 0 tracks in both arms
 	       norm_weight_0p_err[i_era*n_xa+i_xa] = 0.95; // 5% flat
 		   
 	   }
@@ -350,7 +353,8 @@ kipped." << endl;
 	}
 	else if(isSignal && p1_xi==0 && p2_xi>0){ // one signal proton in arm1
 		p1_xi = poll_p1_xi[i_reg];
-		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 1) * norm_weight_1pRP0[i_reg];
+		ptag_wgt = norm_weight_1pRP0[i_reg];
+		ptag_wgt *= ptr.trueZeroTracksRatio(run, beamXangle, 1);
 		ptag_wgt_err = norm_weight_1pRP0_err[i_reg];
 		weight *= ptag_wgt;
 		ppsSF_wgt = MultiRP_eff->getEff(p2_x,p2_y,1,run);
@@ -362,7 +366,8 @@ kipped." << endl;
 	}
 	else if(isSignal && p1_xi>0 && p2_xi==0){ // one signal proton in arm0
 		p2_xi = poll_p2_xi[i_reg];
-		ptag_wgt = ptr.trueZeroTracksRatio(run, beamXangle, 0) * norm_weight_1pRP1[i_reg];
+		ptag_wgt = norm_weight_1pRP1[i_reg];
+		ptag_wgt *= ptr.trueZeroTracksRatio(run, beamXangle, 0);
 		ptag_wgt_err = norm_weight_1pRP1_err[i_reg];
 		weight *= ptag_wgt;
 		ppsSF_wgt = MultiRP_eff->getEff(p1_x,p1_y,0,run);
@@ -387,12 +392,11 @@ kipped." << endl;
     // puleup reweighting
 	float w_mc = mc_pu->GetBinContent(nvtx+1);
 	pu_wgt = (w_mc) ? pu_weights[i_reg]->GetBinContent(nvtx+1)/w_mc : 0;
-	weight *= pu_wgt;
+	//weight *= pu_wgt;
 	
 	// Add extra weight to signal since we have simulation for each era/xangle
 	if(isSignal) {
 		weight *= extra_signal_normalization;
-		ptag_wgt *= extra_signal_normalization;
 	}
 	   
 	// add extra weight in case of signal events:

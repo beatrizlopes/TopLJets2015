@@ -256,12 +256,13 @@ class SelectionTool {
   bool isMuonEGPD(){ return isMuonEGPD_; }
   bool isPhotonPD(){ return isPhotonPD_; }
   bool isJetHTPD(){ return isJetHTPD_; }
+  bool isFSQJetPD(){ return isFSQJetPD_; }
 
  private:
   TString dataset;
   bool debug_;
   AnalysisType anType_;
-  bool isZeroBiasPD_,isSingleElectronPD_,isSingleMuonPD_,isDoubleEGPD_,isDoubleMuonPD_,isMuonEGPD_,isPhotonPD_,isJetHTPD_;
+  bool isZeroBiasPD_,isSingleElectronPD_,isSingleMuonPD_,isFSQJetPD_,isDoubleEGPD_,isDoubleMuonPD_,isMuonEGPD_,isPhotonPD_,isJetHTPD_;
   std::map<TString,unsigned int> triggerBits_;
   std::vector<TString> photonTriggers_;
   int offlinePhoton_;
