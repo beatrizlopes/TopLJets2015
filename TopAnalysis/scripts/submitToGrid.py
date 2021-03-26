@@ -71,7 +71,7 @@ def submitProduction(tag,lfnDirBase,dataset,isData,cfg,workDir,lumiMask,era='era
         else:
             #config_file.write('config.Data.splitting = "Automatic"\n')
             config_file.write('config.Data.splitting = "LumiBased"\n')
-            config_file.write('config.Data.unitsPerJob = 15\n')
+            config_file.write('config.Data.unitsPerJob = 30\n')
             #config_file.write('config.Data.splitting = "FileBased"\n')
             #config_file.write('config.Data.unitsPerJob = 1\n')
     else : 

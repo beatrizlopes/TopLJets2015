@@ -54,15 +54,19 @@ int main(int argc, char* argv[]){
     cout << "Exampe: " << argv[0] << " /eos/cms/store/group/phys_top/TTbarCentralExclProd/ntuples/mc/excl_ttbar_semilep_QED_xa120_era2017_preTS2.root" << endl;
     return 1;
   }
+  
 
   // Check input files
   if(gSystem->AccessPathName(argv[1])){
 	  cout << "ERROR: missing input file " << argv[1] << endl;
 	  return 0;
   }
+
+  TString infile(argv[1]);
+  bool isData = infile.Contains("Data") || infile.Contains("SingleElectron") || infile.Contains("SingleMuon");
   
   //Preparing output file
-  TString outfile = TString(TString(argv[1]).Tokenize("/")->Last()->GetName()).ReplaceAll(".root","_chi2.root");
+  TString outfile = TString(infile.Tokenize("/")->Last()->GetName()).ReplaceAll(".root","_chi2.root");
   if (argc > 2) nMCEventsToProcess = TString(argv[2]).Atoi(); 
   if (argc > 3) {
 	  nMCEventsToSkip = TString(argv[3]).Atoi(); 
@@ -130,14 +134,13 @@ int main(int argc, char* argv[]){
   
   //MC weights variaitons to pass to a new output:
   unsigned int run; float beamXangle, pu_wgt, toppt_wgt, ptag_wgt_err, L1Prefire_wgt_err, ppsSF_wgt_err, trigSF_wgt_err, selSF_wgt_err; 
-  float ren_Up, fac_Up;
-  float ren_Down, fac_Down;
+  float ren_err, fac_err;
   float pdf_as, pdf_hs;
   const int NPSRad_weights = 9;
   float isr_Up[NPSRad_weights], fsr_Up[NPSRad_weights], isr_Down[NPSRad_weights], fsr_Down[NPSRad_weights];
 
   
-  int signal_protons =0 ;
+  int signal_protons =0, cat=0;
   tree_out.Branch("run",&run,"run/i");
   tree_out.Branch("beamXangle",&beamXangle);
   tree_out.Branch("pu_wgt",&pu_wgt);
@@ -157,11 +160,10 @@ int main(int argc, char* argv[]){
     tree_out.Branch(Form("fsr%d_Down",i),&fsr_Down[i]);
   }
 
-  tree_out.Branch("ren_Up",&ren_Up);
-  tree_out.Branch("fac_Up",&fac_Up);
-  tree_out.Branch("ren_Down",&ren_Down);
-  tree_out.Branch("fac_Down",&fac_Down);
+  tree_out.Branch("ren_err",&ren_err);
+  tree_out.Branch("fac_err",&fac_err);
   tree_out.Branch("signal_protons",&signal_protons);
+  tree_out.Branch("cat",&cat);
 
   
   //Input files  
@@ -321,6 +323,7 @@ int main(int argc, char* argv[]){
     if(xi_1==0 || xi_2==0) max=0;
 	
 	//Read weights and variables to pass to the new output:
+	cat = int(tree->GetLeaf("cat")->GetValue(0));
 	run = tree->GetLeaf("run")->GetValue(0);
 	beamXangle = tree->GetLeaf("beamXangle")->GetValue(0);
 	pu_wgt = tree->GetLeaf("pu_wgt")->GetValue(0);
@@ -345,11 +348,9 @@ int main(int argc, char* argv[]){
 		fsr_Down[i]=tree->GetLeaf("fsr_Down")->GetValue(i);
 	}	
 
-	ren_Up =tree->GetLeaf("ren_Up")->GetValue(0); 
-	fac_Up =tree->GetLeaf("fac_Up")->GetValue(0); 
-	ren_Down =tree->GetLeaf("ren_Down")->GetValue(0); 
-	fac_Down =tree->GetLeaf("fac_Down")->GetValue(0); 
-	signal_protons =tree->GetLeaf("signal_protons")->GetValue(0); 
+	ren_err =tree->GetLeaf("ren_err")->GetValue(0); 
+	fac_err =tree->GetLeaf("fac_err")->GetValue(0); 
+	signal_protons = (!isData) ? tree->GetLeaf("signal_protons")->GetValue(0) : 0; 
   
     ////Definisco il vettore di traslazione
     

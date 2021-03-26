@@ -525,8 +525,7 @@ void RunExclusiveTop(TString filename,
 		"p1_220_x","p2_220_x","p1_220_y","p2_220_y",
 		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt", "L1Prefire_wgt",
 		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err","L1Prefire_wgt_err",
-		"ren_Up","fac_Up",
-		"ren_Down","fac_Down",
+		"ren_err","fac_err",
 		"pdf_as","pdf_hs",
 
         "bJet0_pt","bJet0_eta", "bJet0_phi", "bJet0_m", "bJet0_E",
@@ -551,8 +550,8 @@ void RunExclusiveTop(TString filename,
         outVars[fvars[i]]=0.;
         ADDVAR(&(outVars[fvars[i]]),fvars[i],"/F",outT);
     }
-    ADDVAR(&(outVars["nJets"]),"nJets","/I",outPT);
-    ADDVAR(&(outVars["nBjets"]),"nBjets","/I",outPT);
+    ADDVAR(&(outVars["nJets"]),"nJets","/F",outPT);
+    ADDVAR(&(outVars["nBjets"]),"nBjets","/F",outPT);
 
 #ifdef HISTOGRAMS_ON
     //BOOK HISTOGRAMS
@@ -813,8 +812,7 @@ void RunExclusiveTop(TString filename,
 		outVars["trigSF_wgt_err"] = outVars["selSF_wgt_err"] =  outVars["L1Prefire_wgt_err"] =  0;
 		outVars["ppsSF_wgt_err"] = outVars["ptag_wgt_err"] = 0;
 		
-        outVars["ren_Down"] = outVars["fac_Down"] = 0;
-        outVars["ren_Up"] = outVars["fac_Up"] = 0;
+        outVars["ren_err"] = outVars["fac_err"] = 0;
 	    
 		outVars["pdf_as"] = 0;
 		outVars["pdf_hs"] = 0;
@@ -871,10 +869,11 @@ void RunExclusiveTop(TString filename,
 			
 			// Systematic uncertainties (convert to 1 +/- form):
 			if(ev.g_nw>5 && ev.g_w[1]){ // scale variations
-				outVars["fac_Up"] = (ev.g_w[2]) ? (ev.g_w[2])/ev.g_w[1]-1 : 0;
-				outVars["fac_Down"] = (ev.g_w[3]) ? 1-(ev.g_w[3])/ev.g_w[1] : 0;
-				outVars["ren_Up"] = (ev.g_w[4]) ? (ev.g_w[4])/ev.g_w[1]-1 : 0;
-				outVars["ren_Down"] = (ev.g_w[5]) ? 1-(ev.g_w[5])/ev.g_w[1] : 0;
+				outVars["fac_err"] = (ev.g_w[2]-ev.g_w[3])/(ev.g_w[2]+ev.g_w[3]);
+				outVars["ren_err"] =  (ev.g_w[4]-ev.g_w[5])/(ev.g_w[4]+ev.g_w[5]);
+				// protect against broken weights
+				if(abs(outVars["fac_err"])>1) outVars["fac_err"]=0;
+				if(abs(outVars["ren_err"])>1) outVars["ren_err"]=0;
 			}
 			
 			// pdf variations 

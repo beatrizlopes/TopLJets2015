@@ -367,8 +367,8 @@ void TMVAClassificationApplication( char * _fname, TString myMethodList = "")
    
       var1 = theTree->GetLeaf("p_l")->GetValue(0);
       var2 = theTree->GetLeaf("lepton_isolation")->GetValue(0);
-      var3 = userVar1-var4;
       var4 = theTree->GetLeaf("nLightJets")->GetValue(0);
+      var3 = userVar1-var4;
       var5 = abs(userVar2+userVar3+userVar4+userVar5+userVar6+userVar7+userVar8+userVar9+userVar18+userVar19-userVar20);
       var6 = theTree->GetLeaf("mean_ljets_delta_R")->GetValue(0);
       var7 = userVar2+userVar3+userVar4+userVar5;

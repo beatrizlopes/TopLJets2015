@@ -93,7 +93,7 @@ kipped." << endl;
    // ---------------------------------------------------------------------------------------------------------------------------------- //
    // NEW code, create pools from the data files, calculate relative cross-sections and nvtx distributions (era,xangle)
    // Read data, prerare PU trees:
-   float era_lumi[] = {2.367138592,8.680676647,4.142765586,9.062549690,13.247272608};
+   float era_lumi[] = {2.367138592,8.680676647,4.142765586,1.447798525,13.247272608};
    TString era[] = {"2017B","2017C","2017D","2017E","2017F"}; int n_era = (sizeof(era)/sizeof(TString));
    int xangle[] = {120, 130, 140, 150}; int n_xa = (sizeof(xangle)/sizeof(int));
    
@@ -114,7 +114,7 @@ kipped." << endl;
 	      }
 	    // normalize properly per selected crossing-angle (sometimes data contains unselected values lke 141,142...)
 	    float total_event_per_era = 0; for(int ii=0;ii<n_xa;ii++) total_event_per_era+=signal_fraction_regions[i_era*n_xa+ii];
-	    for(int ii=0;ii<n_xa;ii++) signal_fraction_regions[i_era*n_xa+ii] *= (era_lumi[i_era]/37.5)/total_event_per_era;
+	    for(int ii=0;ii<n_xa;ii++) signal_fraction_regions[i_era*n_xa+ii] *= (era_lumi[i_era]/29.885651958)/total_event_per_era;
       }
 
 	  // reduce the number of regions in case if the sample is a simulated signal
@@ -219,9 +219,17 @@ kipped." << endl;
 	       norm_weight_0p_err[i_era*n_xa+i_xa] = 0.95; // 5% flat
 		   
 	   }
-	    // normalize properly per selected crossing-angle (sometimes data contains unselected values lke 141,142...)
+	    // normalize properly per selected crossing-angle (sometimes data contains unselected values like 100,110,...)
 	   float total_event_per_era = 0; for(int ii=0;ii<n_xa;ii++) total_event_per_era+=fraction_regions[i_era*n_xa+ii];
 	   for(int ii=0;ii<n_xa;ii++) fraction_regions[i_era*n_xa+ii] *= (era_lumi[i_era]/total_lumi)/total_event_per_era;
+   }
+   
+   // List obtained fractions:
+   cout << "INFO List obtained fractions (for 120,130,140,150):"<<endl;
+   for(int i_era=0;i_era<n_era;i_era++){
+	   cout << "era " << era[i_era]<<": ";
+	   for(int ii=0;ii<n_xa-1;ii++) cout << fraction_regions[i_era*n_xa+ii]<<" ,";
+	   cout << fraction_regions[i_era*n_xa+n_xa-1] << endl;
    }
    
    // variables to be used to read from PU pools
@@ -336,20 +344,37 @@ kipped." << endl;
 	// fix run number and crossing-angle from proton pool
 	run = poll_run[i_reg];
 	beamXangle = xangle[i_reg % n_xa];
+	
+	// proton efficiency implementation (xi of protons that fail reco. will be set to zero)
+	ppsSF_wgt = 1.; ppsSF_wgt_err=0;
+	if(p1_xi>0){
+		float SF = Strip_eff->getEff(p1_x,p1_y,0,run) * MultiRP_eff->getEff(p1_x,p1_y,0,run);
+		if(rand_gen->Rndm()>SF) p1_xi=0;
+		else ppsSF_wgt *= SF;
+		ppsSF_wgt_err += MultiRP_eff->getRelEffErrSq(p1_x,p1_y,0,run);
+	}
+	if(p2_xi>0){
+		float SF = Strip_eff->getEff(p2_x,p2_y,1,run) * MultiRP_eff->getEff(p2_x,p2_y,1,run);
+		if(rand_gen->Rndm()>SF) p2_xi=0;
+		else ppsSF_wgt *= SF;
+		ppsSF_wgt_err += MultiRP_eff->getRelEffErrSq(p2_x,p2_y,1,run);
+	}
+	ppsSF_wgt_err = sqrt(ppsSF_wgt_err);
+	
 	// mixing with the pileup protons (note the different treatment for the signal)
 	if(isSignal && p1_xi>0 && p2_xi>0){ // two accepted signal protons
 		ptag_wgt = norm_weight_0p[i_reg];
 		ptag_wgt *= ptr.trueZeroTracksRatio(run, beamXangle, 0) * ptr.trueZeroTracksRatio(run, beamXangle, 1);
 		ptag_wgt_err = norm_weight_0p_err[i_reg];
 		weight *= ptag_wgt;
-		ppsSF_wgt = MultiRP_eff->getEff(p1_x,p1_y,0,run) *  MultiRP_eff->getEff(p2_x,p2_y,1,run);
-		ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p1_x,p1_y,0,run) + 
-		                MultiRP_eff->getRelEffErrSq(p2_x,p2_y,1,run);
-		ppsSF_wgt_err = sqrt(ppsSF_wgt_err);
+		//ppsSF_wgt = MultiRP_eff->getEff(p1_x,p1_y,0,run) *  MultiRP_eff->getEff(p2_x,p2_y,1,run);
+		//ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p1_x,p1_y,0,run) + 
+		//                MultiRP_eff->getRelEffErrSq(p2_x,p2_y,1,run);
+		//ppsSF_wgt_err = sqrt(ppsSF_wgt_err);
 		// strip efficiency
-		ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run) * Strip_eff->getEff(p2_x,p2_y,1,run);
+		//ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run) * Strip_eff->getEff(p2_x,p2_y,1,run);
 		signal_protons = 11;
-		weight *= ppsSF_wgt;
+		//weight *= ppsSF_wgt;
 	}
 	else if(isSignal && p1_xi==0 && p2_xi>0){ // one signal proton in arm1
 		p1_xi = poll_p1_xi[i_reg];
@@ -357,12 +382,12 @@ kipped." << endl;
 		ptag_wgt *= ptr.trueZeroTracksRatio(run, beamXangle, 1);
 		ptag_wgt_err = norm_weight_1pRP0_err[i_reg];
 		weight *= ptag_wgt;
-		ppsSF_wgt = MultiRP_eff->getEff(p2_x,p2_y,1,run);
-		ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p2_x,p2_y,1,run);
+		//ppsSF_wgt = MultiRP_eff->getEff(p2_x,p2_y,1,run);
+		//ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p2_x,p2_y,1,run);
 		// strip efficiency
-		ppsSF_wgt *= Strip_eff->getEff(p2_x,p2_y,1,run);
+		//ppsSF_wgt *= Strip_eff->getEff(p2_x,p2_y,1,run);
 		signal_protons = 1;
-		weight *= ppsSF_wgt;
+		//weight *= ppsSF_wgt;
 	}
 	else if(isSignal && p1_xi>0 && p2_xi==0){ // one signal proton in arm0
 		p2_xi = poll_p2_xi[i_reg];
@@ -370,12 +395,12 @@ kipped." << endl;
 		ptag_wgt *= ptr.trueZeroTracksRatio(run, beamXangle, 0);
 		ptag_wgt_err = norm_weight_1pRP1_err[i_reg];
 		weight *= ptag_wgt;
-		ppsSF_wgt = MultiRP_eff->getEff(p1_x,p1_y,0,run);
-		ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p1_x,p1_y,0,run);
+		//ppsSF_wgt = MultiRP_eff->getEff(p1_x,p1_y,0,run);
+		//ppsSF_wgt_err = MultiRP_eff->getRelEffErrSq(p1_x,p1_y,0,run);
 		// strip efficiency
-		ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run);
+		//ppsSF_wgt *= Strip_eff->getEff(p1_x,p1_y,0,run);
 		signal_protons = 10;
-		weight *= ppsSF_wgt;
+		//weight *= ppsSF_wgt;
 	}
 	else{ // no signal protons in the acceptance region
 		p1_xi = poll_p1_xi[i_reg];
@@ -392,7 +417,7 @@ kipped." << endl;
     // puleup reweighting
 	float w_mc = mc_pu->GetBinContent(nvtx+1);
 	pu_wgt = (w_mc) ? pu_weights[i_reg]->GetBinContent(nvtx+1)/w_mc : 0;
-	//weight *= pu_wgt;
+	weight *= pu_wgt;
 	
 	// Add extra weight to signal since we have simulation for each era/xangle
 	if(isSignal) {

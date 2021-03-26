@@ -196,6 +196,7 @@ class PPSEff
 			// load the strips efficiency histograms
 			for(int i=1;i<Nperiods;i++){
 				hname = Form("Strips/2017/%s/h45_%s_all_2D",era[i].Data(),era[i].Data());
+				if(hname.Contains("2017E")) hname+="_lumicorr"; // correction discussed in https://indico.cern.ch/event/992189/
 				_heff201745[i]  = (TH2D *)_file0->Get(hname);
 				if(!_heff201745[i]) {std::cout << "ERROR init() " << hname<< " not loaded " << std::endl; return;}
 				hname = Form("Strips/2017/%s/h56_%s_all_2D",era[i].Data(),era[i].Data());
