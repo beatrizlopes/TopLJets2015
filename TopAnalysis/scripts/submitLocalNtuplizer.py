@@ -116,7 +116,7 @@ def buildCondorFile(opt,fList,FarmDirectory):
         worker.write('echo writes: /eos/cms/%s/%s/${outfile}\n'%(opt.output,opt.jobTag))
         worker.write('xrdcp --force MiniEvents.root root://eoscms//%s/%s/${outfile}\n'%(opt.output,opt.jobTag))
         worker.write('rm MiniEvents.root\n')
-
+    os.system('chmod u+x %s'%(workerFile))
 
     return condorFile
 

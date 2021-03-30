@@ -78,6 +78,19 @@ bool SelectionTool::passJetTrigger(MiniEvent_t &ev) {
   return hasTrigger;
 }
 
+bool SelectionTool::passPhotonTrigger(MiniEvent_t &ev) {
+  //check if triggers have fired and are consistent with the offline selection	  
+  bool hasTrigger(  hasTriggerBit("HLT_HIPhoton60_HoverELoose_v",           ev.triggerBits) );
+  
+  if(anType_!=LOWMU){
+	std::cout << "WARNING: Photon triggers are for low-pile setup only!!!" << std::endl;
+	return false;
+  }
+  
+  // check if datastreams are jetHT/FSQ
+  if(ev.isData && !isFSQJetPD_ && !isJetHTPD_) return false;
+  return hasTrigger;
+}
 
 //
 TString SelectionTool::flagFinalState(MiniEvent_t &ev, std::vector<Particle> preselLeptons,std::vector<Particle> preselPhotons, int sys_) {

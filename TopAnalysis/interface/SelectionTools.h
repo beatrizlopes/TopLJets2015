@@ -37,7 +37,8 @@ class SelectionTool {
   /////////////////////////////////////////////////////////////////////////////////////////
 
   bool passSingleLeptonTrigger(MiniEvent_t &ev);
-  bool passJetTrigger(MiniEvent_t &ev);  
+  bool passJetTrigger(MiniEvent_t &ev);
+  bool passPhotonTrigger(MiniEvent_t &ev);   
   TString flagFinalState(MiniEvent_t &ev, std::vector<Particle> leptons={}, std::vector<Particle> photons={}, int _sys = 0); 
   std::vector<Particle> leptons_,vetoLeptons_,photons_,tmpPhotons;
  

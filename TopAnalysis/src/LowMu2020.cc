@@ -129,8 +129,9 @@ void RunLowMu2020(const TString in_fname,
   //Variables (bools, ints, floats):
   TString bvars[]={
 					"HLT_HIMu15","HLT_HIEle15","HLT_HIPFJetFwd140","HLT_HIPFJet140",
+					"HLT_HIPhoton60",
 					
-					"passLepSel", "passJetSel", "passTopSel",
+					"passLepSel", "passJetSel", "passTopSel","passGamSel",
 					"isOS", "isSF"
   };
 
@@ -184,6 +185,21 @@ void RunLowMu2020(const TString in_fname,
   outT->Branch("lep_gap_n",lep_gap_n,"lep_gap_n[lep_n]/F");
   outT->Branch("lep_id",lep_id,"lep_id[lep_n]/I");
   outT->Branch("lep_q",lep_q,"lep_q[lep_n]/I");
+
+  int gamma_n(0);
+  float gamma_pt[ev.MAXLEP];
+  float gamma_eta[ev.MAXLEP];
+  float gamma_phi[ev.MAXLEP];
+  float gamma_gap_p[ev.MAXLEP];
+  float gamma_gap_n[ev.MAXLEP];
+
+  outT->Branch("gamma_n",&gamma_n,"gamma_n/I");
+  outT->Branch("gamma_pt",gamma_pt,"gamma_pt[lep_n]/F");
+  outT->Branch("gamma_eta",gamma_eta,"gamma_eta[lep_n]/F");
+  outT->Branch("gamma_phi",gamma_phi,"gamma_phi[lep_n]/F");
+  outT->Branch("gamma_gap_p",gamma_gap_p,"gamma_gap_p[lep_n]/F");
+  outT->Branch("gamma_gap_n",gamma_gap_n,"gamma_gap_n[lep_n]/F");
+
   
   // fill custom variables
   std::map<TString,bool> boutVars;
@@ -277,12 +293,13 @@ void RunLowMu2020(const TString in_fname,
       std::vector<double>plotwgts(1,wgt);
 	  
       //trigger
+      boutVars["HLT_HIPhoton60"]=(selector.hasTriggerBit("HLT_HIPhoton60_HoverELoose_v",  ev.addTriggerBits) );   
       boutVars["HLT_HIMu15"]=(selector.hasTriggerBit("HLT_HIMu15_v",  ev.addTriggerBits) );   
       boutVars["HLT_HIEle15"]=(selector.hasTriggerBit("HLT_HIEle15_WPLoose_Gsf_v", ev.addTriggerBits) );   
       boutVars["HLT_HIPFJet140"]=(selector.hasTriggerBit("HLT_HIPFJet140_v", ev.addTriggerBits) );   
       boutVars["HLT_HIPFJetFwd140"]=(selector.hasTriggerBit("HLT_HIPFJetFwd140_v", ev.addTriggerBits) );   
 	  
-	  bool passTrigger = selector.passSingleLeptonTrigger(ev) || selector.passJetTrigger(ev);
+	  bool passTrigger = selector.passSingleLeptonTrigger(ev) || selector.passJetTrigger(ev) || selector.passPhotonTrigger(ev);
       if(isData && !passTrigger) continue;
       ht.fill("evt_count", 3, plotwgts);  // count events after trigger cut
 	  
@@ -302,21 +319,30 @@ void RunLowMu2020(const TString in_fname,
       //if(leptons.size()==0) continue;
       //if(leptons[0].id()!=13) continue;
 
+	  // photon selection
+	  std::vector<Particle> allPhotons=selector.flaggedPhotons(ev);
+	  std::vector<Particle> photons=selector.selPhotons(allPhotons,SelectionTool::MVA90,leptons,60,1.4442);
+
+      //if(photons.size()==0) continue;
+
+	  
       //select jets
       btvSF.addBTagDecisions(ev);
       if(!ev.isData) btvSF.updateBTagDecisions(ev);   
       jec.smearJetEnergies(ev);	  
-      std::vector<Jet> jets = selector.getGoodJets(ev,minJetPt,4.7,leptons,{});
+      std::vector<Jet> jets = selector.getGoodJets(ev,minJetPt,4.7,leptons,photons);
       
 	  boutVars["passLepSel"] = (leptons.size()>0 && leptons[0].pt()>minLeadLeptonPt);
 	  boutVars["passJetSel"] = (jets.size()>0 && jets[0].pt()>minLeadJetPt);
+	  boutVars["passGamSel"] = (photons.size()>0);
 								
 	  if(ev.isData){
 		  boutVars["passLepSel"] = boutVars["passLepSel"] && selector.passSingleLeptonTrigger(ev);
 		  boutVars["passJetSel"] = boutVars["passJetSel"] && selector.passJetTrigger(ev);
+		  boutVars["passGamSel"] = boutVars["passGamSel"] && selector.passPhotonTrigger(ev);
 	  }
 	  
-      if(!boutVars["passJetSel"] && !boutVars["passLepSel"]) continue;
+      if(!boutVars["passJetSel"] && !boutVars["passLepSel"] && !boutVars["passGamSel"]) continue;
       ht.fill("evt_count", 4, plotwgts);  // count events after object selection cut
 
       std::vector<Jet>      bJets,lightJets;
@@ -403,6 +429,28 @@ void RunLowMu2020(const TString in_fname,
 	  }
       TLorentzVector neutrino(met.Px(),met.Py(),nupz ,TMath::Sqrt(TMath::Power(met.Pt(),2)+TMath::Power(nupz,2)));
  
+
+	  // photons
+      gamma_n   = int(photons.size());
+	  for(size_t ij=0; ij<photons.size(); ij++) {
+        gamma_pt[ij] = photons[ij].Pt();
+        gamma_eta[ij] = photons[ij].Eta();
+        gamma_phi[ij] = photons[ij].Phi();
+		gamma_gap_p[ij] = gamma_gap_n[ij] = 0;
+		for(int jtrk=0;jtrk<ev.ntrk;jtrk++){
+			if(ev.track_eta[jtrk]>gamma_eta[ij]){
+				float deta=(ev.track_eta[jtrk]-gamma_eta[ij])/(2.1-gamma_eta[ij]);
+				float dphi=acos(cos(ev.track_eta[jtrk]-gamma_phi[ij]))/TMath::Pi();
+				gamma_gap_p[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
+			}
+			else if(ev.track_eta[jtrk]<gamma_eta[ij]){
+				float deta=(lep_eta[ij]-ev.track_eta[jtrk])/(gamma_eta[ij]-(-2.1));
+				float dphi=acos(cos(ev.track_eta[jtrk]-gamma_phi[ij]))/TMath::Pi();
+				gamma_gap_n[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
+			}
+		}
+	  }
+
 	  // leptons
       lep_n   = int(leptons.size());
 	  for(size_t ij=0; ij<leptons.size(); ij++) {
@@ -551,7 +599,13 @@ void RunLowMu2020(const TString in_fname,
 			  foutVars["cs_xn"]+=leptons[ij].E()-leptons[ij].Pz();
 		  }
 	  }
-	  if(boutVars["passJetSel"] || boutVars["passTopSel"]) {
+	  if(boutVars["passGamSel"]){
+		  for(size_t ij=0; ij<photons.size(); ij++) {
+			  foutVars["cs_xp"]+=photons[ij].E()+photons[ij].Pz();
+			  foutVars["cs_xn"]+=photons[ij].E()-photons[ij].Pz();
+		  }
+	  }	  
+	  if(boutVars["passJetSel"] || boutVars["passTopSel"] || boutVars["passGamSel"]) {
 		  for(size_t ij=0; ij<jets.size(); ij++) {
 			  foutVars["cs_xp"]+=jets[ij].E()+jets[ij].Pz();
 			  foutVars["cs_xn"]+=jets[ij].E()-jets[ij].Pz();

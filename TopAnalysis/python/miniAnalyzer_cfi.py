@@ -14,9 +14,9 @@ ANALYSISVARS={
    'dilep_data': ['leptons','pps','pflow'],
    'ttbar_data': ['leptons','jets','met','pps','pflow'],
    'ttbar_sys': ['leptons','jets','met','pps','generator','systematics','pflow'],
-   'lowmu': ['leptons','jets','met','pps','generator','pflow'],
-   'lowmu_data': ['leptons','jets','met','pps','pflow'],
-   'lowmu_sys': ['leptons','jets','met','pps','generator','systematics','pflow'],
+   'lowmu': ['leptons','photons','jets','met','pps','generator','pflow'],
+   'lowmu_data': ['leptons','photons','jets','met','pps','pflow'],
+   'lowmu_sys': ['leptons','photons','jets','met','pps','generator','systematics','pflow'],
    'test':  ['generator','pps']
 }
 ANALYSISTRIGGERLISTS={
@@ -145,6 +145,7 @@ ANALYSISTRIGGERLISTS={
       ],  
       'lowmu2017':['HLT_HIPFJet140_v',
           'HLT_HIPFJetFwd140_v',
+          'HLT_HIPhoton60_HoverELoose_v1',
           'HLT_HIEle15_WPLoose_Gsf_v',
           'HLT_HIMu15_v',
           'HLT_AK4PFJet120_v',

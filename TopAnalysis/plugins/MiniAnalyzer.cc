@@ -1132,15 +1132,10 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       if(!passPt || !passEta) continue;
 
       //full id+iso decisions
-      //bool isLoose( g.electronID("cutBasedPhotonID-Fall17-94X-V1-loose") );
-      int looseBits( g.userInt("cutBasedPhotonID-Fall17-94X-V"+EGIDVersion_+"-loose") );
-      //bool passLooseId( (looseBits & 0x3) == 0x3 ); //require first two bits (h/e + sihih)
-      //bool isMedium( g.electronID("cutBasedPhotonID-Fall17-94X-V1-medium") );
-      int mediumBits( g.userInt("cutBasedPhotonID-Fall17-94X-V"+EGIDVersion_+"-medium") );
-      //bool passMediumId( (mediumBits & 0x3)== 0x3); //require first two bits (h/e + sihih)
-      //bool isTight( g.photonID("acutBasedPhotonID-Fall17-94X-V1-tight") );
-      int tightBits( g.userInt("cutBasedPhotonID-Fall17-94X-V"+EGIDVersion_+"-tight") );
-      //bool passTightId( (tightBits & 0x3)== 0x3);  //require first two bits (h/e + sihih)
+      int looseBits( g.photonID("cutBasedPhotonID-Fall17-94X-V"+EGIDVersion_+"-loose") );
+      int mediumBits( g.photonID("cutBasedPhotonID-Fall17-94X-V"+EGIDVersion_+"-medium") );
+      int tightBits( g.photonID("cutBasedPhotonID-Fall17-94X-V"+EGIDVersion_+"-tight") );
+	  
       bool ismvawp80( g.photonID("mvaPhoID-RunIIFall17-v"+EGIDVersion_+"-wp80"));
       bool ismvawp90( g.photonID("mvaPhoID-RunIIFall17-v"+EGIDVersion_+"-wp90"));
 
@@ -1179,8 +1174,9 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       ev_.gamma_sieie[ev_.ngamma]            = g.full5x5_sigmaIetaIeta();
       ev_.gamma_r9[ev_.ngamma]               = g.full5x5_r9();
       ev_.ngamma++;
+	  
       if(ev_.ngamma>ev_.MAXGAMMA) break;
-      if( corrP4.pt()>30 && passEta) nrecphotons_++;
+      if( tightBits ) nrecphotons_++;
     }
   if(ev_.MAXGAMMA==ev_.ngamma){
      cout << "WARNING: MAXGAMMA ("<<ev_.MAXGAMMA<<") equal to stored N of photons in the sample ("<<ev_.ngamma<<")."<<endl;
@@ -1623,8 +1619,8 @@ void MiniAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSet
 	  }
 	  if (FilterType_.find("dilep")!=std::string::npos) if(nrecleptons_<2) return;
 	  if (FilterType_.find("lowmu")!=std::string::npos) {
-		  if(ev_.nl==0 && ev_.nj==0) return;
-		  if(ev_.nl==0 && ev_.nj>0 && ev_.j_pt[0]<100) return;
+		  if(ev_.nl==0 && ev_.nj==0 && nrecphotons_==0) return;
+		  if(ev_.nl==0 && nrecphotons_==0 && ev_.nj>0 && ev_.j_pt[0]<100) return;
 	  }
 	// data - skim on event w/o forward protons but save the event count
 	histContainer_["counter"]->Fill(2);

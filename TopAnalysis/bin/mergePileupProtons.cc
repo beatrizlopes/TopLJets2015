@@ -86,7 +86,8 @@ kipped." << endl;
    // Proton efficiency class
    PPSEff *MultiRP_eff = new PPSEff(Form("%s/pixelEfficiencies_multiRP.root",data_path.Data()));
    //PPSEff *Strip_eff = new PPSEff(Form("%s/PreliminaryEfficiencies_July132020_1D2DMultiTrack.root",data_path.Data()));
-   PPSEff *Strip_eff = new PPSEff(Form("%s/Alt2017ERestrictedRuns_PreliminaryEfficiencies_March122021_1D2DMultiTrack.root",data_path.Data()));
+   //PPSEff *Strip_eff = new PPSEff(Form("%s/Alt2017ERestrictedRuns_PreliminaryEfficiencies_March122021_1D2DMultiTrack.root",data_path.Data()));
+   PPSEff *Strip_eff = new PPSEff(Form("%s/PreliminaryEfficiencies_March302021_1D2DMultiTrack.root",data_path.Data()));
    
    // ---------------------------------------------------------------------------------------------------------------------------------- //
    // ---------------------------------------------------------------------------------------------------------------------------------- //
