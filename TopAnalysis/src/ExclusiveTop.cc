@@ -649,13 +649,19 @@ void RunExclusiveTop(TString filename,
 	else{cout << "INFO: Running nominal jet callibration"<<endl;}
 
 	// btagSF settings
-	string option = "central";
-	if(systVar.find("btagUp")!=string::npos) {
-		cout << "INFO: Running btagSF up variation, seed = "<< seed << endl;
-		option = "up";}
-	else if(systVar.find("btagDn")!=string::npos) {
-		cout << "INFO: Running btagSF down variation, seed = "<< seed << endl;
-		option = "down";}
+	string optionlf = "central", optionhf = "central";
+	if(systVar.find("btaghfUp")!=string::npos) {
+		cout << "INFO: Running btaghf up variation, seed = "<< seed << endl;
+		optionhf = "up";}
+	else if(systVar.find("btaghfDn")!=string::npos) {
+		cout << "INFO: Running btaghf down variation, seed = "<< seed << endl;
+		optionhf = "down";}
+        else if(systVar.find("btaglfUp")!=string::npos) {
+                cout << "INFO: Running btaglf up variation, seed = "<< seed << endl;
+                optionlf = "up";}
+        else if(systVar.find("btaglfDn")!=string::npos) {
+                cout << "INFO: Running btaglf down variation, seed = "<< seed << endl;
+                optionlf = "down";}
 	else{cout << "INFO: Running nominal btag SF, seed = "<< seed << endl;}
     
 	// Proton reconstuction systematics
@@ -692,7 +698,7 @@ void RunExclusiveTop(TString filename,
         // CORRECTIONS //
         /////////////////
         btvSF.addBTagDecisions(ev);
-        if(!isData) btvSF.updateBTagDecisions(ev, option, option); 
+        if(!isData) btvSF.updateBTagDecisions(ev, optionhf, optionlf); 
         //btvSF.updateBTagDecisions(ev); // check it !!!
         jec.smearJetEnergies(ev);
         

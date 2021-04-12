@@ -49,6 +49,7 @@ void RunLowMu2020(const TString in_fname,
   float minLeadJetPt(125);
   float minLeadLeptonPt(17);
   float minJetPt(25);
+  float minLeadPhotonPt(60);
   float minLeptonPt(8);
   float minLeptonEta(2.1);
   
@@ -157,6 +158,7 @@ void RunLowMu2020(const TString in_fname,
   int jet_n(0);
   float jet_pt[ev.MAXJET];
   float jet_eta[ev.MAXJET];
+  float jet_phi[ev.MAXJET];
   float jet_deepcsv[ev.MAXJET];
   float jet_gap_p[ev.MAXJET];
   float jet_gap_n[ev.MAXJET];
@@ -164,6 +166,7 @@ void RunLowMu2020(const TString in_fname,
   outT->Branch("jet_n",&jet_n,"jet_n/I");
   outT->Branch("jet_pt",jet_pt,"jet_pt[jet_n]/F");
   outT->Branch("jet_eta",jet_eta,"jet_eta[jet_n]/F");
+  outT->Branch("jet_phi",jet_phi,"jet_phi[jet_n]/F");
   outT->Branch("jet_deepcsv",jet_deepcsv,"jet_deepcsv[jet_n]/F");
   outT->Branch("jet_gap_p",jet_gap_p,"jet_gap_p[jet_n]/F");
   outT->Branch("jet_gap_n",jet_gap_n,"jet_gap_n[jet_n]/F");
@@ -187,18 +190,18 @@ void RunLowMu2020(const TString in_fname,
   outT->Branch("lep_q",lep_q,"lep_q[lep_n]/I");
 
   int gamma_n(0);
-  float gamma_pt[ev.MAXLEP];
-  float gamma_eta[ev.MAXLEP];
-  float gamma_phi[ev.MAXLEP];
-  float gamma_gap_p[ev.MAXLEP];
-  float gamma_gap_n[ev.MAXLEP];
+  float gamma_pt[ev.MAXGAMMA];
+  float gamma_eta[ev.MAXGAMMA];
+  float gamma_phi[ev.MAXGAMMA];
+  float gamma_gap_p[ev.MAXGAMMA];
+  float gamma_gap_n[ev.MAXGAMMA];
 
   outT->Branch("gamma_n",&gamma_n,"gamma_n/I");
-  outT->Branch("gamma_pt",gamma_pt,"gamma_pt[lep_n]/F");
-  outT->Branch("gamma_eta",gamma_eta,"gamma_eta[lep_n]/F");
-  outT->Branch("gamma_phi",gamma_phi,"gamma_phi[lep_n]/F");
-  outT->Branch("gamma_gap_p",gamma_gap_p,"gamma_gap_p[lep_n]/F");
-  outT->Branch("gamma_gap_n",gamma_gap_n,"gamma_gap_n[lep_n]/F");
+  outT->Branch("gamma_pt",gamma_pt,"gamma_pt[gamma_n]/F");
+  outT->Branch("gamma_eta",gamma_eta,"gamma_eta[gamma_n]/F");
+  outT->Branch("gamma_phi",gamma_phi,"gamma_phi[gamma_n]/F");
+  outT->Branch("gamma_gap_p",gamma_gap_p,"gamma_gap_p[gamma_n]/F");
+  outT->Branch("gamma_gap_n",gamma_gap_n,"gamma_gap_n[gamma_n]/F");
 
   
   // fill custom variables
@@ -293,11 +296,11 @@ void RunLowMu2020(const TString in_fname,
       std::vector<double>plotwgts(1,wgt);
 	  
       //trigger
-      boutVars["HLT_HIPhoton60"]=(selector.hasTriggerBit("HLT_HIPhoton60_HoverELoose_v",  ev.addTriggerBits) );   
-      boutVars["HLT_HIMu15"]=(selector.hasTriggerBit("HLT_HIMu15_v",  ev.addTriggerBits) );   
-      boutVars["HLT_HIEle15"]=(selector.hasTriggerBit("HLT_HIEle15_WPLoose_Gsf_v", ev.addTriggerBits) );   
-      boutVars["HLT_HIPFJet140"]=(selector.hasTriggerBit("HLT_HIPFJet140_v", ev.addTriggerBits) );   
-      boutVars["HLT_HIPFJetFwd140"]=(selector.hasTriggerBit("HLT_HIPFJetFwd140_v", ev.addTriggerBits) );   
+      boutVars["HLT_HIPhoton60"]=(selector.hasTriggerBit("HLT_HIPhoton60_HoverELoose_v",  ev.triggerBits) );   
+      boutVars["HLT_HIMu15"]=(selector.hasTriggerBit("HLT_HIMu15_v",  ev.triggerBits) );   
+      boutVars["HLT_HIEle15"]=(selector.hasTriggerBit("HLT_HIEle15_WPLoose_Gsf_v", ev.triggerBits) );   
+      boutVars["HLT_HIPFJet140"]=(selector.hasTriggerBit("HLT_HIPFJet140_v", ev.triggerBits) );   
+      boutVars["HLT_HIPFJetFwd140"]=(selector.hasTriggerBit("HLT_HIPFJetFwd140_v", ev.triggerBits) );   
 	  
 	  bool passTrigger = selector.passSingleLeptonTrigger(ev) || selector.passJetTrigger(ev) || selector.passPhotonTrigger(ev);
       if(isData && !passTrigger) continue;
@@ -334,7 +337,7 @@ void RunLowMu2020(const TString in_fname,
       
 	  boutVars["passLepSel"] = (leptons.size()>0 && leptons[0].pt()>minLeadLeptonPt);
 	  boutVars["passJetSel"] = (jets.size()>0 && jets[0].pt()>minLeadJetPt);
-	  boutVars["passGamSel"] = (photons.size()>0);
+	  boutVars["passGamSel"] = (photons.size()>0 && photons[0].pt()>minLeadPhotonPt);
 								
 	  if(ev.isData){
 		  boutVars["passLepSel"] = boutVars["passLepSel"] && selector.passSingleLeptonTrigger(ev);
@@ -440,12 +443,12 @@ void RunLowMu2020(const TString in_fname,
 		for(int jtrk=0;jtrk<ev.ntrk;jtrk++){
 			if(ev.track_eta[jtrk]>gamma_eta[ij]){
 				float deta=(ev.track_eta[jtrk]-gamma_eta[ij])/(2.1-gamma_eta[ij]);
-				float dphi=acos(cos(ev.track_eta[jtrk]-gamma_phi[ij]))/TMath::Pi();
+				float dphi=acos(cos(ev.track_phi[jtrk]-gamma_phi[ij]))/TMath::Pi();
 				gamma_gap_p[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
 			}
 			else if(ev.track_eta[jtrk]<gamma_eta[ij]){
 				float deta=(lep_eta[ij]-ev.track_eta[jtrk])/(gamma_eta[ij]-(-2.1));
-				float dphi=acos(cos(ev.track_eta[jtrk]-gamma_phi[ij]))/TMath::Pi();
+				float dphi=acos(cos(ev.track_phi[jtrk]-gamma_phi[ij]))/TMath::Pi();
 				gamma_gap_n[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
 			}
 		}
@@ -463,12 +466,12 @@ void RunLowMu2020(const TString in_fname,
 		for(int jtrk=0;jtrk<ev.ntrk;jtrk++){
 			if(ev.track_eta[jtrk]>lep_eta[ij]){
 				float deta=(ev.track_eta[jtrk]-lep_eta[ij])/(2.1-lep_eta[ij]);
-				float dphi=acos(cos(ev.track_eta[jtrk]-lep_phi[ij]))/TMath::Pi();
+				float dphi=acos(cos(ev.track_phi[jtrk]-lep_phi[ij]))/TMath::Pi();
 				lep_gap_p[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
 			}
 			else if(ev.track_eta[jtrk]<lep_eta[ij]){
 				float deta=(lep_eta[ij]-ev.track_eta[jtrk])/(lep_eta[ij]-(-2.1));
-				float dphi=acos(cos(ev.track_eta[jtrk]-lep_phi[ij]))/TMath::Pi();
+				float dphi=acos(cos(ev.track_phi[jtrk]-lep_phi[ij]))/TMath::Pi();
 				lep_gap_n[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
 			}
 		}
@@ -500,17 +503,18 @@ void RunLowMu2020(const TString in_fname,
       for(size_t ij=0; ij<jets.size(); ij++) {
         jet_pt[ij] = jets[ij].Pt();
         jet_eta[ij] = jets[ij].Eta();
+        jet_phi[ij] = jets[ij].Phi();
         scalarht += jets[ij].pt();
 		jet_gap_p[ij] = jet_gap_n[ij] = 0;
 		for(int jtrk=0;jtrk<ev.ntrk;jtrk++){
 			if(ev.track_eta[jtrk]>jet_eta[ij]){
 				float deta=(ev.track_eta[jtrk]-jet_eta[ij])/(2.1-jet_eta[ij]);
-				float dphi=acos(cos(ev.track_eta[jtrk]-lep_phi[ij]))/TMath::Pi();
+				float dphi=acos(cos(ev.track_phi[jtrk]-jet_phi[ij]))/TMath::Pi();
 				jet_gap_p[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
 			}
 			else if(ev.track_eta[jtrk]<jet_eta[ij]){
 				float deta=(jet_eta[ij]-ev.track_eta[jtrk])/(jet_eta[ij]-(-2.1));
-				float dphi=acos(cos(ev.track_eta[jtrk]-lep_phi[ij]))/TMath::Pi();
+				float dphi=acos(cos(ev.track_phi[jtrk]-jet_phi[ij]))/TMath::Pi();
 				jet_gap_n[ij]+=ev.track_pt[jtrk]*sqrt( deta*deta+dphi*dphi );
 			}
 		}

@@ -145,7 +145,7 @@ ANALYSISTRIGGERLISTS={
       ],  
       'lowmu2017':['HLT_HIPFJet140_v',
           'HLT_HIPFJetFwd140_v',
-          'HLT_HIPhoton60_HoverELoose_v1',
+          'HLT_HIPhoton60_HoverELoose_v',
           'HLT_HIEle15_WPLoose_Gsf_v',
           'HLT_HIMu15_v',
           'HLT_AK4PFJet120_v',
