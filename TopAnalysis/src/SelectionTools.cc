@@ -271,7 +271,8 @@ bool SelectionTool::hasTriggerBit(TString triggerName,unsigned int word)
 
 //
 bool SelectionTool::passMETFilters(MiniEvent_t &ev){  
-  if(ev.isData) return ev.met_filterBits==0xff;
+  //if(ev.isData) return ev.met_filterBits==0xff;
+  if(ev.isData) return ev.met_filterBits==0x3F;
   else          return ((ev.met_filterBits&0xf)==0xf) && ((ev.met_filterBits>>5)==0x7);
 }
 

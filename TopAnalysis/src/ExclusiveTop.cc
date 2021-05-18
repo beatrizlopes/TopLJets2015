@@ -482,9 +482,10 @@ void RunExclusiveTop(TString filename,
 	PSmap["isr_Q2QG_cNS_up"] = 43;
 	PSmap["isr_X2XG_cNS_dn"] = 44;
 	PSmap["isr_X2XG_cNS_up"] = 45;
-				
-	ADDVAR(&ev.met_pt,"met_pt","/F",outT);
-    ADDVAR(&ev.met_phi,"met_phi","/F",outT);
+	
+	float met_pt, met_phi;
+	ADDVAR(&met_pt,"met_pt","/F",outT);
+    ADDVAR(&met_phi,"met_phi","/F",outT);
     ADDVAR(&ev.met_sig,"met_sig","/F",outT);
 	
 	
@@ -591,16 +592,17 @@ void RunExclusiveTop(TString filename,
     ht.addHist("ytop_res_leptonic",   new TH1F("ytop_res_leptonic",";Y_{top,rec}-Y_{top,gen} ;Events",75,-2.5,2.5));
 	
     // normalization and event count
-    ht.addHist("evt_count",    new TH1F("evt_count",   ";Selection Stage;Events",10,0,10));
+    ht.addHist("evt_count",    new TH1F("evt_count",   ";Selection Stage;Events",11,0,11));
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(1,"Total");
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(2,"Sumweighted");
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(3,"preselection");
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(4,"=2 p (data)");
     ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(5,"trigger");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(6,"=1 lep");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(7,"#geq4 jets");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(8,"#geq2 bjets");
-    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(9,"#geq2 ljets");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(6,"event cleaning");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(7,"=1 lep");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(8,"#geq4 jets");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(9,"#geq2 bjets");
+    ht.getPlots()["evt_count"]->GetXaxis()->SetBinLabel(10,"#geq2 ljets");
     ht.getPlots()["evt_count"]->SetBinContent(1,counter->GetBinContent(1));
     ht.getPlots()["evt_count"]->SetBinContent(2,counter->GetBinContent(2));
     ht.getPlots()["evt_count"]->SetBinContent(3,counter->GetBinContent(3));	
@@ -624,6 +626,7 @@ void RunExclusiveTop(TString filename,
     
     //EVENT SELECTION WRAPPER
     SelectionTool selector(filename, false, triggerList, SelectionTool::AnalysisType::TOP);
+    SelectionTool selector_nominal(filename, false, triggerList, SelectionTool::AnalysisType::TOP);
 	// selector.minJetPt = 25;
     
 	// JEC/JER settings
@@ -694,6 +697,13 @@ void RunExclusiveTop(TString filename,
         float wgt(1.0);
         std::vector<double>plotwgts(1,wgt);
         
+		////////////////////
+		// EVENT cleaning //
+		// https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETOptionalFiltersRun2#2018_2017_data_and_MC_UL
+		////////////////////
+		bool passMETfilters = selector.passMETFilters(ev);
+        //missing "Flag_ecalBadCalibFilter" && "BadPFMuonFilter" && "Flag_BadPFMuonDzFilter" (we don't have these) 
+						
         //////////////////
         // CORRECTIONS //
         /////////////////
@@ -706,6 +716,7 @@ void RunExclusiveTop(TString filename,
         // RECO LEVEL SELECTION //
         //////////////////////////
         TString chTag = selector.flagFinalState(ev, {}, {}, sys); // writes the name in chTag, last argument is JEC/JER systematics
+		selector_nominal.flagFinalState(ev, {}, {}, 0); // selector tool with nominal event selection
         // ch
 		Int_t ch_tag = 0;
 #ifdef HISTOGRAMS_ON
@@ -721,6 +732,7 @@ void RunExclusiveTop(TString filename,
         std::vector<Particle> &leptons     = selector.getSelLeptons();
 		//std::vector<Particle> allPhotons=selector.getSelPhotons();
         std::vector<Jet>      &allJets        = selector.getJets();
+        std::vector<Jet>      &nominalJets        = selector_nominal.getJets();
         std::vector<Jet>      jets,bJets,lightJets;
         std::vector<Particle> selectedLeptons;
         double p1_xi =0.; // proton in positive pot
@@ -742,6 +754,35 @@ void RunExclusiveTop(TString filename,
             if(allJets[ij].flavor()==5) bJets.push_back(allJets[ij]);
             else                     lightJets.push_back(allJets[ij]);
         }
+		
+		// met selection:
+		met_pt=ev.met_pt;
+		met_phi=ev.met_phi;
+		if(sys!=0){ // if apply JEC/JER variation, propogate the difference to MET
+		    TLorentzVector tmp_met(0,0,0,0);
+            tmp_met.SetPtEtaPhiM(met_pt,0.,met_phi,0.);
+			float dx = 0, dy =0;
+			for(size_t ij=0; ij<nominalJets.size(); ij++) {
+				int idx=nominalJets[ij].getJetIndex();		
+				int jid=ev.j_id[idx];
+				bool passLoosePu((jid>>2)&0x1);    
+				if(!passLoosePu) {continue;}
+				dx+=nominalJets[ij].Px();
+				dy+=nominalJets[ij].Py();
+			}
+			for(size_t ij=0; ij<allJets.size(); ij++) {
+				int idx=allJets[ij].getJetIndex();		
+				int jid=ev.j_id[idx];
+				bool passLoosePu((jid>>2)&0x1);    
+				if(!passLoosePu) {continue;}
+				dx-=allJets[ij].Px();
+				dy-=allJets[ij].Py();
+			}
+			float newx=tmp_met.Px()+dx, newy=tmp_met.Py()+dy;
+			tmp_met.SetPxPyPzE(newx,newy,0,sqrt(newx*newx+newy*newy));
+			met_pt=tmp_met.Pt();
+			met_phi=tmp_met.Phi();
+		}
         
         // selection of leptons
         for( size_t i_lept=0;i_lept<leptons.size();i_lept++) {
@@ -790,22 +831,26 @@ void RunExclusiveTop(TString filename,
 	if(chTag!="E" && chTag!="M" )   continue; // events with electrons (id=11) or muons (id=13)
 #ifdef HISTOGRAMS_ON
         ht.fill("evt_count", 4, plotwgts); // count events after channel selection
+#endif	
+	if(ev.isData && !passMETfilters)   continue; // event cleaning
+#ifdef HISTOGRAMS_ON
+        ht.fill("evt_count", 5, plotwgts); // count events after channel selection
 #endif
 	if (selectedLeptons.size()!=1) continue; // ONLY events with 1 selected lepton
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 5, plotwgts); // count events after selection on number of leptons (SHOULD BE SAME)
+        ht.fill("evt_count", 6, plotwgts); // count events after selection on number of leptons (SHOULD BE SAME)
 #endif
         if ( jets.size()  < 4 )        continue; // ONLY events with at least 4 jets
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 6, plotwgts); // count events after selection on number of jets
+        ht.fill("evt_count", 7, plotwgts); // count events after selection on number of jets
 #endif
         if ( bJets.size() < 2 )        continue; // ONLY events with at least 2 BJets
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 7, plotwgts); // count events after selection on number of Bjets
+        ht.fill("evt_count", 8, plotwgts); // count events after selection on number of Bjets
 #endif
         if(lightJets.size()<2)       continue; // ONLY events with at least 2 light Jets
 #ifdef HISTOGRAMS_ON
-        ht.fill("evt_count", 8, plotwgts); // count events after selection on number of light jets
+        ht.fill("evt_count", 9, plotwgts); // count events after selection on number of light jets
 #endif  
 
 #ifdef HISTOGRAMS_ON
@@ -863,7 +908,8 @@ void RunExclusiveTop(TString filename,
                     outVars["toppt_wgt"] *= TMath::Exp(0.0615-0.0005*ev.gtop_pt[igen]);
                 }
             }
-			wgt *= outVars["toppt_wgt"];
+			// The recommendation is not to apply this weight but use it as a systematic uncertainty.
+			//wgt *= outVars["toppt_wgt"]; 
 			
 			// generator weights
 			outVars["gen_wgt"] = (ev.g_nw>0 ? ev.g_w[0] : 1.0);
@@ -1021,7 +1067,7 @@ void RunExclusiveTop(TString filename,
             
             //determine the neutrino kinematics
             TLorentzVector met(0,0,0,0);
-            met.SetPtEtaPhiM(ev.met_pt,0.,ev.met_phi,0.);
+            met.SetPtEtaPhiM(met_pt,0.,met_phi,0.);
             neutrinoPzComputer.SetMET(met);
             neutrinoPzComputer.SetLepton(leptons[0].p4());
             float nupz=neutrinoPzComputer.Calculate();
