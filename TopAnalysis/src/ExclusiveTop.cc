@@ -677,6 +677,16 @@ void RunExclusiveTop(TString filename,
 		pps_err = -1;}
 	else{cout << "INFO: Running nominal PPS reco"<<endl;}
 	
+	// MET uncertanty https://github.com/cms-sw/cmssw/blob/master/DataFormats/PatCandidates/interface/MET.h#L152-L167
+	int met_err = 0;
+	if(systVar.find("UnclusteredEnUp")!=string::npos) {
+		cout << "INFO: Running MET UnclusteredEn up variation"<<endl;
+		met_err = 10;}
+	else if(systVar.find("UnclusteredEnDn")!=string::npos) {
+		cout << "INFO: Running MET UnclusteredEn down variation"<<endl;
+		met_err = 11;}
+	else{cout << "INFO: Running nominal MET "<<endl;}
+	
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////  LOOP OVER EVENTS  /////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -764,7 +774,7 @@ void RunExclusiveTop(TString filename,
 		// met selection:
 		met_pt=ev.met_pt;
 		met_phi=ev.met_phi;
-		if(sys!=0){ // if apply JEC/JER variation, propogate the difference to MET
+		if(sys){ // if apply JEC/JER variation, propogate the difference to MET
 		    TLorentzVector tmp_met(0,0,0,0);
             tmp_met.SetPtEtaPhiM(met_pt,0.,met_phi,0.);
 			float dx = 0, dy =0;
@@ -789,6 +799,11 @@ void RunExclusiveTop(TString filename,
 			met_pt=tmp_met.Pt();
 			met_phi=tmp_met.Phi();
 		}
+		if(met_err){
+			met_pt=ev.met_ptShifted[met_err];
+			met_phi=ev.met_phiShifted[met_err];
+		}
+			
         
         // selection of leptons
         for( size_t i_lept=0;i_lept<leptons.size();i_lept++) {
