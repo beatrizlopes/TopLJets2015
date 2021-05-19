@@ -524,8 +524,8 @@ void RunExclusiveTop(TString filename,
         "p1_xi", "p2_xi", "ppsSF_wgt", "ppsSF_wgt_err",
 		"p1_x","p2_x","p1_y","p2_y",
 		"p1_220_x","p2_220_x","p1_220_y","p2_220_y",
-		"weight", "gen_wgt", "toppt_wgt", "selSF_wgt", "trigSF_wgt", "L1Prefire_wgt",
-		"selSF_wgt_err", "trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err","L1Prefire_wgt_err",
+		"weight", "gen_wgt", "toppt_wgt", "El_SF_wgt","MU_SF_wgt" "EL_trigSF_wgt","MU_trigSF_wgt", "L1Prefire_wgt",
+		"El_SF_wgt_err","MU_SF_wgt_err", "EL_trigSF_wgt_err","MU_trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err","L1Prefire_wgt_err",
 		"ren_err","fac_err",
 		"pdf_as","pdf_hs",
 
@@ -862,11 +862,16 @@ void RunExclusiveTop(TString filename,
 #ifdef HISTOGRAMS_ON
         ht.fill("puwgtctr",0,plotwgts);
 #endif  
-        outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = outVars["selSF_wgt"] = outVars["trigSF_wgt"] = 1;
+        outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = 1;
+		outVars["El_SF_wgt"] = outVars["MU_SF_wgt"] = 1;
+		outVars["EL_trigSF_wgt"] = outVars["MU_trigSF_wgt"] = 1;
+
         outVars["pu_wgt"] = outVars["ptag_wgt"] =  outVars["L1Prefire_wgt"] = outVars["ppsSF_wgt"] = 1;
         
+		outVars["El_SF_wgt_err"] = outVars["MU_SF_wgt_err"] = 0;
+		outVars["EL_trigSF_wgt_err"] = outVars["MU_trigSF_wgt_err"] = 0;
 
-		outVars["trigSF_wgt_err"] = outVars["selSF_wgt_err"] =  outVars["L1Prefire_wgt_err"] =  0;
+		outVars["L1Prefire_wgt_err"] =  0;
 		outVars["ppsSF_wgt_err"] = outVars["ptag_wgt_err"] = 0;
 		
         outVars["ren_err"] = outVars["fac_err"] = 0;
@@ -892,19 +897,31 @@ void RunExclusiveTop(TString filename,
             // lepton trigger*selection weights (update the code later)
             EffCorrection_t trigSF = lepEffH.getTriggerCorrection(leptons,{},{},"");
             EffCorrection_t  selSF = lepEffH.getOfflineCorrection(leptons[0], period);
-			outVars["trigSF_wgt"] = trigSF.first;
-			outVars["trigSF_wgt_err"] = trigSF.second;
-			if(!outVars["trigSF_wgt"]) cout << "WARNING: trigSF = 0, check your selection! " << endl;
-			outVars["selSF_wgt"] = selSF.first;
-			outVars["selSF_wgt_err"] = selSF.second;
-			if(!outVars["trigSF_wgt"]) cout << "WARNING: trigSF = 0, check your selection! " << endl;
+			if(leptons[0].id()==11){
+				outVars["EL_trigSF_wgt"] = trigSF.first;
+				outVars["EL_trigSF_wgt_err"] = trigSF.second;
+				if(!outVars["EL_trigSF_wgt"]) cout << "WARNING: EL_trigSF_wgt = 0, check your selection! " << endl;
+				outVars["El_SF_wgt"] = selSF.first;
+				outVars["El_SF_wgt_err"] = selSF.second;
+			}
+			else if(leptons[0].id()==13){
+				outVars["MU_trigSF_wgt"] = trigSF.first;
+				outVars["MU_trigSF_wgt_err"] = trigSF.second;
+				if(!outVars["MU_trigSF_wgt"]) cout << "WARNING: MU_trigSF_wgt = 0, check your selection! " << endl;
+				outVars["MU_SF_wgt"] = selSF.first;
+				outVars["MU_SF_wgt_err"] = selSF.second;
+			}
+			else cout << "ERROR: leptons[0].id()="<<leptons[0].id()<<" cannot set triggerSF"<<endl;
+
+            wgt *= outVars["El_SF_wgt"]*outVars["MU_SF_wgt"];
+            wgt *= outVars["EL_trigSF_wgt"]*outVars["MU_trigSF_wgt"];
 
 			//L1 pre-fire
 			EffCorrection_t l1prefireProb=l1PrefireWR.getCorrection(allJets,{});
 			outVars["L1Prefire_wgt"] = l1prefireProb.first;
 			outVars["L1Prefire_wgt_err"] = l1prefireProb.second;
 
-            wgt *= outVars["trigSF_wgt"]*outVars["selSF_wgt"]*outVars["L1Prefire_wgt"];
+			wgt *= outVars["L1Prefire_wgt"];
             
             //top pt weighting
             outVars["toppt_wgt"] = 1.0;
