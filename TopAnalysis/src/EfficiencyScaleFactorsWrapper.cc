@@ -78,9 +78,9 @@ void EfficiencyScaleFactorsWrapper::init(TString era)
     lumiWgts.push_back(0.5);
   }
   else{
-    m_idSF.push_back( era+"/RunBCDEF_UL_SF_ID.root");
-    m_isoSF.push_back( era+"/RunBCDEF_UL_SF_ISO.root");
-    m_trigSF.push_back( era+"/EfficienciesAndSF_RunBtoF_Nov17Nov2017.root");
+    m_idSF.push_back( era+"/Efficiencies_muon_generalTracks_Z_Run2017_UL_ID.root");
+    m_isoSF.push_back( era+"/Efficiencies_muon_generalTracks_Z_Run2017_UL_ISO.root");
+    m_trigSF.push_back( era+"/Efficiencies_muon_generalTracks_Z_Run2017_UL_SingleMuonTriggers.root");
     lumiWgts.push_back(1.0);
   }
 
@@ -98,7 +98,7 @@ void EfficiencyScaleFactorsWrapper::init(TString era)
     fIn=TFile::Open(m_idSF[i]);
     if(fIn && !fIn->IsZombie()) {
       cout << "muons: id SF from " << m_idSF[i] << " with weight " << lumiWgts[i] << endl;
-      scaleFactorsH_["m_id"]=(TH2F *)fIn->Get("NUM_TightID_DEN_genTracks_pt_abseta")->Clone();
+      scaleFactorsH_["m_id"]=(TH2F *)fIn->Get("NUM_TightID_DEN_TrackerMuons_abseta_pt")->Clone();
       scaleFactorsH_["m_id"]->SetDirectory(0);
       fIn->Close();
     }
@@ -108,18 +108,22 @@ void EfficiencyScaleFactorsWrapper::init(TString era)
     fIn=TFile::Open(m_isoSF[i]);
     if(fIn && !fIn->IsZombie()) {
       cout << "muons: iso SF from " << m_isoSF[i] << " with weight " << lumiWgts[i] << endl;
-      scaleFactorsH_["m_iso"]=(TH2F *)fIn->Get("NUM_TightRelIso_DEN_TightIDandIPCut_pt_abseta")->Clone();
+      scaleFactorsH_["m_iso"]=(TH2F *)fIn->Get("NUM_TightRelIso_DEN_TightIDandIPCut_abseta_pt")->Clone();
       scaleFactorsH_["m_iso"]->SetDirectory(0);
       fIn->Close();
     }
-  }  
+  }
   for(size_t i=0; i<m_trigSF.size(); i++) {
     gSystem->ExpandPathName(m_trigSF[i]);
     fIn=TFile::Open(m_trigSF[i]);
     if(fIn && !fIn->IsZombie()) {
       cout << "muons: Trigger SF from" << m_trigSF[i] << " with weight " << lumiWgts[i] << endl;
-      scaleFactorsH_["m_trig"]=(TH2F *)fIn->Get("IsoMu27_PtEtaBins/abseta_pt_ratio")->Clone();
-      scaleFactorsH_["m_trig"]->SetDirectory(0);
+	  if(era_==2017){
+		//scaleFactorsH_["m_trig"]=(TH2F *)fIn->Get("IsoMu27_PtEtaBins/abseta_pt_ratio")->Clone();
+		scaleFactorsH_["m_trig"]=(TH2F *)fIn->Get("NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight_eta_pt")->Clone();
+		scaleFactorsH_["m_trig"]->SetDirectory(0);
+	  }
+	  else{ cout << "ERROR: no SF awailable for 2016 or 2018!"<<endl;}
       fIn->Close();
     }
   }

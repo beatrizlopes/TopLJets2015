@@ -28,7 +28,7 @@ def getEraConfiguration(era,isData):
         }
     muonFiles   = {
         'era2016':'RoccoR2016.txt',
-        'era2017':'RoccoR2017.txt',
+        'era2017':'RoccoR2017UL.txt',
         'era2018':'RoccoR2018.txt'
         }
     ppsFiles   = {
