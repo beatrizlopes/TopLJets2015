@@ -524,7 +524,7 @@ void RunExclusiveTop(TString filename,
         "p1_xi", "p2_xi", "ppsSF_wgt", "ppsSF_wgt_err",
 		"p1_x","p2_x","p1_y","p2_y",
 		"p1_220_x","p2_220_x","p1_220_y","p2_220_y",
-		"weight", "gen_wgt", "toppt_wgt", "El_SF_wgt","MU_SF_wgt" "EL_trigSF_wgt","MU_trigSF_wgt", "L1Prefire_wgt",
+		"weight", "gen_wgt", "toppt_wgt", "El_SF_wgt","MU_SF_wgt", "EL_trigSF_wgt","MU_trigSF_wgt", "L1Prefire_wgt",
 		"El_SF_wgt_err","MU_SF_wgt_err", "EL_trigSF_wgt_err","MU_trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err","L1Prefire_wgt_err",
 		"ren_err","fac_err",
 		"pdf_as","pdf_hs",
@@ -927,6 +927,7 @@ void RunExclusiveTop(TString filename,
 				outVars["MU_SF_wgt_err"] = selSF.second;
 			}
 			else cout << "ERROR: leptons[0].id()="<<leptons[0].id()<<" cannot set triggerSF"<<endl;
+
 
             wgt *= outVars["El_SF_wgt"]*outVars["MU_SF_wgt"];
             wgt *= outVars["EL_trigSF_wgt"]*outVars["MU_trigSF_wgt"];

@@ -77,19 +77,27 @@ void EfficiencyScaleFactorsWrapper::init(TString era)
     lumiWgts.push_back(0.5);
     lumiWgts.push_back(0.5);
   }
-  else{
-    m_idSF.push_back( era+"/Efficiencies_muon_generalTracks_Z_Run2017_UL_ID.root");
-    m_isoSF.push_back( era+"/Efficiencies_muon_generalTracks_Z_Run2017_UL_ISO.root");
+  if(era_==2017){
+    m_tkSF.push_back( era+"/Run2_UL_2017_Efficiency_muon_generalTracks_Run2017_UL_trackerMuon.root");
+    m_idSF.push_back( era+"/Run2_UL_2017_2017_Z_Efficiencies_muon_generalTracks_Z_Run2017_UL_ID.root");
+    m_isoSF.push_back( era+"/Run2_UL_2017_2017_Z_Efficiencies_muon_generalTracks_Z_Run2017_UL_ISO.root");
     m_trigSF.push_back( era+"/Efficiencies_muon_generalTracks_Z_Run2017_UL_SingleMuonTriggers.root");
     lumiWgts.push_back(1.0);
   }
+  else{cout << "ERROR: Wrong era provided (era="<<era<<")"<<endl;}
 
   for(size_t i=0; i<m_tkSF.size(); i++) {
     gSystem->ExpandPathName(m_tkSF[i]);
     fIn=TFile::Open(m_tkSF[i]);
     if(fIn && !fIn->IsZombie()) {
       cout << "muons: tk SF from " << m_tkSF[i] << " with weight " << lumiWgts[i] << endl;
-      scaleFactorsGr_["m_tkSF"]=(TGraphAsymmErrors *)fIn->Get("ratio_eff_aeta_dr030e030_corr");
+	  if(era_==2016){
+        scaleFactorsGr_["m_tk"]=(TGraphAsymmErrors *)fIn->Get("ratio_eff_aeta_dr030e030_corr");
+	  }
+	  if(era_==2017){
+        scaleFactorsH_["m_tk"]=(TH2F *)fIn->Get("NUM_TrackerMuons_DEN_genTracks_abseta_pt")->Clone();
+        scaleFactorsH_["m_tk"]->SetDirectory(0);
+	  }
       fIn->Close();
     }
   }
@@ -117,10 +125,10 @@ void EfficiencyScaleFactorsWrapper::init(TString era)
     gSystem->ExpandPathName(m_trigSF[i]);
     fIn=TFile::Open(m_trigSF[i]);
     if(fIn && !fIn->IsZombie()) {
-      cout << "muons: Trigger SF from" << m_trigSF[i] << " with weight " << lumiWgts[i] << endl;
+      cout << "muons: Trigger SF from " << m_trigSF[i] << " with weight " << lumiWgts[i] << endl;
 	  if(era_==2017){
 		//scaleFactorsH_["m_trig"]=(TH2F *)fIn->Get("IsoMu27_PtEtaBins/abseta_pt_ratio")->Clone();
-		scaleFactorsH_["m_trig"]=(TH2F *)fIn->Get("NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight_eta_pt")->Clone();
+		scaleFactorsH_["m_trig"]=(TH2F *)fIn->Get("NUM_IsoMu27_DEN_CutBasedIdTight_and_PFIsoTight_abseta_pt")->Clone();
 		scaleFactorsH_["m_trig"]->SetDirectory(0);
 	  }
 	  else{ cout << "ERROR: no SF awailable for 2016 or 2018!"<<endl;}
@@ -259,7 +267,7 @@ EffCorrection_t EfficiencyScaleFactorsWrapper::getOfflineCorrection(Particle p,T
 //
 EffCorrection_t EfficiencyScaleFactorsWrapper::getOfflineCorrection(int pdgId,float pt,float eta,TString period)
 {
-  EffCorrection_t corr(1.0,0.01);
+  EffCorrection_t corr(1.0,0.00);
 
   TString corrSteps[]={"rec","tk","id","iso"};
   for(size_t icor=0; icor<sizeof(corrSteps)/sizeof(TString); icor++) {
@@ -284,7 +292,6 @@ EffCorrection_t EfficiencyScaleFactorsWrapper::getOfflineCorrection(int pdgId,fl
         }
     }
     else if(scaleFactorsH_.find(hname)!=scaleFactorsH_.end() ) {
-
       TH2 *h=scaleFactorsH_[hname];
       Double_t xval(eta), yval(pt);
       if(idstr=="m") {
@@ -302,8 +309,9 @@ EffCorrection_t EfficiencyScaleFactorsWrapper::getOfflineCorrection(int pdgId,fl
       iSFUnc=h->GetBinError(xbin,ybin);
     }
    
-    corr.second = sqrt(pow(iSFUnc*corr.first,2)+pow(iSF*corr.second,2));
-    corr.first  = corr.first*iSF;
+    //corr.second = sqrt(pow(iSFUnc*corr.first,2)+pow(iSF*corr.second,2));
+    corr.second = sqrt( iSFUnc*iSFUnc + corr.second*corr.second );
+    corr.first  *= iSF;
   }
      
   //

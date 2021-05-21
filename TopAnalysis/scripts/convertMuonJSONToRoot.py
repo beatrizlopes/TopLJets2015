@@ -1,33 +1,40 @@
 #!/usr/bin/env python
 
-import sys
+import sys, math
+
+def getRange(tkn):
+    return [float(x) for x in re.findall(r"[-+]?\d*\.\d+|\d+",tkn)]
+
+if len(sys.argv)<2:
+  print('ERROR: missing input file.')
+  quit()
+  
+
 import json
 import ROOT
 import re
 from array import array
-
-def getRange(tkn):
-    return [float(x) for x in re.findall(r"[-+]?\d*\.\d+|\d+",tkn)]
 
 url=sys.argv[1]
 fOut=ROOT.TFile.Open(url.replace('.json','.root'),'RECREATE')
 
 with open(url,'r') as f:
     results = json.load(f)
-
-    for i in ['Loose','Medium','Tight']:
-        key='NUM_%sID_DEN_genTracks'%i
-        if not key in results:
-            if i=='Loose' : key='NUM_LooseRelIso_DEN_LooseID'
-            if i=='Medium': key='NUM_TightRelIso_DEN_MediumID'
-            if i=='Tight':  key='NUM_TightRelIso_DEN_TightIDandIPCut'
+    params='abseta_pt'
+    for key in results.keys():
 
         effVals=[]
-        for etaTkn in results[key]['abseta_pt']:
-
+        for etaTkn in results[key][params]:
+            if 'binning' in etaTkn: continue
             ieffVals=[]
-            for ptTkn in results[key]['abseta_pt'][etaTkn]:
-                ieffVals.append( getRange(ptTkn)+[results[key]['abseta_pt'][etaTkn][ptTkn]["value"],results[key]['abseta_pt'][etaTkn][ptTkn]["error"]] )
+            for ptTkn in results[key][params][etaTkn]:
+                data=results[key][params][etaTkn][ptTkn]			
+                value=data["value"]
+                error=0.
+                for _k in ['error','stat','syst']:
+                  if _k in data.keys(): error+=data[_k]**2
+                error=math.sqrt(error);
+                ieffVals.append( getRange(ptTkn)+[value,error] )
             ieffVals.sort(key=lambda x : x[0])
             effVals.append( (getRange(etaTkn),ieffVals) )
 
@@ -44,7 +51,7 @@ with open(url,'r') as f:
         ptVals.append( effVals[0][1][-1][1] )
 
         fOut.cd()
-        sfH=ROOT.TH2F(key,key,len(etaVals)-1,array('d',etaVals),len(ptVals)-1,array('d',ptVals))
+        sfH=ROOT.TH2F(key+'_'+params,key,len(etaVals)-1,array('d',etaVals),len(ptVals)-1,array('d',ptVals))
         for i in xrange(0,len(effVals)):
             for j in xrange(0,len(effVals[i][1])):
                 sf,sfUnc=effVals[i][1][j][2:4]
@@ -52,6 +59,7 @@ with open(url,'r') as f:
                 sfH.SetBinError(i+1,j+1,sfUnc)
         sfH.Write()
 
+print('Writes %s'%fOut.GetName())
 fOut.Close()
         
 
