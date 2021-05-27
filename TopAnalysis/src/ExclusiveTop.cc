@@ -524,8 +524,8 @@ void RunExclusiveTop(TString filename,
         "p1_xi", "p2_xi", "ppsSF_wgt", "ppsSF_wgt_err",
 		"p1_x","p2_x","p1_y","p2_y",
 		"p1_220_x","p2_220_x","p1_220_y","p2_220_y",
-		"weight", "gen_wgt", "toppt_wgt", "El_SF_wgt","MU_SF_wgt", "EL_trigSF_wgt","MU_trigSF_wgt", "L1Prefire_wgt",
-		"El_SF_wgt_err","MU_SF_wgt_err", "EL_trigSF_wgt_err","MU_trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err","L1Prefire_wgt_err",
+		"weight", "gen_wgt", "toppt_wgt", "EL_SF_wgt","MU_SF_wgt", "EL_trigSF_wgt","MU_trigSF_wgt", "L1Prefire_wgt",
+		"EL_SF_wgt_err","MU_SF_wgt_err", "EL_trigSF_wgt_err","MU_trigSF_wgt_err", "pu_wgt", "ptag_wgt", "ptag_wgt_err","L1Prefire_wgt_err",
 		"ren_err","fac_err",
 		"pdf_as","pdf_hs",
 
@@ -668,13 +668,19 @@ void RunExclusiveTop(TString filename,
 	else{cout << "INFO: Running nominal btag SF, seed = "<< seed << endl;}
     
 	// Proton reconstuction systematics
-	float pps_err = 0;
-	if(systVar.find("ppsUp")!=string::npos) {
+	float pps45_err = 0, pps56_err = 0;
+	if(systVar.find("pps45Up")!=string::npos) {
 		cout << "INFO: Running PPS xi reco. up variation"<<endl;
-		pps_err = 1;}
-	else if(systVar.find("ppsDn")!=string::npos) {
+		pps45_err = 1;}
+	else if(systVar.find("pps45Dn")!=string::npos) {
 		cout << "INFO: Running PPS xi reco. down variation"<<endl;
-		pps_err = -1;}
+		pps45_err = -1;}
+	else if(systVar.find("pps56Up")!=string::npos) {
+		cout << "INFO: Running PPS xi reco. up variation"<<endl;
+		pps56_err = 1;}
+	else if(systVar.find("pps56Dn")!=string::npos) {
+		cout << "INFO: Running PPS xi reco. down variation"<<endl;
+		pps56_err = -1;}
 	else{cout << "INFO: Running nominal PPS reco"<<endl;}
 	
 	// MET uncertanty https://github.com/cms-sw/cmssw/blob/master/DataFormats/PatCandidates/interface/MET.h#L152-L167
@@ -820,7 +826,7 @@ void RunExclusiveTop(TString filename,
             const unsigned short pot_raw_id = ev.fwdtrk_pot[ift];
             if(ev.fwdtrk_method[ift]==1){  // selecting only MultiRP protons
               if (pot_raw_id<100){ // positive z  (pot_raw_id=3)
-                    p1_xi = ev.fwdtrk_xi[ift] + pps_err*PPS_reco->getRecoErr(ev.fwdtrk_xi[ift],0,ev.run);
+                    p1_xi = ev.fwdtrk_xi[ift] + pps45_err*PPS_reco->getRecoErr(ev.fwdtrk_xi[ift],0,ev.run);
 		    p1_x = ev.fwdtrk_NearX[ift];
 		    p1_y = ev.fwdtrk_NearY[ift];
 		    p1_220_x = ev.fwdtrk_FarX[ift];
@@ -828,7 +834,7 @@ void RunExclusiveTop(TString filename,
 
               }
               else {   // negative z   (pot_raw_id=103)
-                p2_xi = ev.fwdtrk_xi[ift] + pps_err*PPS_reco->getRecoErr(ev.fwdtrk_xi[ift],1,ev.run);
+                p2_xi = ev.fwdtrk_xi[ift] + pps56_err*PPS_reco->getRecoErr(ev.fwdtrk_xi[ift],1,ev.run);
 		p2_x = ev.fwdtrk_NearX[ift];
 		p2_y = ev.fwdtrk_NearY[ift];
 		p2_220_x = ev.fwdtrk_FarX[ift];
@@ -878,12 +884,12 @@ void RunExclusiveTop(TString filename,
         ht.fill("puwgtctr",0,plotwgts);
 #endif  
         outVars["weight"] = outVars["gen_wgt"] = outVars["toppt_wgt"] = 1;
-		outVars["El_SF_wgt"] = outVars["MU_SF_wgt"] = 1;
+		outVars["EL_SF_wgt"] = outVars["MU_SF_wgt"] = 1;
 		outVars["EL_trigSF_wgt"] = outVars["MU_trigSF_wgt"] = 1;
 
         outVars["pu_wgt"] = outVars["ptag_wgt"] =  outVars["L1Prefire_wgt"] = outVars["ppsSF_wgt"] = 1;
         
-		outVars["El_SF_wgt_err"] = outVars["MU_SF_wgt_err"] = 0;
+		outVars["EL_SF_wgt_err"] = outVars["MU_SF_wgt_err"] = 0;
 		outVars["EL_trigSF_wgt_err"] = outVars["MU_trigSF_wgt_err"] = 0;
 
 		outVars["L1Prefire_wgt_err"] =  0;
@@ -916,8 +922,8 @@ void RunExclusiveTop(TString filename,
 				outVars["EL_trigSF_wgt"] = trigSF.first;
 				outVars["EL_trigSF_wgt_err"] = trigSF.second;
 				if(!outVars["EL_trigSF_wgt"]) cout << "WARNING: EL_trigSF_wgt = 0, check your selection! " << endl;
-				outVars["El_SF_wgt"] = selSF.first;
-				outVars["El_SF_wgt_err"] = selSF.second;
+				outVars["EL_SF_wgt"] = selSF.first;
+				outVars["EL_SF_wgt_err"] = selSF.second;
 			}
 			else if(leptons[0].id()==13){
 				outVars["MU_trigSF_wgt"] = trigSF.first;
@@ -929,7 +935,7 @@ void RunExclusiveTop(TString filename,
 			else cout << "ERROR: leptons[0].id()="<<leptons[0].id()<<" cannot set triggerSF"<<endl;
 
 
-            wgt *= outVars["El_SF_wgt"]*outVars["MU_SF_wgt"];
+            wgt *= outVars["EL_SF_wgt"]*outVars["MU_SF_wgt"];
             wgt *= outVars["EL_trigSF_wgt"]*outVars["MU_trigSF_wgt"];
 
 			//L1 pre-fire

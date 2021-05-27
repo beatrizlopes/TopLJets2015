@@ -93,7 +93,7 @@ struct MiniEvent_t
   Float_t sumPFHt[8],sumPFEn[8],sumPFPz[8],sumPFChHt[8],sumPFChEn[8],sumPFChPz[8];
 		  
   //CTPPS protons
-  Short_t nfwdtrk,fwdtrk_pot[MAXPROTONS],fwdtrk_method[MAXPROTONS];
+  Short_t nfwdtrk,fwdtrk_pot[MAXPROTONS],fwdtrk_method[MAXPROTONS],fwdtrk_shifted[MAXPROTONS];
   Float_t fwdtrk_thetax[MAXPROTONS],fwdtrk_thetay[MAXPROTONS],
     fwdtrk_vx[MAXPROTONS],fwdtrk_vy[MAXPROTONS],fwdtrk_vz[MAXPROTONS],
     fwdtrk_time[MAXPROTONS],fwdtrk_timeError[MAXPROTONS],

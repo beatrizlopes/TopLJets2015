@@ -30,13 +30,14 @@ class PPSEff
 
 	public: 
 	
-	//Constructor 
+	//Constructors
+	PPSEff(){} 
 	PPSEff(std::string filename){
         init(filename);  
 	}
 	
 	// Destructor 
-	~PPSEff() {_file0->Close();}
+	~PPSEff() { if(RecoInit || EffInit) _file0->Close();}
 	
 	int GetRunIndx(unsigned int runNumber){
 		if(runNumber>=297050&& runNumber<=299329) return static_cast<int>(Periods::era2017B);
@@ -47,9 +48,10 @@ class PPSEff
 		if(runNumber>=305044&& runNumber<=305114) return static_cast<int>(Periods::era2017F1);
 		if(runNumber>=305178&& runNumber<=305902) return static_cast<int>(Periods::era2017F2);
 		if(runNumber>=305967&& runNumber<=306460) return static_cast<int>(Periods::era2017F3);
+		//if(runNumber>=306936&& runNumber<=307082) return static_cast<int>(Periods::era2017H);
 		return static_cast<int>(Periods::undefined);
 	}
-	
+
 	TString era[static_cast<int>(Periods::Count)] = {
 		"UNDEF","2017B","2017C1","2017C2","2017D","2017E","2017F1","2017F2","2017F3"
 	};

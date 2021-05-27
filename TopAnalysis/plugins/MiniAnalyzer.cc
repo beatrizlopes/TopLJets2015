@@ -264,7 +264,8 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   muonRC_->init(iConfig.getParameter<std::string>("RoccoR"));
   //muonRC_->init(edm::FileInPath(iConfig.getParameter<std::string>("RoccoR")).fullPath());
   
-  PPS_eff_ = new PPSEff(edm::FileInPath(iConfig.getParameter<std::string>("PPS_pixelEff")).fullPath());
+  PPS_eff_ = new PPSEff();
+  //PPS_eff_ = new PPSEff(edm::FileInPath(iConfig.getParameter<std::string>("PPS_pixelEff")).fullPath());
 
   histContainer_["triggerList"] = fs->make<TH1F>("triggerList", ";Trigger bits;",triggersToUse_.size(),0,triggersToUse_.size());
   histContainer_["triggerPrescale"] = fs->make<TH1D>("triggerPrescale", ";Trigger prescale sum;",triggersToUse_.size(),0,triggersToUse_.size());
@@ -352,7 +353,7 @@ void MiniAnalyzer::genAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 
        // Store 5 scale weights and 103 PDF weights
 	   ev_.g_nw+=(5+103);
-	   float origW = evet->originalXWGTUP();
+	   //float origW = evet->originalXWGTUP();
 	   for(int i=1;i<ev_.g_nw;i++) ev_.g_w[i]=0;   
        //cout << "Original wegiht = " << origW << endl;
 	   for (unsigned int i=0; i<evet->weights().size(); i++) {
@@ -734,24 +735,26 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 			bool isPixel = (detid.station()==2), isMultiRP = (ev_.fwdtrk_method[ev_.nfwdtrk]==1);
 			
 			// Veto track: if not fiducial or is shifted (only for pixels)
-			bool skipTrack = false;
-			if(isPixel){ // 3+3 reconstruction check
-				CTPPSpixelLocalTrackReconstructionInfo pixtrackinfo = (*proton.contributingLocalTracks().begin())->getPixelTrackRecoInfo();
-				bool pixShift = !(pixtrackinfo == CTPPSpixelLocalTrackReconstructionInfo::notShiftedRun || 
-								pixtrackinfo == CTPPSpixelLocalTrackReconstructionInfo::noShiftedPlanes ||
-								pixtrackinfo == CTPPSpixelLocalTrackReconstructionInfo::invalid);
-				if(pixShift) skipTrack = true;
-			}
+			bool VetoTrack = false;
 			if(isPixel || isMultiRP){ // check fiducial cut
 				for (const auto &pr_tr : proton.contributingLocalTracks()) {
 					CTPPSDetId rpId(pr_tr->getRPId());
 					if(rpId.station()!=2) continue; // only pixels
 					float x = pr_tr->getX(), y = pr_tr->getY();
-					if(!PPS_eff_->InFiducial(detid.arm(), 2, ev_.run, x, y)) skipTrack = true;
+					if(!PPS_eff_->InFiducial(detid.arm(), 2, ev_.run, x, y)) VetoTrack = true;
 				}
 			}
-			if(skipTrack) continue;
+			if(VetoTrack) continue;
 			
+			// Reject shifted pixel tracks (https://twiki.cern.ch/twiki/bin/view/CMS/TaggedProtonsGettingStarted#Specific_features_and_warnings_f)
+			CTPPSpixelLocalTrackReconstructionInfo pixtrackinfo = (*proton.contributingLocalTracks().begin())->getPixelTrackRecoInfo();
+			bool _pixShift = !(pixtrackinfo == CTPPSpixelLocalTrackReconstructionInfo::notShiftedRun || 
+							pixtrackinfo == CTPPSpixelLocalTrackReconstructionInfo::noShiftedPlanes ||
+							pixtrackinfo == CTPPSpixelLocalTrackReconstructionInfo::invalid);
+			//if(pixShift) skipTrack = true;
+            ev_.fwdtrk_shifted[ev_.nfwdtrk]   = _pixShift ? 1 : 0;			
+
+
             ev_.fwdtrk_pot[ev_.nfwdtrk]       = 100*detid.arm()+10*detid.station()+detid.rp();
             ev_.fwdtrk_chisqnorm[ev_.nfwdtrk] = proton.normalizedChi2();
             ev_.fwdtrk_thetax[ev_.nfwdtrk]    = proton.thetaX();
@@ -970,6 +973,10 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       ev_.l_ip3d[ev_.nl]    = -9999.;
       ev_.l_ip3dsig[ev_.nl] = -9999;
 	  ev_.l_dz[ev_.nl] = -1;
+	  // Trigger maching
+	  //for(size_t i=0; i<triggersToUse_.size(); i++) 
+	  //	  ev_.l_trigMatch[ev_.nl][i] = mu.triggered((triggersToUse_[i]+"*").c_str());
+	  	  
       if(mu.innerTrack().get())
 	{
 	  std::pair<bool,Measurement1D> ip3dRes = getImpactParameter<reco::TrackRef>(mu.innerTrack(), primVtxRef, iSetup, true);

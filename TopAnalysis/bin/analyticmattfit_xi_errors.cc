@@ -135,7 +135,7 @@ int main(int argc, char* argv[]){
   //MC weights variaitons to pass to a new output:
   unsigned int run; float beamXangle, pu_wgt, toppt_wgt, ptag_wgt_err;
   float L1Prefire_wgt_err, ppsSF_wgt_err;
-  float MU_trigSF_wgt_err, MU_SF_wgt_err, EL_trigSF_wgt_err, El_SF_wgt_err; 
+  float MU_trigSF_wgt_err, MU_SF_wgt_err, EL_trigSF_wgt_err, EL_SF_wgt_err; 
 
   float ren_err, fac_err;
   float pdf_as, pdf_hs;
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]){
   tree_out.Branch("MU_trigSF_wgt_err",&MU_trigSF_wgt_err);
   tree_out.Branch("EL_trigSF_wgt_err",&EL_trigSF_wgt_err);
   tree_out.Branch("MU_SF_wgt_err",&MU_SF_wgt_err);
-  tree_out.Branch("El_SF_wgt_err",&El_SF_wgt_err);
+  tree_out.Branch("El_SF_wgt_err",&EL_SF_wgt_err); // FIXME
   tree_out.Branch("L1Prefire_wgt_err",&L1Prefire_wgt_err);
 
   tree_out.Branch("pdf_as_err",&pdf_as);
@@ -338,7 +338,7 @@ int main(int argc, char* argv[]){
 	MU_trigSF_wgt_err = tree->GetLeaf("MU_trigSF_wgt_err")->GetValue(0);
 	EL_trigSF_wgt_err = tree->GetLeaf("EL_trigSF_wgt_err")->GetValue(0);
 	MU_SF_wgt_err =tree->GetLeaf("MU_SF_wgt_err")->GetValue(0); 
-	El_SF_wgt_err =tree->GetLeaf("El_SF_wgt_err")->GetValue(0); 
+	EL_SF_wgt_err =tree->GetLeaf("EL_SF_wgt_err")->GetValue(0);
 	L1Prefire_wgt_err =tree->GetLeaf("L1Prefire_wgt_err")->GetValue(0); 
 
 	pdf_as =tree->GetLeaf("pdf_as")->GetValue(0); 
