@@ -335,8 +335,7 @@ kipped." << endl;
 	// ------------- new approach --------------------- //
 	// samples region index using flat PDF, and asign extra weight to event
     int i_reg = rand_gen->Rndm() * n_PUregions;
-	weight *= (fraction_regions[i_reg]*float(n_PUregions));
-
+    float _extra_weight = (fraction_regions[i_reg]*float(n_PUregions));
 	// -------------------------------------------------- //
 	
 	int i_event = rand_gen->Rndm()*counter_regions[i_reg];  
@@ -350,6 +349,7 @@ kipped." << endl;
 	
 	// asign the protons to the MC event
     chMCEvents->GetEntry(iMCEntry + nMCEventsToSkip);
+	weight *= _extra_weight;
 	
 	// fix run number and crossing-angle from proton pool
 	run = poll_run[i_reg];
