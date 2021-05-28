@@ -226,12 +226,12 @@ kipped." << endl;
    }
    
    // List obtained fractions:
-   cout << "INFO List obtained fractions (for 120,130,140,150):"<<endl;
+   cout << "INFO List obtained fractions for all "<<n_PUregions<<" SRs, (for 120,130,140,150), including statistics:"<<endl;
    for(int i_era=0;i_era<n_era;i_era++){
 	   cout << "era " << era[i_era]<<": ";
-	   for(int ii=0;ii<n_xa-1;ii++) cout << fraction_regions[i_era*n_xa+ii]<<" ,";
-	   cout << fraction_regions[i_era*n_xa+n_xa-1] << endl;
-   }
+	   for(int ii=0;ii<n_xa-1;ii++) cout << fraction_regions[i_era*n_xa+ii]<<" ("<<counter_regions[i_era*n_xa+ii]<<"),";
+	   cout << fraction_regions[i_era*n_xa+n_xa-1] <<" ("<<counter_regions[i_era*n_xa+n_xa-1]<<")"<< endl;
+   }   
    
    // variables to be used to read from PU pools
     unsigned int poll_run[n_PUregions]; float poll_p1_xi[n_PUregions],poll_p2_xi[n_PUregions];
@@ -326,10 +326,19 @@ kipped." << endl;
   for (iMCEntry = 0; (iMCEntry < nEventsToMix) && (iMCEntry + nMCEventsToSkip < nMCEntries); iMCEntry++) {
     if(iMCEntry%1000==0) printf ("\r [%3.0f%%] done", 100.*(float)iMCEntry/(float)nEventsToMix);
     
+	// ------------- old approach --------------------- //
 	// sample region index using PDF and get protons from the pool
-	int i_reg=0; float cdf_=0, rndm = rand_gen->Rndm();
-	while (cdf_<rndm) {cdf_+= fraction_regions[i_reg];i_reg++;}
-	i_reg--; // region index should start from 0
+	//int i_reg=0; float cdf_=0, rndm = rand_gen->Rndm();
+	//while (cdf_<rndm) {cdf_+= fraction_regions[i_reg];i_reg++;}
+	//i_reg--; // region index should start from 0
+
+	// ------------- new approach --------------------- //
+	// samples region index using flat PDF, and asign extra weight to event
+    int i_reg = rand_gen->Rndm() * n_PUregions;
+	weight *= (fraction_regions[i_reg]*float(n_PUregions));
+
+	// -------------------------------------------------- //
+	
 	int i_event = rand_gen->Rndm()*counter_regions[i_reg];  
 	PUpr[i_reg]->GetEntry(i_event);
 	

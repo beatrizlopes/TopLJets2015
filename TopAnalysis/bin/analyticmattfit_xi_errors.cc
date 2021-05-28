@@ -338,7 +338,7 @@ int main(int argc, char* argv[]){
 	MU_trigSF_wgt_err = tree->GetLeaf("MU_trigSF_wgt_err")->GetValue(0);
 	EL_trigSF_wgt_err = tree->GetLeaf("EL_trigSF_wgt_err")->GetValue(0);
 	MU_SF_wgt_err =tree->GetLeaf("MU_SF_wgt_err")->GetValue(0); 
-	EL_SF_wgt_err =tree->GetLeaf("EL_SF_wgt_err")->GetValue(0);
+	EL_SF_wgt_err =tree->GetLeaf("El_SF_wgt_err")->GetValue(0);
 	L1Prefire_wgt_err =tree->GetLeaf("L1Prefire_wgt_err")->GetValue(0); 
 
 	pdf_as =tree->GetLeaf("pdf_as")->GetValue(0); 
