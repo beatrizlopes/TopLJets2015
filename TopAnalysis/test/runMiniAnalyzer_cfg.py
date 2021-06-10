@@ -303,9 +303,6 @@ if process.updatedPatJetsUpdatedJECBTag:
       process.custom_jec_seq=cms.Sequence(process.QGTagger * process.patJetCorrFactorsUpdatedJECBTag * process.updatedPatJetsUpdatedJECBTag)
       process.custom_jec=cms.Path(process.custom_jec_seq)
       toSchedule.append( process.custom_jec)
-if process.fullPatMetSequenceModifiedMET:
-      process.custom_met=cms.Path(process.fullPatMetSequenceModifiedMET)
-      toSchedule.append(process.custom_met)
 if options.doParticleLevel and not options.runOnData:
       process.mctruth=cms.Path(process.mergedGenParticles*process.genParticles2HepMC*process.particleLevel)
       toSchedule.append( process.mctruth )

@@ -163,11 +163,7 @@ private:
   edm::EDGetTokenT<edm::DetSetVector<TotemRPUVPattern>> tokenStripPatterns_;
   edm::EDGetTokenT<std::vector<CTPPSLocalTrackLite> > ctppsToken_;
   std::vector< edm::EDGetTokenT<std::vector<reco::ForwardProton> > > tokenRecoProtons_;
-
-  //
-  edm::EDGetTokenT<bool> BadChCandFilterToken_,BadPFMuonFilterToken_;
-
-  //  edm::EDGetTokenT<edm::ValueMap<float> > petersonFragToken_;
+  edm::EDGetTokenT<bool> BadChCandFilterToken_,BadPFMuonFilterToken_,BadPFMuonDzFilterToken_;
 
   std::unordered_map<std::string,TH1*> histContainer_;
 
@@ -235,6 +231,7 @@ MiniAnalyzer::MiniAnalyzer(const edm::ParameterSet& iConfig) :
   ctppsToken_(consumes<std::vector<CTPPSLocalTrackLite> >(iConfig.getParameter<edm::InputTag>("ctppsLocalTracks"))),
   BadChCandFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badChCandFilter"))),
   BadPFMuonFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badPFMuonFilter"))),
+  BadPFMuonDzFilterToken_(consumes<bool>(iConfig.getParameter<edm::InputTag>("badPFMuonDzFilter"))),
   saveTree_( iConfig.getParameter<bool>("saveTree") ),
   runNumber_( iConfig.getUntrackedParameter<int>("runNumber") ),
   applyFilt_( iConfig.getParameter<bool>("applyFilt") )
@@ -1248,7 +1245,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
         }
 
 
-      auto corrP4  = j->p4() * jerSF[0];
+      auto corrP4  = j->p4() * jerSF[0]; 
 
       //jet id cf. for AK4CHS jets
       //2017 https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL#Preliminary_Recommendations_for
@@ -1302,7 +1299,8 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
         jecCorrectionUncs_[iunc]->setJetEta(j->eta());
         ev_.j_jecDn[iunc][ev_.nj]=1.+jecCorrectionUncs_[iunc]->getUncertainty(false);
       }
-      ev_.j_rawsf[ev_.nj]   = j->correctedJet("Uncorrected").pt()/j->pt();
+      ev_.j_rawsf[ev_.nj]   = 1.0/jerSF[0];//j->pt()/corrP4.pt();
+      //ev_.j_rawsf[ev_.nj]   = j->correctedJet("Uncorrected").pt()/j->pt();
       ev_.j_pt[ev_.nj]      = corrP4.pt();
       ev_.j_mass[ev_.nj]    = corrP4.mass();
       ev_.j_eta[ev_.nj]     = corrP4.eta();
@@ -1382,9 +1380,21 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   // MET
   edm::Handle<pat::METCollection> mets;
   iEvent.getByToken(metToken_, mets);
-  ev_.met_pt  = mets->at(0).pt();
-  ev_.met_phi = mets->at(0).phi();
+  //ev_.met_pt  = mets->at(0).pt();
+  //ev_.met_phi = mets->at(0).phi();
   ev_.met_sig = mets->at(0).significance();
+  
+  // Propogate JEC/JER corrections to MET:
+  double px=mets->at(0).px(), py=mets->at(0).py();
+  for (int i=0;i<ev_.nj;i++){
+	  px+=ev_.j_pt[i]*cos(ev_.j_phi[i])*(1-ev_.j_rawsf[i]);
+	  py+=ev_.j_pt[i]*sin(ev_.j_phi[i])*(1-ev_.j_rawsf[i]);
+  }
+  ROOT::Math::PxPyPzM4D met(px,py,mets->at(0).pz(),0.0);
+  ev_.met_pt  = met.Pt();
+  ev_.met_phi = met.Phi();
+
+
   for(size_t i=0; i<ev_.MAXMETSYS; i++){
     ev_.met_ptShifted[i]  = mets->at(0).shiftedPt(pat::MET::METUncertainty(i));
     ev_.met_phiShifted[i] = mets->at(0).shiftedPhi(pat::MET::METUncertainty(i));
@@ -1395,7 +1405,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   ev_.e_met_py  = mets->at(0).getSignificanceMatrix()[1][1];
   ev_.e_met_pxpy= mets->at(0).getSignificanceMatrix()[0][1];
   
-  //MET filter bits
+  //MET filter bits https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2
   ev_.met_filterBits=0;
   edm::Handle<edm::TriggerResults> h_metFilters;
   iEvent.getByToken(metFilterBits_, h_metFilters);
@@ -1411,24 +1421,36 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 	  ev_.met_filterBits |= (1<<itrig);
 	}
     }
-
-  try{
-    edm::Handle<bool> ifilterbadChCand;
-    iEvent.getByToken(BadChCandFilterToken_, ifilterbadChCand);
-    bool  filterbadChCandidate = *ifilterbadChCand;
-    ev_.met_filterBits |= (filterbadChCandidate<<metFiltersToUse_.size());
-  }
-  catch(...){
-  }
-
+  
+  // Bad Charged Hadron and Bad Muon Filters cannot be accessed directly:
+  // https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookMiniAOD2016#ETmiss_filters
   try{
     edm::Handle<bool> ifilterbadPFMuon;
     iEvent.getByToken(BadPFMuonFilterToken_, ifilterbadPFMuon);
     bool filterbadPFMuon = *ifilterbadPFMuon;
-    ev_.met_filterBits |= (filterbadPFMuon<<(metFiltersToUse_.size()+1));
+    ev_.met_filterBits |= (filterbadPFMuon<<(metFiltersToUse_.size()));
   }
   catch(...){
   }
+
+  try{
+    edm::Handle<bool> ifilterbadPFMuonDz;
+    iEvent.getByToken(BadPFMuonDzFilterToken_, ifilterbadPFMuonDz);
+    bool filterbadPFMuonDz = *ifilterbadPFMuonDz;
+    ev_.met_filterBits |= (filterbadPFMuonDz<<(metFiltersToUse_.size()+1));
+  }
+  catch(...){
+  }
+  
+  //try{
+  //  edm::Handle<bool> ifilterbadChCand;
+  //  iEvent.getByToken(BadChCandFilterToken_, ifilterbadChCand);
+  //  bool  filterbadChCandidate = *ifilterbadChCand;
+  //  ev_.met_filterBits |= (filterbadChCandidate<<metFiltersToUse_.size()+2);
+  //}
+  //catch(...){
+  //}	
+  
 
   //PF candidates
   LorentzVector vtxPt[8]; 

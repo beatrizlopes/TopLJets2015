@@ -419,7 +419,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   }
   }
   
-  //t->SetBranchAddress("j_rawsf",    ev.j_rawsf);
+  t->SetBranchAddress("j_rawsf",    ev.j_rawsf);
   t->SetBranchAddress("j_pt",       ev.j_pt);
   t->SetBranchAddress("j_eta",      ev.j_eta);
   t->SetBranchAddress("j_phi",      ev.j_phi);

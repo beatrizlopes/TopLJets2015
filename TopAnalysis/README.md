@@ -9,16 +9,16 @@ marked with the `##OPTIONAL/##END OPTIONAL` markers.
 If compilation fails for some reason repeat the scram b...
 
 ```
-cmsrel CMSSW_10_6_16
-cd CMSSW_10_6_16/src
+cmsrel CMSSW_10_6_20
+cd CMSSW_10_6_20/src
 cmsenv
 
 #EGM id https://twiki.cern.ch/twiki/bin/view/CMS/EgammaUL2016To2018#Recipe_for_running_Scales_and_sm
 git cms-init
-git cms-merge-topic jainshilpi:ULV1_backport10616_forUsers
-git clone https://github.com/jainshilpi/EgammaPostRecoTools.git -b ULV0 
+git cms-addpkg RecoEgamma/EgammaTools
+git clone https://github.com/cms-egamma/EgammaPostRecoTools.git
 mv EgammaPostRecoTools/python/EgammaPostRecoTools.py RecoEgamma/EgammaTools/python/.
-git clone https://github.com/jainshilpi/EgammaAnalysis-ElectronTools.git -b UL2017SSV2 EgammaAnalysis/ElectronTools/data/
+git clone -b ULSSfiles_correctScaleSysMC https://github.com/jainshilpi/EgammaAnalysis-ElectronTools.git EgammaAnalysis/ElectronTools/data/
 git cms-addpkg EgammaAnalysis/ElectronTools
 scram b -j 8
 
@@ -29,13 +29,14 @@ git clone -b 94x https://gitlab.cern.ch/psilva/BFragmentationAnalyzer.git
 scram b -j 8
 cd -
 
-#Statistical analysis
+#Statistical analysis http://cms-analysis.github.io/HiggsAnalysis-CombinedLimit
 git clone https://github.com/cms-analysis/CombineHarvester.git CombineHarvester
 git clone https://github.com/cms-analysis/HiggsAnalysis-CombinedLimit.git HiggsAnalysis/CombinedLimit
 cd HiggsAnalysis/CombinedLimit
 git fetch origin
-git checkout v8.1.0
-scramv1 b clean; scramv1 b # always make a clean build
+git checkout v8.2.0
+scramv1 b clean # always make a clean build
+scramv1 b 
 
 #This package
 cd $CMSSW_BASE/src

@@ -397,9 +397,6 @@ void RunExclusiveTop(TString filename,
     //BTagSFUtil btvSF(era,"DeepCSV",BTagEntry::OperatingPoint::OP_MEDIUM,"",0);
     BTagSFUtil btvSF(era,BTagEntry::OperatingPoint::OP_MEDIUM,"",seed);
 	
-    //JEC/JER
-    JECTools jec(era);
-	
     // Proton correction class
     PPSEff *PPS_reco = new PPSEff(Form("%s/src/TopLJets2015/TopAnalysis/data/era2017/reco_charactersitics_version1.root", CMSSW_BASE));
 
@@ -732,7 +729,6 @@ void RunExclusiveTop(TString filename,
         btvSF.addBTagDecisions(ev);
         if(!isData) btvSF.updateBTagDecisions(ev, optionhf, optionlf); 
         //btvSF.updateBTagDecisions(ev); // check it !!!
-        jec.smearJetEnergies(ev);
         
         //////////////////////////
         // RECO LEVEL SELECTION //
