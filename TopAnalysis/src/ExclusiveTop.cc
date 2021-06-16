@@ -713,15 +713,18 @@ void RunExclusiveTop(TString filename,
 		////////////////////
 		// EVENT cleaning //
 		// https://twiki.cern.ch/twiki/bin/viewauth/CMS/MissingETOptionalFiltersRun2#2018_2017_data_and_MC_UL
+		// list of met_filterBits defined in:
+		// cat ${CMSSW_BASE}/src/TopLJets2015/TopAnalysis/python/miniAnalyzer_cfi.py
 		////////////////////
 		//bool passMETfilters = selector.passMETFilters(ev);
-		bool passMETfilters = ( ((ev.met_filterBits >> 3) & 0x1) && //Flag_goodVertices
-		                ((ev.met_filterBits >> 5) & 0x1) && //Flag_globalSuperTightHalo2016Filter
-			            ((ev.met_filterBits >> 0) & 0x1) && //Flag_HBHENoiseFilter
-                        ((ev.met_filterBits >> 1) & 0x1) && //Flag_HBHENoiseIsoFilter
-                        ((ev.met_filterBits >> 2) & 0x1) && //Flag_EcalDeadCellTriggerPrimitiveFilter
-                        ((ev.met_filterBits >> 4) & 0x1) ); //Flag_eeBadScFilter          
-                        //missing "Flag_ecalBadCalibFilter" && "BadPFMuonFilter" && "Flag_BadPFMuonDzFilter" (we don't have these) 
+		bool passMETfilters = ( ((ev.met_filterBits >> 0) & 0x1) && //Flag_goodVertices
+		                ((ev.met_filterBits >> 1) & 0x1) && //Flag_globalSuperTightHalo2016Filter
+			            ((ev.met_filterBits >> 2) & 0x1) && //Flag_HBHENoiseFilter
+                        ((ev.met_filterBits >> 3) & 0x1) && //Flag_HBHENoiseIsoFilter
+                        ((ev.met_filterBits >> 4) & 0x1) && //Flag_EcalDeadCellTriggerPrimitiveFilter
+                        ((ev.met_filterBits >> 5) & 0x1) && //Flag_eeBadScFilter
+                        ((ev.met_filterBits >> 6) & 0x1) ); //Flag_ecalBadCalibFilter          
+                        //missing "BadPFMuonFilter" && "Flag_BadPFMuonDzFilter" (we don't have these) 
 												
         //////////////////
         // CORRECTIONS //

@@ -1246,6 +1246,9 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
 
 
       auto corrP4  = j->p4() * jerSF[0]; 
+	  
+	  // Skip jets with corrected PT < 10 GeV
+      if(corrP4.pt()<10 ) continue;
 
       //jet id cf. for AK4CHS jets
       //2017 https://twiki.cern.ch/twiki/bin/view/CMS/JetID13TeVUL#Preliminary_Recommendations_for
@@ -1380,19 +1383,19 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   // MET
   edm::Handle<pat::METCollection> mets;
   iEvent.getByToken(metToken_, mets);
-  //ev_.met_pt  = mets->at(0).pt();
-  //ev_.met_phi = mets->at(0).phi();
+  ev_.met_pt  = mets->at(0).pt();
+  ev_.met_phi = mets->at(0).phi();
   ev_.met_sig = mets->at(0).significance();
   
-  // Propogate JEC/JER corrections to MET:
-  double px=mets->at(0).px(), py=mets->at(0).py();
-  for (int i=0;i<ev_.nj;i++){
-	  px+=ev_.j_pt[i]*cos(ev_.j_phi[i])*(1-ev_.j_rawsf[i]);
-	  py+=ev_.j_pt[i]*sin(ev_.j_phi[i])*(1-ev_.j_rawsf[i]);
-  }
-  ROOT::Math::PxPyPzM4D met(px,py,mets->at(0).pz(),0.0);
-  ev_.met_pt  = met.Pt();
-  ev_.met_phi = met.Phi();
+  // Propogate JEC/JER corrections to MET: DONE AT THE ANALYSIS LEVEL
+  //double px=mets->at(0).px(), py=mets->at(0).py();
+  //for (int i=0;i<ev_.nj;i++){
+//	  px+=ev_.j_pt[i]*cos(ev_.j_phi[i])*(1-ev_.j_rawsf[i]);
+//	  py+=ev_.j_pt[i]*sin(ev_.j_phi[i])*(1-ev_.j_rawsf[i]);
+  //}
+  //ROOT::Math::PxPyPzM4D met(px,py,mets->at(0).pz(),0.0);
+  //ev_.met_pt  = met.Pt();
+  //ev_.met_phi = met.Phi();
 
 
   for(size_t i=0; i<ev_.MAXMETSYS; i++){
