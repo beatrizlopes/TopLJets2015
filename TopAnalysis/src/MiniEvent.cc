@@ -188,6 +188,7 @@ void createMiniEventTree(TTree *t,MiniEvent_t &ev,Int_t njecUncs, std::vector<st
   //pf sums
   for(size_t v=0; v<ListVars.size(); v++) if (ListVars[v].find("pflow")!=std::string::npos){
   t->Branch("nchPV",        &ev.nchPV,        "nchPV/I");
+  t->Branch("zPV",          &ev.zPV,          "zPV/F");
   t->Branch("zPV2",         &ev.zPV2,         "zPV2/F");
   t->Branch("sumPVChPt",    &ev.sumPVChPt,    "sumPVChPt/F");
   t->Branch("sumPVChPz",    &ev.sumPVChPz,    "sumPVChPz/F");
@@ -462,6 +463,7 @@ void attachToMiniEventTree(TTree *t,MiniEvent_t &ev)
   //PF Sums
   if(t->FindBranch("nchPV")){
   t->SetBranchAddress("nchPV",        &ev.nchPV);
+  t->SetBranchAddress("zPV",          &ev.zPV);
   t->SetBranchAddress("zPV2",         &ev.zPV2);
   t->SetBranchAddress("sumPVChPt",    &ev.sumPVChPt);
   t->SetBranchAddress("sumPVChPz",    &ev.sumPVChPz);

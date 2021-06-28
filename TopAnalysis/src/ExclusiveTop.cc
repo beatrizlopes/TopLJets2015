@@ -779,8 +779,24 @@ void RunExclusiveTop(TString filename,
 		// met selection:
 		met_pt=ev.met_pt;
 		met_phi=ev.met_phi;
+		
+		// propogate JER to MET:
+		TLorentzVector tmp_met(0,0,0,0);
+		tmp_met.SetPtEtaPhiM(met_pt,0.,met_phi,0.);
+		float newx=tmp_met.Px(), newy=tmp_met.Py();
+		for(size_t ij=0; ij<allJets.size(); ij++) {
+			int idx=allJets[ij].getJetIndex();
+			int jid=ev.j_id[idx];
+			bool passLoosePu((jid>>2)&0x1);    
+			if(!passLoosePu) {continue;}
+			newx+=allJets[ij].Px()*(1-ev.j_rawsf[idx]);
+			newy+=allJets[ij].Py()*(1-ev.j_rawsf[idx]);
+		}
+		tmp_met.SetPxPyPzE(newx,newy,0,sqrt(newx*newx+newy*newy));
+		met_pt=tmp_met.Pt();
+		met_phi=tmp_met.Phi();
+			
 		if(sys){ // if apply JEC/JER variation, propogate the difference to MET
-		    TLorentzVector tmp_met(0,0,0,0);
             tmp_met.SetPtEtaPhiM(met_pt,0.,met_phi,0.);
 			float dx = 0, dy =0;
 			for(size_t ij=0; ij<nominalJets.size(); ij++) {

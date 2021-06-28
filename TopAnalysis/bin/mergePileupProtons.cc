@@ -94,7 +94,7 @@ kipped." << endl;
    // ---------------------------------------------------------------------------------------------------------------------------------- //
    // NEW code, create pools from the data files, calculate relative cross-sections and nvtx distributions (era,xangle)
    // Read data, prerare PU trees:
-   float era_lumi[] = {2.367138592,8.680676647,4.142765586,1.447798525,13.247272608};
+   float era_lumi[] = {2.360910165,8.577154400,4.074834625,1.440661783,13.219864250};
    TString era[] = {"2017B","2017C","2017D","2017E","2017F"}; int n_era = (sizeof(era)/sizeof(TString));
    int xangle[] = {120, 130, 140, 150}; int n_xa = (sizeof(xangle)/sizeof(int));
    
@@ -102,6 +102,7 @@ kipped." << endl;
    
    // Extra normalization factor used for signal since we have dedicated signal samples per era/xangle
    float signal_fraction_regions[n_PUregionsMAX], extra_signal_normalization=0;
+   float sig_total_event_per_era[n_PUregionsMAX];
    if(isSignal){
 	   
 	  //Get extra normalization
@@ -112,10 +113,10 @@ kipped." << endl;
 		    // calculate fraction of Xangle at preselection fpr ALL REGIONS:
 		    TChain * _ch2 = new TChain("tree"); _ch2->Add(name_el); _ch2->Add(name_mu);
 		    signal_fraction_regions[i_era*n_xa+i_xa] = _ch2->GetEntries(Form("beamXangle==%d",xangle[i_xa]));
+			sig_total_event_per_era[i_era*n_xa+i_xa]=_ch2->GetEntries();
 	      }
 	    // normalize properly per selected crossing-angle (sometimes data contains unselected values lke 141,142...)
-	    float total_event_per_era = 0; for(int ii=0;ii<n_xa;ii++) total_event_per_era+=signal_fraction_regions[i_era*n_xa+ii];
-	    for(int ii=0;ii<n_xa;ii++) signal_fraction_regions[i_era*n_xa+ii] *= (era_lumi[i_era]/29.885651958)/total_event_per_era;
+	    for(int ii=0;ii<n_xa;ii++) signal_fraction_regions[i_era*n_xa+ii] *= (era_lumi[i_era]/29.673425)/sig_total_event_per_era[i_era*n_xa+ii];
       }
 
 	  // reduce the number of regions in case if the sample is a simulated signal
@@ -158,6 +159,7 @@ kipped." << endl;
    float total_lumi=0;
    for(int i_era=0;i_era<n_era;i_era++) total_lumi+=era_lumi[i_era];
    
+   float total_event_per_era[n_PUregions];
    float norm_weight[n_PUregions], norm_weight_err[n_PUregions], fraction_regions[n_PUregions]; int counter_regions[n_PUregions];
    float norm_weight_0p[n_PUregions], norm_weight_0p_err[n_PUregions]; // for signal events
    float norm_weight_1pRP0[n_PUregions], norm_weight_1pRP0_err[n_PUregions]; // for signal events
@@ -191,7 +193,7 @@ kipped." << endl;
 		
 	   // events with exactly 0 pu tracks
 	   int n_p0 = n - n_p1_RP0 - n_p1_RP1 - n_p2; 
-
+	   
 	   for(int i_xa=0;i_xa<n_xa;i_xa++){ // create proton pools
 		   TChain * _ch = new TChain("protons");
 		   _ch->Add(name_el);
@@ -205,7 +207,8 @@ kipped." << endl;
 		   // calculate fraction of Xangle at preselection:
 		   TChain * _ch2 = new TChain("tree"); _ch2->Add(name_el); _ch2->Add(name_mu);
 		   fraction_regions[i_era*n_xa+i_xa] = _ch2->GetEntries(Form("beamXangle==%d",xangle[i_xa]));
-	       norm_weight[i_era*n_xa+i_xa] = n_p2/float(n); // probability of 2 tracks
+		   total_event_per_era[i_era*n_xa+i_xa] = isSignal ? fraction_regions[i_era*n_xa+i_xa] : _ch2->GetEntries();
+		   norm_weight[i_era*n_xa+i_xa] = n_p2/float(n); // probability of 2 tracks
 	       norm_weight_err[i_era*n_xa+i_xa] = (n_p2_sys/float(n_sys)) / norm_weight[i_era*n_xa+i_xa];
 		   		   
 		   // probabilities for 1 track in signal events
@@ -220,13 +223,12 @@ kipped." << endl;
 	       norm_weight_0p_err[i_era*n_xa+i_xa] = 0.95; // 5% flat
 		   
 	   }
-	    // normalize properly per selected crossing-angle (sometimes data contains unselected values like 100,110,...)
-	   float total_event_per_era = 0; for(int ii=0;ii<n_xa;ii++) total_event_per_era+=fraction_regions[i_era*n_xa+ii];
-	   for(int ii=0;ii<n_xa;ii++) fraction_regions[i_era*n_xa+ii] *= (era_lumi[i_era]/total_lumi)/total_event_per_era;
+	   // normalize properly per selected crossing-angle (sometimes data contains unselected values like 100,110,...)
+	   for(int ii=0;ii<n_xa;ii++) fraction_regions[i_era*n_xa+ii] *= (era_lumi[i_era]/total_lumi)/total_event_per_era[i_era*n_xa+ii];
    }
    
    // List obtained fractions:
-   cout << "INFO List obtained fractions for all "<<n_PUregions<<" SRs, (for 120,130,140,150), including statistics:"<<endl;
+   cout << "\nINFO List obtained fractions for all "<<n_PUregions<<" SRs, (for 120,130,140,150), including statistics:"<<endl;
    for(int i_era=0;i_era<n_era;i_era++){
 	   cout << "era " << era[i_era]<<": ";
 	   for(int ii=0;ii<n_xa-1;ii++) cout << fraction_regions[i_era*n_xa+ii]<<" ("<<counter_regions[i_era*n_xa+ii]<<"),";

@@ -623,6 +623,7 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
   const reco::Vertex &primVtx = vertices->front();
   reco::VertexRef primVtxRef(vertices,0);
   ev_.nvtx=vertices->size();
+  ev_.zPV = (ev_.nvtx>0) ? primVtx.z() : 999;
   ev_.zPV2 = (ev_.nvtx>1) ? fabs(primVtx.z() - vertices->at(1).z()): -1;
   unsigned int _second_vertex_index = 1;
   for (size_t ipv = 2; ipv < vertices->size(); ++ipv) {

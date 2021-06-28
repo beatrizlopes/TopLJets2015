@@ -86,7 +86,7 @@ struct MiniEvent_t
   Int_t met_filterBits;
 
   //event energy fluxes (PF-based)
-  Int_t nchPV, nchPV_v[8]; Float_t zPV2;
+  Int_t nchPV, nchPV_v[8]; Float_t zPV, zPV2;
   Float_t sumPVChPt,sumPVChPz,sumPVChHt;
   Float_t sumPVChPt_v[8],sumPVChPz_v[8],sumPVChHt_v[8];
   Int_t nPFCands[8],nPFChCands[8];
