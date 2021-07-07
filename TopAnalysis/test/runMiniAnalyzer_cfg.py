@@ -298,6 +298,12 @@ except:
       
 if options.runOnAOD:
   print 'I don\'t know how to run on AODs!!!!!' 
+
+if 'era2017' in options.era and options.runOnData:
+      print 'running BadMuon filters, not needed with miniAODv2'
+      process.addmetfilters_seq = cms.Sequence(process.BadPFMuonFilter * process.BadPFMuonFilterUpdateDz)
+      process.addmetfilters = cms.Path(process.addmetfilters_seq)
+      toSchedule.append(process.addmetfilters)
       
 if process.updatedPatJetsUpdatedJECBTag:
       process.custom_jec_seq=cms.Sequence(process.QGTagger * process.patJetCorrFactorsUpdatedJECBTag * process.updatedPatJetsUpdatedJECBTag)

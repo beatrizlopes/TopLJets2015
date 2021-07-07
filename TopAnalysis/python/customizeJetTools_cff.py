@@ -69,4 +69,20 @@ def customizeJetTools(process,jecDB,jecTag,jerDB,jerTag,baseJetCollection,runOnD
 		jetSource = cms.InputTag(baseJetCollection),
 		jetCorrections = (payload, cms.vstring(jecLevels), 'None')
 		)
+    
+	#add MET Muon filters
+	#https://twiki.cern.ch/twiki/bin/view/CMS/MissingETOptionalFiltersRun2#How_to_run_the_Bad_Charged_Hadro
+	process.load('RecoMET.METFilters.BadPFMuonFilter_cfi')
+	process.BadPFMuonFilter.muons = cms.InputTag("slimmedMuons")
+	process.BadPFMuonFilter.vtx = cms.InputTag("offlineSlimmedPrimaryVertices")
+	process.BadPFMuonFilter.PFCandidates = cms.InputTag("packedPFCandidates")
+
+	from RecoMET.METFilters.BadPFMuonDzFilter_cfi import BadPFMuonDzFilter
+	process.BadPFMuonFilterUpdateDz=BadPFMuonDzFilter.clone(
+	  muons = cms.InputTag("slimmedMuons"),
+	  vtx   = cms.InputTag("offlineSlimmedPrimaryVertices"),
+	  PFCandidates = cms.InputTag("packedPFCandidates"),
+	  minDzBestTrack = cms.double(0.5),
+	  taggingMode    = cms.bool(True)
+	)
 

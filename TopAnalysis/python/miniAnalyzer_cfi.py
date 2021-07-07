@@ -260,7 +260,7 @@ analysis = cms.EDAnalyzer("MiniAnalyzer",
                                                                'Flag_EcalDeadCellTriggerPrimitiveFilter',
                                                                'Flag_eeBadScFilter',
                                                                'Flag_ecalBadCalibFilter', 
-                                                               'Flag_BadPFMuonFilter'
+                                                               'Flag_BadPFMuonFilter',
                                                                'Flag_BadPFMuonDzFilter'
                                                    ),
                           badChCandFilter        = cms.InputTag('BadChargedCandidateFilter'),

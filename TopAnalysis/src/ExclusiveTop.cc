@@ -723,8 +723,9 @@ void RunExclusiveTop(TString filename,
                         ((ev.met_filterBits >> 3) & 0x1) && //Flag_HBHENoiseIsoFilter
                         ((ev.met_filterBits >> 4) & 0x1) && //Flag_EcalDeadCellTriggerPrimitiveFilter
                         ((ev.met_filterBits >> 5) & 0x1) && //Flag_eeBadScFilter
-                        ((ev.met_filterBits >> 6) & 0x1) ); //Flag_ecalBadCalibFilter          
-                        //missing "BadPFMuonFilter" && "Flag_BadPFMuonDzFilter" (we don't have these) 
+                        ((ev.met_filterBits >> 6) & 0x1) && //Flag_ecalBadCalibFilter          
+                        ((ev.met_filterBits >> 7) & 0x1) && //Flag_BadPFMuonFilter          
+                        ((ev.met_filterBits >> 8) & 0x1) ); //Flag_BadPFMuonDzFilter          
 												
         //////////////////
         // CORRECTIONS //
