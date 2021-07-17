@@ -1421,27 +1421,30 @@ void MiniAnalyzer::recAnalysis(const edm::Event& iEvent, const edm::EventSetup& 
       if( !(*h_metFilters)[i].accept() ) continue;
       for(size_t itrig=0; itrig<metFiltersToUse_.size(); itrig++)
 	{
+	  //cout << metFiltersToUse_[itrig] << " pass =  " << !(metFilterNames[i].find(metFiltersToUse_[itrig])==string::npos) << endl;
 	  if (metFilterNames[i].find(metFiltersToUse_[itrig])==string::npos) continue;
 	  ev_.met_filterBits |= (1<<itrig);
+	  //cout << metFiltersToUse_[itrig] << " pass! " << endl;
 	}
     }
   
   // Bad Charged Hadron and Bad Muon Filters cannot be accessed directly:
   // https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookMiniAOD2016#ETmiss_filters
-  try{
-    edm::Handle<bool> ifilterbadPFMuon;
-    iEvent.getByToken(BadPFMuonFilterToken_, ifilterbadPFMuon);
-    bool filterbadPFMuon = *ifilterbadPFMuon;
-    ev_.met_filterBits |= (filterbadPFMuon<<(metFiltersToUse_.size()));
-  }
-  catch(...){
-  }
+  //try{
+  //  edm::Handle<bool> ifilterbadPFMuon;
+  //  iEvent.getByToken(BadPFMuonFilterToken_, ifilterbadPFMuon);
+  //  bool filterbadPFMuon = *ifilterbadPFMuon;
+  //	cout << "Check muon, answer = " << filterbadPFMuon << endl;
+  //  ev_.met_filterBits |= (filterbadPFMuon<<(metFiltersToUse_.size()));
+  //}
+  //catch(...){
+  //}
 
   try{
     edm::Handle<bool> ifilterbadPFMuonDz;
     iEvent.getByToken(BadPFMuonDzFilterToken_, ifilterbadPFMuonDz);
     bool filterbadPFMuonDz = *ifilterbadPFMuonDz;
-    ev_.met_filterBits |= (filterbadPFMuonDz<<(metFiltersToUse_.size()+1));
+    ev_.met_filterBits |= (filterbadPFMuonDz<<(metFiltersToUse_.size()));
   }
   catch(...){
   }

@@ -261,11 +261,11 @@ analysis = cms.EDAnalyzer("MiniAnalyzer",
                                                                'Flag_eeBadScFilter',
                                                                'Flag_ecalBadCalibFilter', 
                                                                'Flag_BadPFMuonFilter',
-                                                               'Flag_BadPFMuonDzFilter'
+                                                               #'Flag_BadPFMuonDzFilter'
                                                    ),
                           badChCandFilter        = cms.InputTag('BadChargedCandidateFilter'),
                           badPFMuonFilter        = cms.InputTag('BadPFMuonFilter'),
-                          badPFMuonDzFilter      = cms.InputTag('BadPFMuonDzFilter'),
+                          badPFMuonDzFilter      = cms.InputTag('BadPFMuonFilterUpdateDz'),
                           PUprotons              = cms.InputTag(''),
                           mets                   = cms.InputTag('slimmedMETs'),                          
                           pfCands                = cms.InputTag('packedPFCandidates'),
