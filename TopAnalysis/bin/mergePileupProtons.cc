@@ -109,9 +109,14 @@ kipped." << endl;
       for(int i_era=0;i_era<n_era;i_era++){
 	    TString name_el = Form("%s/SingleElectron_%s.root",inPUFileName.c_str(),era[i_era].Data());
 	    TString name_mu = Form("%s/SingleMuon_%s.root",inPUFileName.c_str(),era[i_era].Data());
+	    //TString name_elmu = Form("%s/MuonEG_%s.root",inPUFileName.c_str(),era[i_era].Data());
+      //TString name_mumu = Form("%s/DoubleMuon_%s.root",inPUFileName.c_str(),era[i_era].Data());
+      //TString name_elel = Form("%s/DoubleEG_%s.root",inPUFileName.c_str(),era[i_era].Data());
+
 	      for(int i_xa=0;i_xa<n_xa;i_xa++){ // create proton pools
 		    // calculate fraction of Xangle at preselection fpr ALL REGIONS:
 		    TChain * _ch2 = new TChain("tree"); _ch2->Add(name_el); _ch2->Add(name_mu);
+		    //_ch2->Add(name_elmu); _ch2->Add(name_mumu);_ch2->Add(name_elel);
 		    signal_fraction_regions[i_era*n_xa+i_xa] = _ch2->GetEntries(Form("beamXangle==%d",xangle[i_xa]));
 			sig_total_event_per_era[i_era*n_xa+i_xa]=_ch2->GetEntries();
 	      }
@@ -168,29 +173,59 @@ kipped." << endl;
 	   printf ("\rProcessing %s ", era[i_era].Data());
 	   TString name_el = Form("%s/SingleElectron_%s.root",inPUFileName.c_str(),era[i_era].Data());
 	   TString name_mu = Form("%s/SingleMuon_%s.root",inPUFileName.c_str(),era[i_era].Data());
-	   
+	   //TString name_elmu = Form("%s/MuonEG_%s.root",inPUFileName.c_str(),era[i_era].Data());
+     //TString name_mumu = Form("%s/DoubleMuon_%s.root",inPUFileName.c_str(),era[i_era].Data());
+     //TString name_elel = Form("%s/DoubleEG_%s.root",inPUFileName.c_str(),era[i_era].Data());
+
 	   // Read 2 proton hits and total number of events
 	   int n_p2_e = int(((TH1F*)TFile::Open(name_el)->Get("evt_count"))->GetBinContent(4));
 	   int n_p2_m = int(((TH1F*)TFile::Open(name_mu)->Get("evt_count"))->GetBinContent(4));
+	   //int n_p2_em = int(((TH1F*)TFile::Open(name_elmu)->Get("evt_count"))->GetBinContent(4));
+     //int n_p2_mm = int(((TH1F*)TFile::Open(name_mumu)->Get("evt_count"))->GetBinContent(4));
+     //int n_p2_ee = int(((TH1F*)TFile::Open(name_elel)->Get("evt_count"))->GetBinContent(4));
+
 	   int n_e = int(((TH1F*)TFile::Open(name_el)->Get("evt_count"))->GetBinContent(3));
 	   int n_m = int(((TH1F*)TFile::Open(name_mu)->Get("evt_count"))->GetBinContent(3));
-	   int n_p2 = (n_p2_e+n_p2_m), n = (n_e+n_m);
-	   
+	   //int n_em = int(((TH1F*)TFile::Open(name_elmu)->Get("evt_count"))->GetBinContent(3));
+     //int n_mm = int(((TH1F*)TFile::Open(name_mumu)->Get("evt_count"))->GetBinContent(3));
+     //int n_ee = int(((TH1F*)TFile::Open(name_elel)->Get("evt_count"))->GetBinContent(3));
+
+	   //int n_p2 = (n_p2_e+n_p2_m+n_p2_em+n_p2_mm+n_p2_ee), n = (n_e+n_m+n_em+n_mm+n_ee);
+		 int n_p2 = (n_p2_e+n_p2_m), n = (n_e+n_m);
+
 	   // Get systematics for n_proton==2 event fraction from sub-selection of nBjet>0 events:
 	   int n_e_sys = int(((TH1F*)TFile::Open(name_el)->Get("pn_count"))->GetBinContent(5));
 	   int n_m_sys = int(((TH1F*)TFile::Open(name_mu)->Get("pn_count"))->GetBinContent(5));
+	   //int n_em_sys = int(((TH1F*)TFile::Open(name_elmu)->Get("pn_count"))->GetBinContent(5));
+     //int n_mm_sys = int(((TH1F*)TFile::Open(name_mumu)->Get("pn_count"))->GetBinContent(5));
+     //int n_ee_sys = int(((TH1F*)TFile::Open(name_elel)->Get("pn_count"))->GetBinContent(5));
+	   
 	   TChain * _ch_protons = new TChain("protons");
 	   _ch_protons->Add(name_el);
 	   _ch_protons->Add(name_mu);
-	   int n_sys = (n_e_sys+n_m_sys), n_p2_sys = _ch_protons->GetEntries("nBjets>0");
+	   //_ch_protons->Add(name_elmu);
+     //_ch_protons->Add(name_mumu);
+     //_ch_protons->Add(name_elel);
 	   
+	   //int n_sys = (n_e_sys+n_m_sys+n_em_sys+n_mm_sys+n_ee_sys), n_p2_sys = _ch_protons->GetEntries("nBjets>0");
+	   int n_sys = (n_e_sys+n_m_sys), n_p2_sys = _ch_protons->GetEntries("nBjets>0");
+
 	   // Get 1 proton hits (depend on the arm)
 	   int n_p1_eRP0 = int(((TH1F*)TFile::Open(name_el)->Get("pn_count"))->GetBinContent(2));
 	   int n_p1_mRP0 = int(((TH1F*)TFile::Open(name_mu)->Get("pn_count"))->GetBinContent(2));
+	   //int n_p1_emRP0 = int(((TH1F*)TFile::Open(name_elmu)->Get("pn_count"))->GetBinContent(2));
+     //int n_p1_mmRP0 = int(((TH1F*)TFile::Open(name_mumu)->Get("pn_count"))->GetBinContent(2));
+     //int n_p1_eeRP0 = int(((TH1F*)TFile::Open(name_elel)->Get("pn_count"))->GetBinContent(2));
+	   
 	   int n_p1_eRP1 = int(((TH1F*)TFile::Open(name_el)->Get("pn_count"))->GetBinContent(3));
 	   int n_p1_mRP1 = int(((TH1F*)TFile::Open(name_mu)->Get("pn_count"))->GetBinContent(3));
-	   int n_p1_RP0 = (n_p1_eRP0+n_p1_mRP0), n_p1_RP1 = (n_p1_eRP1+n_p1_mRP1);
-		
+	   //int n_p1_emRP1 = int(((TH1F*)TFile::Open(name_elmu)->Get("pn_count"))->GetBinContent(3));
+     //int n_p1_mmRP1 = int(((TH1F*)TFile::Open(name_mumu)->Get("pn_count"))->GetBinContent(3));
+     //int n_p1_eeRP1 = int(((TH1F*)TFile::Open(name_elel)->Get("pn_count"))->GetBinContent(3));
+
+     //int n_p1_RP0 = (n_p1_eRP0+n_p1_mRP0+n_p1_emRP0+n_p1_mmRP0+n_p1_eeRP0), n_p1_RP1 = (n_p1_eRP1+n_p1_mRP1+n_p1_emRP1+n_p1_mmRP1+n_p1_eeRP1);
+		 int n_p1_RP0 = (n_p1_eRP0+n_p1_mRP0), n_p1_RP1 = (n_p1_eRP1+n_p1_mRP1);
+
 	   // events with exactly 0 pu tracks
 	   int n_p0 = n - n_p1_RP0 - n_p1_RP1 - n_p2; 
 	   
@@ -198,7 +233,11 @@ kipped." << endl;
 		   TChain * _ch = new TChain("protons");
 		   _ch->Add(name_el);
 		   _ch->Add(name_mu);
-  		   _puweights->cd();
+		   //_ch->Add(name_elmu);
+		   //_ch->Add(name_mumu);
+		   //_ch->Add(name_elel);
+
+  		 _puweights->cd();
 		   PUpr[i_era*n_xa+i_xa] = (_ch->CopyTree(Form("beamXangle==%d",xangle[i_xa])))->CloneTree();
 		   pu_weights[i_era*n_xa+i_xa] = new TH1F(Form("data_puw_%d",i_era*n_xa+i_xa),";nvtx;w",100,0,100);
 		   PUpr[i_era*n_xa+i_xa]->Draw(Form("nvtx>>data_puw_%d",i_era*n_xa+i_xa));
@@ -206,6 +245,7 @@ kipped." << endl;
 		   pu_weights[i_era*n_xa+i_xa]->Scale(1/float(counter_regions[i_era*n_xa+i_xa]));
 		   // calculate fraction of Xangle at preselection:
 		   TChain * _ch2 = new TChain("tree"); _ch2->Add(name_el); _ch2->Add(name_mu);
+		   //_ch2->Add(name_elmu); _ch2->Add(name_mumu); _ch2->Add(name_elel);
 		   fraction_regions[i_era*n_xa+i_xa] = _ch2->GetEntries(Form("beamXangle==%d",xangle[i_xa]));
 		   total_event_per_era[i_era*n_xa+i_xa] = isSignal ? fraction_regions[i_era*n_xa+i_xa] : _ch2->GetEntries();
 		   norm_weight[i_era*n_xa+i_xa] = n_p2/float(n); // probability of 2 tracks
