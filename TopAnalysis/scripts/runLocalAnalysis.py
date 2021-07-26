@@ -203,7 +203,7 @@ def main():
                         continue
                     if (len(outputOnlyList) > 1 and not outF in outputOnlyList):
                         continue
-                    task_list.append( (opt.method,inF,outF,opt.channel,opt.charge,opt.flag,opt.runSysts,systVar,opt.era,tag,opt.debug, opt.CR, opt.QCDTemp, opt.SRfake, opt.skimtree,opt.genWeights,xsec) )
+                    task_list.append( (opt.method,inF,outF,opt.channel,opt.charge,opt.seed,opt.flag,opt.runSysts,systVar,opt.era,opt.tag,opt.debug, opt.CR, opt.QCDTemp, opt.SRfake, opt.skimtree,opt.genWeights,xsec) )
                 if (opt.skipexisting and nexisting): print '--skipexisting: %s - skipping %d of %d tasks as files already exist'%(systVar,nexisting,len(input_list))
 
     #run the analysis jobs
@@ -240,7 +240,8 @@ def main():
             condor.write('+JobFlavour = "{0}"\n'.format(opt.queue))
 
             jobNb=0
-            for method,inF,outF,channel,charge,flag,runSysts,systVar,era,tag,debug,CR,QCDTemp,SRfake,skimtree,genWeights,xsec in task_list:
+
+            for method,inF,outF,channel,charge,seed,flag,runSysts,systVar,era,tag,debug,CR,QCDTemp,SRfake,skimtree,genWeights,xsec in task_list:
 
                 jobNb+=1
                 cfgFile='%s'%(os.path.splitext(os.path.basename(outF))[0])
@@ -263,6 +264,7 @@ def main():
                     if debug :    runOpts += ' --debug'
                     if skimtree :  runOpts += ' --skimtree'                    
                     if CR :       runOpts += ' --CR'
+                    if seed: runOpts += ' --seed '+str(seed)
                     if QCDTemp :  runOpts += ' --QCDTemp'
                     if SRfake :  runOpts += ' --SRfake'
                     cfg.write('python %s/src/TopLJets2015/TopAnalysis/scripts/runLocalAnalysis.py %s\n'%(cmsswBase,runOpts))
