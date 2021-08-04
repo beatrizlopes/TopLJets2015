@@ -261,7 +261,7 @@ void TMVAClassificationApplication( char * _fname, TString myMethodList = "")
 
       if (Use["BDT"          ]){ wBDT = reader->EvaluateMVA("BDT method");  histBdt->Fill(wBDT);}
       
-      if(wBDT>999) theTreeNew->Fill();
+      if(wBDT<999) theTreeNew->Fill();
        
    }
 

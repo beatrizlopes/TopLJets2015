@@ -13,7 +13,7 @@ def getEOSlslist(directory, mask='', prepend='root://eoscms//eos/cms/'):
     print 'looking into: '+directory+'...'
 
     #eos should be mounted
-    data = Popen(['ls', '/eos/cms/%s'%directory],stdout=PIPE)
+    data = Popen(['ls', '/%s'%directory],stdout=PIPE)
     out,err = data.communicate()
 
     full_list = []
@@ -44,7 +44,7 @@ def getChunksInSizeOf(chunkSize,directoryList,mask='',prepend='root://eoscms//eo
     cursize=0.
     for directory in directoryList:
 
-        fList=getEOSlslist(directory=directory, mask=mask, prepend='/eos/cms')
+        fList=getEOSlslist(directory=directory, mask=mask, prepend='')
 
         for f in fList:
             if not '.root' in f : continue
@@ -54,6 +54,6 @@ def getChunksInSizeOf(chunkSize,directoryList,mask='',prepend='root://eoscms//eo
                 cursize=fsize
             else:
                 cursize += fsize
-            chunkList[-1].append(f.replace('/eos/cms/',prepend))
+            chunkList[-1].append(f.replace('',prepend))
 
     return chunkList
